@@ -137,4 +137,5 @@ Vercel serverless **does not support WebSockets**. Options:
 | 401 on all routes | Check `Authorization: Bearer <token>` header |
 | CORS error | Add frontend URL to `CORS_ORIGINS` |
 | Prisma errors on Vercel | Ensure `DATABASE_URL` is set and migrations ran |
+| P3009 failed migration on Neon | Run `prisma/fix-failed-migration.sql` in Neon SQL Editor, or `npm run prisma:resolve-failed` with Neon `DATABASE_URL`, then redeploy |
 | Firebase token fails | Verify `FIREBASE_SERVICE_ACCOUNT` JSON is valid one-line string |
