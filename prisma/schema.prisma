@@ -1,0 +1,299 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id               String           @id @default(uuid())
+  firebase_uid     String?          @unique
+  password         String?
+  name             String
+  email            String           @unique
+  avatar           String?
+  role_id          String?
+  role             Role?            @relation(fields: [role_id], references: [id])
+  status           String           @default("ACTIVE")
+  is_verified      Boolean          @default(false)
+  is_banned        Boolean          @default(false)
+  is_deleted       Boolean          @default(false)
+  created_at       DateTime         @default(now())
+  updated_at       DateTime         @updatedAt
+
+  creator_profile  CreatorProfile?
+  brand_profile    BrandProfile?
+  wallets          Wallet[]
+  notifications    Notification[]
+  audit_logs       AuditLog[]
+  messages         Message[]
+  settings         Json?
+
+  @@map("users")
+}
+
+model Role {
+  id               String           @id @default(uuid())
+  name             String           @unique
+  description      String?
+  users            User[]
+  permissions      RolePermission[]
+
+  @@map("roles")
+}
+
+model Permission {
+  id               String           @id @default(uuid())
+  key              String           @unique
+  description      String?
+  roles            RolePermission[]
+
+  @@map("permissions")
+}
+
+model RolePermission {
+  role_id          String
+  permission_id    String
+  role             Role       @relation(fields: [role_id], references: [id])
+  permission       Permission @relation(fields: [permission_id], references: [id])
+
+  @@id([role_id, permission_id])
+  @@map("role_permissions")
+}
+
+model CreatorProfile {
+  id               String       @id @default(uuid())
+  user_id          String       @unique
+  user             User         @relation(fields: [user_id], references: [id])
+  full_name        String?
+  bio              String?
+  niche            String?
+  followers        Int          @default(0)
+  engagement_rate  Float        @default(0.0)
+  languages        String[]
+  locality         String?
+  social_links     Json?
+  media_kit        String?
+  portfolio        String?
+  contact_email    String?
+  phone            String?
+  photo            String?
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  applications     Application[]
+  conversations    Conversation[]
+  disputes         Dispute[]
+  escrows          Escrow[]
+  deliverables     Deliverable[]
+
+  @@map("creator_profiles")
+}
+
+model BrandProfile {
+  id               String       @id @default(uuid())
+  user_id          String       @unique
+  user             User         @relation(fields: [user_id], references: [id])
+  company_name     String
+  industry         String?
+  website          String?
+  description      String?
+  logo             String?
+  contact_email    String?
+  phone            String?
+  location         String?
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  campaigns        Campaign[]
+  conversations    Conversation[]
+  disputes         Dispute[]
+  escrows          Escrow[]
+
+  @@map("brand_profiles")
+}
+
+model Campaign {
+  id               String       @id @default(uuid())
+  brand_id         String
+  brand            BrandProfile @relation(fields: [brand_id], references: [id])
+  title            String
+  description      String
+  platform         String
+  budget           Float
+  remaining_budget Float
+  deadline         DateTime
+  deliverables     String[]
+  status           String       @default("DRAFT") // ACTIVE, DRAFT, PENDING_APPROVAL, FLAGGED, COMPLETED, FROZEN
+  locality         String?
+  languages        String[]
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  applications     Application[]
+  escrows          Escrow[]
+  disputes         Dispute[]
+  campaignDeliverables Deliverable[]
+
+  @@map("campaigns")
+}
+
+model Application {
+  id               String       @id @default(uuid())
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  campaign_id      String
+  campaign         Campaign       @relation(fields: [campaign_id], references: [id])
+  message          String?
+  proposed_price   Float?
+  status           String         @default("PENDING") // PENDING, SHORTLISTED, ACCEPTED, REJECTED, COMPLETED
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+  deliverables     Deliverable[]
+
+  @@map("applications")
+}
+
+model Deliverable {
+  id               String         @id @default(uuid())
+  campaign_id      String
+  campaign         Campaign       @relation(fields: [campaign_id], references: [id])
+  application_id   String?
+  application      Application?   @relation(fields: [application_id], references: [id])
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  title            String
+  type             String?
+  media_url        String?
+  thumbnail_url    String?
+  notes            String?
+  revision_notes   String?
+  status           String         @default("PENDING")
+  due_date         DateTime?
+  submitted_at     DateTime?
+  reviewed_at      DateTime?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  @@map("deliverables")
+}
+
+model Wallet {
+  id               String       @id @default(uuid())
+  user_id          String       @unique
+  user             User         @relation(fields: [user_id], references: [id])
+  available_balance Float       @default(0.0)
+  pending_balance  Float        @default(0.0)
+  created_at       DateTime     @default(now())
+  updated_at       DateTime     @updatedAt
+
+  transactions     Transaction[]
+
+  @@map("wallets")
+}
+
+model Escrow {
+  id               String       @id @default(uuid())
+  campaign_id      String
+  campaign         Campaign       @relation(fields: [campaign_id], references: [id])
+  brand_id         String
+  brand            BrandProfile   @relation(fields: [brand_id], references: [id])
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  amount           Float
+  status           String         @default("HELD") // HELD, RELEASED, REFUNDED, DISPUTED
+
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  @@map("escrows")
+}
+
+model Transaction {
+  id               String       @id @default(uuid())
+  wallet_id        String
+  wallet           Wallet         @relation(fields: [wallet_id], references: [id])
+  type             String         // DEPOSIT, WITHDRAWAL, ESCROW_HOLD, ESCROW_RELEASE
+  amount           Float
+  status           String         @default("PENDING")
+  reference_id     String?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  @@map("transactions")
+}
+
+model Conversation {
+  id               String         @id @default(uuid())
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  brand_id         String
+  brand            BrandProfile   @relation(fields: [brand_id], references: [id])
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  messages         Message[]
+
+  @@map("conversations")
+}
+
+model Message {
+  id               String         @id @default(uuid())
+  conversation_id  String
+  conversation     Conversation   @relation(fields: [conversation_id], references: [id])
+  sender_id        String
+  sender           User           @relation(fields: [sender_id], references: [id])
+  message          String
+  type             String         @default("text")
+  file_url         String?
+  file_name        String?
+  file_size        String?
+  created_at       DateTime       @default(now())
+  read_at          DateTime?
+
+  @@map("messages")
+}
+
+model Notification {
+  id               String         @id @default(uuid())
+  user_id          String
+  user             User           @relation(fields: [user_id], references: [id])
+  title            String
+  body             String
+  type             String?
+  metadata         Json?
+  is_read          Boolean        @default(false)
+  created_at       DateTime       @default(now())
+
+  @@map("notifications")
+}
+
+model Dispute {
+  id               String         @id @default(uuid())
+  campaign_id      String
+  campaign         Campaign       @relation(fields: [campaign_id], references: [id])
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  brand_id         String
+  brand            BrandProfile   @relation(fields: [brand_id], references: [id])
+  reason           String
+  status           String         @default("OPEN")
+  created_at       DateTime       @default(now())
+
+  @@map("disputes")
+}
+
+model AuditLog {
+  id               String         @id @default(uuid())
+  admin_id         String
+  admin            User           @relation(fields: [admin_id], references: [id])
+  action           String
+  entity           String
+  entity_id        String
+  metadata         Json?
+  created_at       DateTime       @default(now())
+
+  @@map("audit_logs")
+}
