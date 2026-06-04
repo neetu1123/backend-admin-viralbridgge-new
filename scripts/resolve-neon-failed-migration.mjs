@@ -1,17 +1,11 @@
 /**
- * One-time fix for P3009 on Neon after a failed Vercel deploy.
- * Prisma Option 2: schema already matches → mark migration as applied.
- *
- * 1. Set DATABASE_URL in .env to your Neon connection string (not localhost)
- * 2. npm run neon:fix-migration
- * 3. Redeploy on Vercel
+ * One-time fix for P3009 on Neon (run locally with Neon DATABASE_URL in .env).
  */
 import { execSync } from 'node:child_process';
 import { existsSync, readFileSync } from 'node:fs';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-const FAILED_MIGRATION = '20260603200000_add_deliverables_and_message_fields';
 const root = resolve(dirname(fileURLToPath(import.meta.url)), '..');
 const envPath = resolve(root, '.env');
 
@@ -26,25 +20,35 @@ function loadDatabaseUrl() {
 const databaseUrl = loadDatabaseUrl();
 
 if (!databaseUrl) {
-  console.error('DATABASE_URL is missing. Add your Neon URL to backend-admin-viralbridgge/.env');
+  console.error('Set DATABASE_URL in .env to your Neon PostgreSQL connection string.');
   process.exit(1);
 }
 
 if (/localhost|127\.0\.0\.1/i.test(databaseUrl)) {
   console.error(
-    'DATABASE_URL still points to localhost. Paste your Neon connection string into .env first.\n' +
-      'Neon Console → Connection string → use the host WITHOUT "-pooler" for migrations.',
+    'Your .env still uses localhost. Replace DATABASE_URL with Neon’s postgresql:// URL\n' +
+      '(Connection string tab — NOT the Data API https://...apirest... URL).',
   );
+  process.exit(1);
+}
+
+if (/apirest|\/rest\/v1/i.test(databaseUrl)) {
+  console.error('DATABASE_URL must be postgresql://... not the Neon Data API REST URL.');
   process.exit(1);
 }
 
 const env = { ...process.env, DATABASE_URL: databaseUrl };
 const run = (cmd) => execSync(cmd, { cwd: root, env, stdio: 'inherit' });
 
-console.log('→ Marking failed migration as applied (Prisma migrate resolve)...');
-run(`npx prisma migrate resolve --applied "${FAILED_MIGRATION}"`);
+console.log('→ Applying fix SQL to _prisma_migrations...');
+run('npx prisma db execute --file prisma/fix-failed-migration.sql --schema prisma/schema.prisma');
 
-console.log('→ Verifying migration history...');
+console.log('→ Marking migration as applied (Prisma resolve)...');
+run(
+  'npx prisma migrate resolve --applied "20260603200000_add_deliverables_and_message_fields"',
+);
+
+console.log('→ Verifying deploy...');
 run('npx prisma migrate deploy');
 
-console.log('Done. Commit any migration file changes, push, and redeploy on Vercel.');
+console.log('\nSuccess. Redeploy on Vercel (no cache optional).');

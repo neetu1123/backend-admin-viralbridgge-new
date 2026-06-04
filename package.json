@@ -22,6 +22,7 @@
     "prisma:migrate": "prisma migrate deploy",
     "prisma:resolve-failed": "prisma migrate resolve --applied 20260603200000_add_deliverables_and_message_fields",
     "neon:fix-migration": "node scripts/resolve-neon-failed-migration.mjs",
+    "neon:fix-migration:sql": "prisma db execute --file prisma/fix-failed-migration.sql --schema prisma/schema.prisma",
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && prisma migrate deploy",
     "seed": "node prisma/seed.js"
