@@ -21,6 +21,8 @@ Use any hosted Postgres:
 
 Copy the connection string into `DATABASE_URL`.
 
+**Neon + Vercel:** Use the connection string whose host does **not** contain `-pooler` (direct connection) for `DATABASE_URL` on Vercel and when running migrations. The same value must be set in Vercel → Settings → Environment Variables.
+
 Run migrations locally or let Vercel run them on deploy:
 
 ```bash
@@ -137,5 +139,23 @@ Vercel serverless **does not support WebSockets**. Options:
 | 401 on all routes | Check `Authorization: Bearer <token>` header |
 | CORS error | Add frontend URL to `CORS_ORIGINS` |
 | Prisma errors on Vercel | Ensure `DATABASE_URL` is set and migrations ran |
-| P3009 failed migration on Neon | Run `prisma/fix-failed-migration.sql` in Neon SQL Editor, or `npm run prisma:resolve-failed` with Neon `DATABASE_URL`, then redeploy |
+| P3009 failed migration on Neon | See **Fix P3009 (failed migration)** below |
+
+### Fix P3009 (failed migration on Neon)
+
+This happens when a deploy failed mid-migration. Your schema is already correct; Prisma only needs the history updated (**Option 2** in [Prisma docs](https://www.prisma.io/docs/guides/migrate/production-troubleshooting)).
+
+**A — Terminal (recommended)**
+
+```bash
+cd backend-admin-viralbridgge
+# Edit .env: set DATABASE_URL to your Neon string (not localhost)
+npm run neon:fix-migration
+```
+
+**B — Neon SQL Editor**
+
+Run `prisma/fix-failed-migration.sql`, then redeploy on Vercel.
+
+After either fix: push latest code (includes the corrected second migration SQL) and **Redeploy** the Vercel project.
 | Firebase token fails | Verify `FIREBASE_SERVICE_ACCOUNT` JSON is valid one-line string |
