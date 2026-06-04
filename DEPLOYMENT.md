@@ -38,8 +38,9 @@ In Vercel → Project → Settings → Environment Variables, add:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | PostgreSQL connection string |
+| `DATABASE_URL` | Yes | Neon `postgresql://...` (not localhost, not Data API URL) |
 | `JWT_SECRET` | Yes | Long random string for admin JWT login |
+| `CORS_ORIGINS` | Yes | Your frontend URL(s), comma-separated |
 | `FIREBASE_SERVICE_ACCOUNT` | Yes* | Full Firebase service account JSON as **single-line string** |
 | `CORS_ORIGINS` | Yes | Comma-separated frontend URLs, e.g. `https://your-app.vercel.app,http://localhost:3000` |
 | `REDIS_URL` | No | Redis URL for BullMQ (Upstash recommended) |

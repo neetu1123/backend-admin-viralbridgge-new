@@ -2,10 +2,16 @@ import { DynamicModule, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 
 function redisConnection() {
-  const redisUrl = process.env.REDIS_URL;
+  const redisUrl = process.env.REDIS_URL?.trim();
   if (!redisUrl) return null;
 
-  const url = new URL(redisUrl);
+  let url: URL;
+  try {
+    url = new URL(redisUrl);
+  } catch {
+    console.warn('Invalid REDIS_URL; BullMQ disabled.');
+    return null;
+  }
   return {
     host: url.hostname,
     port: Number(url.port || 6379),

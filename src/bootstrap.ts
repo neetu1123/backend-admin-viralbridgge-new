@@ -8,12 +8,18 @@ import { ApiResponseInterceptor } from './common/interceptors/api-response.inter
 export function initializeFirebaseAdmin() {
   if (admin.apps.length) return;
 
-  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-  const credential = serviceAccountJson
-    ? admin.credential.cert(JSON.parse(serviceAccountJson))
-    : admin.credential.applicationDefault();
+  const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
+  if (!serviceAccountJson) {
+    // Do not call applicationDefault() on Vercel — it hangs without GCP metadata.
+    return;
+  }
 
-  admin.initializeApp({ credential });
+  try {
+    const serviceAccount = JSON.parse(serviceAccountJson) as admin.ServiceAccount;
+    admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+  } catch (error) {
+    console.error('FIREBASE_SERVICE_ACCOUNT is invalid JSON; Firebase auth disabled.', error);
+  }
 }
 
 export function configureApp(app: INestApplication) {

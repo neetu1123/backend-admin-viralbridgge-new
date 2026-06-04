@@ -1,5 +1,5 @@
+import { ForbiddenException } from '@nestjs/common';
 import {
-  ForbiddenException,
   WebSocketGateway,
   WebSocketServer,
   SubscribeMessage,

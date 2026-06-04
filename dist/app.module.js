@@ -11,6 +11,8 @@ const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
 const throttler_1 = require("@nestjs/throttler");
 const core_1 = require("@nestjs/core");
+const app_controller_1 = require("./app.controller");
+const app_service_1 = require("./app.service");
 const prisma_module_1 = require("./prisma/prisma.module");
 const auth_module_1 = require("./auth/auth.module");
 const users_module_1 = require("./users/users.module");
@@ -33,16 +35,17 @@ exports.AppModule = AppModule = __decorate([
                     limit: 100,
                 }]),
             prisma_module_1.PrismaModule,
-            queue_module_1.QueueModule,
+            queue_module_1.QueueModule.register(),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,
             admin_module_1.AdminModule,
             brand_module_1.BrandModule,
             creator_module_1.CreatorModule,
         ],
-        controllers: [],
+        controllers: [app_controller_1.AppController],
         providers: [
-            app_gateway_1.AppGateway,
+            app_service_1.AppService,
+            ...(process.env.VERCEL ? [] : [app_gateway_1.AppGateway]),
             {
                 provide: core_1.APP_GUARD,
                 useClass: throttler_1.ThrottlerGuard,

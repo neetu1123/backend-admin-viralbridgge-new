@@ -47,11 +47,17 @@ const api_response_interceptor_1 = require("./common/interceptors/api-response.i
 function initializeFirebaseAdmin() {
     if (admin.apps.length)
         return;
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT;
-    const credential = serviceAccountJson
-        ? admin.credential.cert(JSON.parse(serviceAccountJson))
-        : admin.credential.applicationDefault();
-    admin.initializeApp({ credential });
+    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
+    if (!serviceAccountJson) {
+        return;
+    }
+    try {
+        const serviceAccount = JSON.parse(serviceAccountJson);
+        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
+    }
+    catch (error) {
+        console.error('FIREBASE_SERVICE_ACCOUNT is invalid JSON; Firebase auth disabled.', error);
+    }
 }
 function configureApp(app) {
     initializeFirebaseAdmin();

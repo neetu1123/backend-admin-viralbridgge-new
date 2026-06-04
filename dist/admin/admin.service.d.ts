@@ -58,30 +58,30 @@ export declare class AdminService {
             users: number;
         };
     } & {
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     })[]>;
     createRole(name: string, description: string, adminId?: string): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     updateRole(id: string, name: string, description: string, adminId?: string): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     deleteRole(id: string, adminId?: string): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     getAdmins(): Promise<({
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
     } & {
         id: string;
@@ -122,9 +122,9 @@ export declare class AdminService {
     }>;
     getUsers(): Promise<({
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
     } & {
         id: string;
@@ -144,9 +144,9 @@ export declare class AdminService {
     })[]>;
     getUser(id: string): Promise<{
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
         creator_profile: {
             id: string;
@@ -168,7 +168,6 @@ export declare class AdminService {
             photo: string | null;
         } | null;
         brand_profile: {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -176,6 +175,7 @@ export declare class AdminService {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
@@ -264,7 +264,6 @@ export declare class AdminService {
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -272,30 +271,30 @@ export declare class AdminService {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
             location: string | null;
         };
     } & {
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     })[]>;
     getFlaggedCampaigns(): Promise<({
         brand: {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -303,74 +302,75 @@ export declare class AdminService {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
             location: string | null;
         };
     } & {
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     })[]>;
     approveCampaign(id: string, adminId?: string): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     rejectCampaign(id: string, adminId?: string): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     flagCampaign(id: string, reason: string, adminId?: string): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     getTransactions(): Promise<({
         wallet: {

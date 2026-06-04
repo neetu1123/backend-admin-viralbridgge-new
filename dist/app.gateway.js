@@ -46,6 +46,7 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AppGateway = void 0;
+const common_1 = require("@nestjs/common");
 const websockets_1 = require("@nestjs/websockets");
 const socket_io_1 = require("socket.io");
 const admin = __importStar(require("firebase-admin"));
@@ -80,7 +81,7 @@ let AppGateway = class AppGateway {
     async handleSendMessage(client, payload) {
         const user = client.data.user;
         if (!user)
-            throw new websockets_1.ForbiddenException('Socket is not authenticated');
+            throw new common_1.ForbiddenException('Socket is not authenticated');
         await this.assertConversationAccess(user.id, payload.conversationId);
         const message = await this.prisma.$transaction(async (tx) => {
             const created = await tx.message.create({
@@ -124,7 +125,7 @@ let AppGateway = class AppGateway {
     async resolveSocketUser(client) {
         const token = this.extractSocketToken(client);
         if (!token || !admin.apps.length) {
-            throw new websockets_1.ForbiddenException('Missing socket token');
+            throw new common_1.ForbiddenException('Missing socket token');
         }
         const decoded = await admin.auth().verifyIdToken(token);
         const user = await this.prisma.user.findUnique({
@@ -132,7 +133,7 @@ let AppGateway = class AppGateway {
             include: { role: true },
         });
         if (!user || user.is_banned || user.is_deleted) {
-            throw new websockets_1.ForbiddenException('Socket user is not allowed');
+            throw new common_1.ForbiddenException('Socket user is not allowed');
         }
         return user;
     }
@@ -156,7 +157,7 @@ let AppGateway = class AppGateway {
             },
         });
         if (!conversation) {
-            throw new websockets_1.ForbiddenException('Conversation access denied');
+            throw new common_1.ForbiddenException('Conversation access denied');
         }
     }
 };

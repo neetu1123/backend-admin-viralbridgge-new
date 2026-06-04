@@ -6,8 +6,6 @@ export declare class CreatorService {
     getProfile(userId: string): Promise<{
         user: {
             id: string;
-            created_at: Date;
-            updated_at: Date;
             firebase_uid: string | null;
             email: string;
             password: string | null;
@@ -18,11 +16,17 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            created_at: Date;
+            updated_at: Date;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
         id: string;
+        created_at: Date;
+        updated_at: Date;
         user_id: string;
+        contact_email: string | null;
+        phone: string | null;
         full_name: string | null;
         bio: string | null;
         niche: string | null;
@@ -33,17 +37,11 @@ export declare class CreatorService {
         social_links: import("@prisma/client/runtime/library").JsonValue | null;
         media_kit: string | null;
         portfolio: string | null;
-        contact_email: string | null;
-        phone: string | null;
         photo: string | null;
-        created_at: Date;
-        updated_at: Date;
     }>;
     updateProfile(userId: string, dto: UpdateCreatorProfileDto): Promise<{
         user: {
             id: string;
-            created_at: Date;
-            updated_at: Date;
             firebase_uid: string | null;
             email: string;
             password: string | null;
@@ -54,11 +52,17 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            created_at: Date;
+            updated_at: Date;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
         id: string;
+        created_at: Date;
+        updated_at: Date;
         user_id: string;
+        contact_email: string | null;
+        phone: string | null;
         full_name: string | null;
         bio: string | null;
         niche: string | null;
@@ -69,15 +73,15 @@ export declare class CreatorService {
         social_links: import("@prisma/client/runtime/library").JsonValue | null;
         media_kit: string | null;
         portfolio: string | null;
-        contact_email: string | null;
-        phone: string | null;
         photo: string | null;
-        created_at: Date;
-        updated_at: Date;
     }>;
     uploadPhoto(userId: string, dto: UploadDto): Promise<{
         id: string;
+        created_at: Date;
+        updated_at: Date;
         user_id: string;
+        contact_email: string | null;
+        phone: string | null;
         full_name: string | null;
         bio: string | null;
         niche: string | null;
@@ -88,15 +92,15 @@ export declare class CreatorService {
         social_links: import("@prisma/client/runtime/library").JsonValue | null;
         media_kit: string | null;
         portfolio: string | null;
-        contact_email: string | null;
-        phone: string | null;
         photo: string | null;
-        created_at: Date;
-        updated_at: Date;
     }>;
     uploadMediaKit(userId: string, dto: UploadDto): Promise<{
         id: string;
+        created_at: Date;
+        updated_at: Date;
         user_id: string;
+        contact_email: string | null;
+        phone: string | null;
         full_name: string | null;
         bio: string | null;
         niche: string | null;
@@ -107,19 +111,13 @@ export declare class CreatorService {
         social_links: import("@prisma/client/runtime/library").JsonValue | null;
         media_kit: string | null;
         portfolio: string | null;
-        contact_email: string | null;
-        phone: string | null;
         photo: string | null;
-        created_at: Date;
-        updated_at: Date;
     }>;
     getCampaigns(query: CreatorCampaignQueryDto): Promise<{
         data: ({
             brand: {
                 user: {
                     id: string;
-                    created_at: Date;
-                    updated_at: Date;
                     firebase_uid: string | null;
                     email: string;
                     password: string | null;
@@ -130,20 +128,22 @@ export declare class CreatorService {
                     is_verified: boolean;
                     is_banned: boolean;
                     is_deleted: boolean;
+                    created_at: Date;
+                    updated_at: Date;
                     settings: import("@prisma/client/runtime/library").JsonValue | null;
                 };
             } & {
                 id: string;
-                user_id: string;
-                contact_email: string | null;
-                phone: string | null;
                 created_at: Date;
                 updated_at: Date;
-                description: string | null;
+                user_id: string;
                 company_name: string;
                 industry: string | null;
                 website: string | null;
+                description: string | null;
                 logo: string | null;
+                contact_email: string | null;
+                phone: string | null;
                 location: string | null;
             };
             _count: {
@@ -151,19 +151,19 @@ export declare class CreatorService {
             };
         } & {
             id: string;
-            languages: string[];
-            locality: string | null;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             brand_id: string;
-            title: string;
             description: string;
+            languages: string[];
+            locality: string | null;
+            deliverables: string[];
+            title: string;
             platform: string;
             budget: number;
             remaining_budget: number;
             deadline: Date;
-            deliverables: string[];
         })[];
         meta: {
             page: number;
@@ -173,21 +173,9 @@ export declare class CreatorService {
         };
     }>;
     getCampaign(id: string): Promise<{
-        applications: {
-            id: string;
-            created_at: Date;
-            updated_at: Date;
-            status: string;
-            creator_id: string;
-            campaign_id: string;
-            message: string | null;
-            proposed_price: number | null;
-        }[];
         brand: {
             user: {
                 id: string;
-                created_at: Date;
-                updated_at: Date;
                 firebase_uid: string | null;
                 email: string;
                 password: string | null;
@@ -198,60 +186,70 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                created_at: Date;
+                updated_at: Date;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
             id: string;
-            user_id: string;
-            contact_email: string | null;
-            phone: string | null;
             created_at: Date;
             updated_at: Date;
-            description: string | null;
+            user_id: string;
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
+            contact_email: string | null;
+            phone: string | null;
             location: string | null;
         };
+        applications: {
+            message: string | null;
+            id: string;
+            status: string;
+            created_at: Date;
+            updated_at: Date;
+            creator_id: string;
+            campaign_id: string;
+            proposed_price: number | null;
+        }[];
     } & {
         id: string;
-        languages: string[];
-        locality: string | null;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        status: string;
         brand_id: string;
-        title: string;
         description: string;
+        languages: string[];
+        locality: string | null;
+        deliverables: string[];
+        title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     apply(userId: string, campaignId: string, dto: ApplyCampaignDto): Promise<{
         campaign: {
             id: string;
-            languages: string[];
-            locality: string | null;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             brand_id: string;
-            title: string;
             description: string;
+            languages: string[];
+            locality: string | null;
+            deliverables: string[];
+            title: string;
             platform: string;
             budget: number;
             remaining_budget: number;
             deadline: Date;
-            deliverables: string[];
         };
         creator: {
             user: {
                 id: string;
-                created_at: Date;
-                updated_at: Date;
                 firebase_uid: string | null;
                 email: string;
                 password: string | null;
@@ -262,11 +260,17 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                created_at: Date;
+                updated_at: Date;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
             id: string;
+            created_at: Date;
+            updated_at: Date;
             user_id: string;
+            contact_email: string | null;
+            phone: string | null;
             full_name: string | null;
             bio: string | null;
             niche: string | null;
@@ -277,20 +281,16 @@ export declare class CreatorService {
             social_links: import("@prisma/client/runtime/library").JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
-            contact_email: string | null;
-            phone: string | null;
             photo: string | null;
-            created_at: Date;
-            updated_at: Date;
         };
     } & {
+        message: string | null;
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        status: string;
         creator_id: string;
         campaign_id: string;
-        message: string | null;
         proposed_price: number | null;
     }>;
     getApplications(userId: string, query: ApplicationQueryDto): Promise<{
@@ -298,42 +298,42 @@ export declare class CreatorService {
             campaign: {
                 brand: {
                     id: string;
-                    user_id: string;
-                    contact_email: string | null;
-                    phone: string | null;
                     created_at: Date;
                     updated_at: Date;
-                    description: string | null;
+                    user_id: string;
                     company_name: string;
                     industry: string | null;
                     website: string | null;
+                    description: string | null;
                     logo: string | null;
+                    contact_email: string | null;
+                    phone: string | null;
                     location: string | null;
                 };
             } & {
                 id: string;
-                languages: string[];
-                locality: string | null;
+                status: string;
                 created_at: Date;
                 updated_at: Date;
-                status: string;
                 brand_id: string;
-                title: string;
                 description: string;
+                languages: string[];
+                locality: string | null;
+                deliverables: string[];
+                title: string;
                 platform: string;
                 budget: number;
                 remaining_budget: number;
                 deadline: Date;
-                deliverables: string[];
             };
         } & {
+            message: string | null;
             id: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             creator_id: string;
             campaign_id: string;
-            message: string | null;
             proposed_price: number | null;
         })[];
         meta: {
@@ -347,42 +347,42 @@ export declare class CreatorService {
         campaign: {
             brand: {
                 id: string;
-                user_id: string;
-                contact_email: string | null;
-                phone: string | null;
                 created_at: Date;
                 updated_at: Date;
-                description: string | null;
+                user_id: string;
                 company_name: string;
                 industry: string | null;
                 website: string | null;
+                description: string | null;
                 logo: string | null;
+                contact_email: string | null;
+                phone: string | null;
                 location: string | null;
             };
         } & {
             id: string;
-            languages: string[];
-            locality: string | null;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             brand_id: string;
-            title: string;
             description: string;
+            languages: string[];
+            locality: string | null;
+            deliverables: string[];
+            title: string;
             platform: string;
             budget: number;
             remaining_budget: number;
             deadline: Date;
-            deliverables: string[];
         };
     } & {
+        message: string | null;
         id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
-        status: string;
         creator_id: string;
         campaign_id: string;
-        message: string | null;
         proposed_price: number | null;
     }>;
     getDashboard(userId: string): Promise<{
@@ -392,46 +392,122 @@ export declare class CreatorService {
         walletBalance: number;
         earnings: number;
     }>;
-    getDeliverables(userId: string): Promise<any>;
-    submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto): Promise<any>;
-    getWallet(userId: string): Promise<{
+    getDeliverables(userId: string): Promise<({
+        campaign: {
+            brand: {
+                id: string;
+                created_at: Date;
+                updated_at: Date;
+                user_id: string;
+                company_name: string;
+                industry: string | null;
+                website: string | null;
+                description: string | null;
+                logo: string | null;
+                contact_email: string | null;
+                phone: string | null;
+                location: string | null;
+            };
+        } & {
+            id: string;
+            status: string;
+            created_at: Date;
+            updated_at: Date;
+            brand_id: string;
+            description: string;
+            languages: string[];
+            locality: string | null;
+            deliverables: string[];
+            title: string;
+            platform: string;
+            budget: number;
+            remaining_budget: number;
+            deadline: Date;
+        };
+        application: {
+            message: string | null;
+            id: string;
+            status: string;
+            created_at: Date;
+            updated_at: Date;
+            creator_id: string;
+            campaign_id: string;
+            proposed_price: number | null;
+        } | null;
+    } & {
         id: string;
-        user_id: string;
+        status: string;
         created_at: Date;
         updated_at: Date;
+        creator_id: string;
+        type: string | null;
+        title: string;
+        notes: string | null;
+        campaign_id: string;
+        application_id: string | null;
+        media_url: string | null;
+        thumbnail_url: string | null;
+        revision_notes: string | null;
+        due_date: Date | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
+    })[]>;
+    submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto): Promise<{
+        id: string;
+        status: string;
+        created_at: Date;
+        updated_at: Date;
+        creator_id: string;
+        type: string | null;
+        title: string;
+        notes: string | null;
+        campaign_id: string;
+        application_id: string | null;
+        media_url: string | null;
+        thumbnail_url: string | null;
+        revision_notes: string | null;
+        due_date: Date | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
+    }>;
+    getWallet(userId: string): Promise<{
+        id: string;
+        created_at: Date;
+        updated_at: Date;
+        user_id: string;
         available_balance: number;
         pending_balance: number;
     }>;
     withdraw(userId: string, dto: WithdrawDto): Promise<{
         wallet: {
             id: string;
-            user_id: string;
             created_at: Date;
             updated_at: Date;
+            user_id: string;
             available_balance: number;
             pending_balance: number;
         };
         transaction: {
             id: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             type: string;
+            wallet_id: string;
             amount: number;
             reference_id: string | null;
-            wallet_id: string;
         };
     }>;
     getWalletTransactions(userId: string, query: TransactionQueryDto): Promise<{
         data: {
             id: string;
+            status: string;
             created_at: Date;
             updated_at: Date;
-            status: string;
             type: string;
+            wallet_id: string;
             amount: number;
             reference_id: string | null;
-            wallet_id: string;
         }[];
         meta: {
             page: number;
@@ -442,18 +518,20 @@ export declare class CreatorService {
     }>;
     getConversations(userId: string): Promise<({
         messages: {
+            message: string;
             id: string;
             created_at: Date;
-            message: string;
+            type: string;
+            file_url: string | null;
+            file_name: string | null;
+            file_size: string | null;
+            read_at: Date | null;
             conversation_id: string;
             sender_id: string;
-            read_at: Date | null;
         }[];
         brand: {
             user: {
                 id: string;
-                created_at: Date;
-                updated_at: Date;
                 firebase_uid: string | null;
                 email: string;
                 password: string | null;
@@ -464,34 +542,34 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                created_at: Date;
+                updated_at: Date;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
             id: string;
-            user_id: string;
-            contact_email: string | null;
-            phone: string | null;
             created_at: Date;
             updated_at: Date;
-            description: string | null;
+            user_id: string;
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
+            contact_email: string | null;
+            phone: string | null;
             location: string | null;
         };
     } & {
         id: string;
         created_at: Date;
         updated_at: Date;
-        brand_id: string;
         creator_id: string;
+        brand_id: string;
     })[]>;
     getMessages(userId: string, conversationId: string): Promise<({
         sender: {
             id: string;
-            created_at: Date;
-            updated_at: Date;
             firebase_uid: string | null;
             email: string;
             password: string | null;
@@ -502,33 +580,43 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            created_at: Date;
+            updated_at: Date;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
+        message: string;
         id: string;
         created_at: Date;
-        message: string;
+        type: string;
+        file_url: string | null;
+        file_name: string | null;
+        file_size: string | null;
+        read_at: Date | null;
         conversation_id: string;
         sender_id: string;
-        read_at: Date | null;
     })[]>;
     sendMessage(userId: string, dto: SendMessageDto): Promise<{
+        message: string;
         id: string;
         created_at: Date;
-        message: string;
+        type: string;
+        file_url: string | null;
+        file_name: string | null;
+        file_size: string | null;
+        read_at: Date | null;
         conversation_id: string;
         sender_id: string;
-        read_at: Date | null;
     }>;
     getNotifications(userId: string, query: NotificationQueryDto): Promise<{
         data: {
             id: string;
-            user_id: string;
             created_at: Date;
-            title: string;
+            user_id: string;
             type: string | null;
-            body: string;
             metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            title: string;
+            body: string;
             is_read: boolean;
         }[];
         meta: {
@@ -540,19 +628,17 @@ export declare class CreatorService {
     }>;
     markNotificationRead(userId: string, id: string): Promise<{
         id: string;
-        user_id: string;
         created_at: Date;
-        title: string;
+        user_id: string;
         type: string | null;
-        body: string;
         metadata: import("@prisma/client/runtime/library").JsonValue | null;
+        title: string;
+        body: string;
         is_read: boolean;
     }>;
     getSettings(userId: string): Promise<string | number | boolean | import("@prisma/client/runtime/library").JsonObject | import("@prisma/client/runtime/library").JsonArray>;
     updateSettings(userId: string, settings: Record<string, any>): Promise<{
         id: string;
-        created_at: Date;
-        updated_at: Date;
         firebase_uid: string | null;
         email: string;
         password: string | null;
@@ -563,6 +649,8 @@ export declare class CreatorService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        created_at: Date;
+        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     private ensureCreatorProfile;

@@ -7,36 +7,36 @@ export declare class AdminController {
             users: number;
         };
     } & {
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     })[]>;
     createRole(body: {
         name: string;
         description: string;
     }, req: any): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     updateRole(id: string, body: {
         name: string;
         description: string;
     }, req: any): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     deleteRole(id: string, req: any): Promise<{
-        description: string | null;
         id: string;
         name: string;
+        description: string | null;
     }>;
     getAdmins(): Promise<({
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
     } & {
         id: string;
@@ -77,9 +77,9 @@ export declare class AdminController {
     }>;
     getUsers(): Promise<({
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
     } & {
         id: string;
@@ -99,9 +99,9 @@ export declare class AdminController {
     })[]>;
     getUser(id: string): Promise<{
         role: {
-            description: string | null;
             id: string;
             name: string;
+            description: string | null;
         } | null;
         creator_profile: {
             id: string;
@@ -123,7 +123,6 @@ export declare class AdminController {
             photo: string | null;
         } | null;
         brand_profile: {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -131,6 +130,7 @@ export declare class AdminController {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
@@ -221,7 +221,6 @@ export declare class AdminController {
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -229,30 +228,30 @@ export declare class AdminController {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
             location: string | null;
         };
     } & {
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     })[]>;
     getFlaggedCampaigns(): Promise<({
         brand: {
-            description: string | null;
             id: string;
             created_at: Date;
             updated_at: Date;
@@ -260,76 +259,77 @@ export declare class AdminController {
             company_name: string;
             industry: string | null;
             website: string | null;
+            description: string | null;
             logo: string | null;
             contact_email: string | null;
             phone: string | null;
             location: string | null;
         };
     } & {
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     })[]>;
     approveCampaign(id: string, req: any): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     rejectCampaign(id: string, req: any): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     flagCampaign(id: string, body: {
         reason?: string;
     }, req: any): Promise<{
-        description: string;
         id: string;
         status: string;
         created_at: Date;
         updated_at: Date;
+        brand_id: string;
+        description: string;
         languages: string[];
         locality: string | null;
-        brand_id: string;
+        deliverables: string[];
         title: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
-        deliverables: string[];
     }>;
     getTransactions(): Promise<({
         wallet: {
