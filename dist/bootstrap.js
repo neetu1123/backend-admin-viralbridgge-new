@@ -32,7 +32,8 @@ async function configureApp(app) {
         app.use((0, helmet_1.default)());
     }
     app.enableCors({
-        origin: (process.env.CORS_ORIGINS || 'http://localhost:3000,http://localhost:3002')
+        origin: (process.env.CORS_ORIGINS ||
+            'http://localhost:3000,http://localhost:3002,https://admin-viralbridgge-new.vercel.app')
             .split(',')
             .map((origin) => origin.trim()),
         credentials: true,

@@ -6,8 +6,41 @@ import serverless from 'serverless-http';
 const server = express();
 const BOOTSTRAP_TIMEOUT_MS = 9000;
 
+const DEFAULT_ORIGINS =
+  'http://localhost:3000,http://localhost:3002,https://admin-viralbridgge-new.vercel.app';
+
 let cachedHandler: ReturnType<typeof serverless> | undefined;
 let bootstrapPromise: Promise<ReturnType<typeof serverless>> | undefined;
+
+function getAllowedOrigins(): string[] {
+  return (process.env.CORS_ORIGINS || DEFAULT_ORIGINS)
+    .split(',')
+    .map((origin) => origin.trim())
+    .filter(Boolean);
+}
+
+function setCorsHeaders(req: express.Request, res: express.Response): void {
+  const origin = req.headers.origin;
+  const allowed = getAllowedOrigins();
+
+  if (typeof origin === 'string' && allowed.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+    res.setHeader('Access-Control-Allow-Credentials', 'true');
+    res.setHeader('Vary', 'Origin');
+  }
+
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+}
+
+server.use((req, res, next) => {
+  setCorsHeaders(req, res);
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+  next();
+});
 
 function requestPath(url: string | undefined): string {
   const raw = url ?? '/';
@@ -79,6 +112,13 @@ function withTimeout<T>(promise: Promise<T>, ms: number): Promise<T> {
 }
 
 export default async function handler(req: express.Request, res: express.Response) {
+  setCorsHeaders(req, res);
+
+  if (req.method === 'OPTIONS') {
+    res.status(204).end();
+    return;
+  }
+
   const path = requestPath(req.url);
 
   if (isFastPath(path)) {
