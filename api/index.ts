@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import serverless from 'serverless-http';
+import { handleAuthLogin } from './auth-login';
 
 const server = express();
 const BOOTSTRAP_TIMEOUT_MS = 9000;
@@ -12,23 +13,34 @@ const DEFAULT_ORIGINS =
 let cachedHandler: ReturnType<typeof serverless> | undefined;
 let bootstrapPromise: Promise<ReturnType<typeof serverless>> | undefined;
 
+function normalizeOrigin(origin: string): string {
+  return origin.trim().replace(/\/$/, '');
+}
+
 function getAllowedOrigins(): string[] {
-  return (process.env.CORS_ORIGINS || DEFAULT_ORIGINS)
+  const raw = process.env.CORS_ORIGINS?.trim();
+  const source = raw && raw.length > 0 ? raw : DEFAULT_ORIGINS;
+  return source
     .split(',')
-    .map((origin) => origin.trim())
+    .map((o) => o.trim().replace(/^["']|["']$/g, '').replace(/\/$/, ''))
     .filter(Boolean);
+}
+
+function isOriginAllowed(origin: string): boolean {
+  const normalized = normalizeOrigin(origin);
+  const allowed = getAllowedOrigins();
+  if (allowed.includes(normalized)) return true;
+  if (process.env.VERCEL && normalized.endsWith('.vercel.app')) return true;
+  return false;
 }
 
 function setCorsHeaders(req: express.Request, res: express.Response): void {
   const origin = req.headers.origin;
-  const allowed = getAllowedOrigins();
-
-  if (typeof origin === 'string' && allowed.includes(origin)) {
+  if (typeof origin === 'string' && isOriginAllowed(origin)) {
     res.setHeader('Access-Control-Allow-Origin', origin);
     res.setHeader('Access-Control-Allow-Credentials', 'true');
     res.setHeader('Vary', 'Origin');
   }
-
   res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,PATCH,DELETE,OPTIONS');
   res.setHeader('Access-Control-Allow-Headers', 'Content-Type, Authorization');
 }
@@ -42,6 +54,8 @@ server.use((req, res, next) => {
   next();
 });
 
+server.use(express.json());
+
 function requestPath(url: string | undefined): string {
   const raw = url ?? '/';
   return raw.split('?')[0] || '/';
@@ -49,6 +63,10 @@ function requestPath(url: string | undefined): string {
 
 function isFastPath(path: string): boolean {
   return path === '/' || path === '/health';
+}
+
+function bypassesNest(path: string, method: string): boolean {
+  return isFastPath(path) || (path === '/auth/login' && method === 'POST');
 }
 
 function warmNestInBackground(): void {
@@ -75,6 +93,16 @@ server.get('/', (_req, res) => {
     success: true,
     data: 'ViralBridge API is running',
   });
+});
+
+server.post('/auth/login', async (req, res) => {
+  try {
+    const result = await handleAuthLogin(req.body);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Fast login failed:', error);
+    res.status(500).json({ success: false, message: 'Login failed' });
+  }
 });
 
 async function bootstrapServerless() {
@@ -121,7 +149,8 @@ export default async function handler(req: express.Request, res: express.Respons
 
   const path = requestPath(req.url);
 
-  if (isFastPath(path)) {
+  if (bypassesNest(path, req.method)) {
+    if (!isFastPath(path)) warmNestInBackground();
     server(req, res);
     return;
   }
