@@ -21,16 +21,26 @@ Use any hosted Postgres:
 
 Copy the connection string into `DATABASE_URL`.
 
-**Neon + Vercel:** Use the connection string whose host does **not** contain `-pooler` (direct connection) for `DATABASE_URL` on Vercel and when running migrations. The same value must be set in Vercel → Settings → Environment Variables.
+**Neon + Vercel:**
 
-Run migrations locally or let Vercel run them on deploy:
+| Variable | Connection | Use |
+|----------|------------|-----|
+| `DATABASE_URL` | **Pooled** (`-pooler` in host) | API runtime on Vercel |
+| `DIRECT_DATABASE_URL` | **Direct** (no `-pooler`) | Migrations (optional — build auto-derives from pooler if omitted) |
+
+Running `prisma migrate deploy` on every Vercel build can cause **P1002** (advisory lock timeout), especially with Neon’s pooler or parallel deploys. **Migrations are not run during Vercel build** — run them locally before deploy when the schema changes (see below).
+
+Run migrations **locally** before deploying schema changes (use direct Neon URL, not pooler):
 
 ```bash
 cd backend-admin-viralbridgge
 npm install
-npx prisma migrate deploy
+# .env: DATABASE_URL or DIRECT_DATABASE_URL = non-pooler Neon host
+npm run prisma:migrate
 npm run seed
 ```
+
+Optional: run migrations during Vercel build with `npm run vercel-build:migrate` as the Build Command (not recommended — use only if you cannot migrate locally).
 
 ## 2. Backend environment variables (Vercel)
 
@@ -38,7 +48,8 @@ In Vercel → Project → Settings → Environment Variables, add:
 
 | Variable | Required | Description |
 |----------|----------|-------------|
-| `DATABASE_URL` | Yes | Neon `postgresql://...` (not localhost, not Data API URL) |
+| `DATABASE_URL` | Yes | Neon **pooled** `postgresql://...@ep-xxx-pooler....neon.tech/...` |
+| `DIRECT_DATABASE_URL` | No | Neon **direct** URL for migrations (recommended; build can derive from pooler) |
 | `JWT_SECRET` | Yes | Long random string for admin JWT login |
 | `CORS_ORIGINS` | Yes | e.g. `https://admin-viralbridgge-new.vercel.app,http://localhost:3000` |
 | `FIREBASE_SERVICE_ACCOUNT` | Yes* | Full Firebase service account JSON as **single-line string** |
@@ -140,6 +151,7 @@ Vercel serverless **does not support WebSockets**. Options:
 | 401 on all routes | Check `Authorization: Bearer <token>` header |
 | CORS error | Add frontend URL to `CORS_ORIGINS` |
 | Prisma errors on Vercel | Ensure `DATABASE_URL` is set and migrations ran |
+| **P1002** advisory lock timeout on deploy | Do **not** run `prisma migrate deploy` on Vercel build (default). Use `npm run prisma:migrate` locally with **direct** Neon URL. If a lock is stuck, wait 1–2 min and retry; avoid parallel deploys. |
 | P3009 failed migration on Neon | See **Fix P3009 (failed migration)** below |
 | Root URL loads forever on Vercel Hobby | Fast `/` and `/health` routes skip Nest bootstrap; Swagger/Bull disabled on `VERCEL`. Hobby limit is ~10s — use Railway if API routes still timeout. |
 
