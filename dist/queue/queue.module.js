@@ -32,6 +32,9 @@ function redisConnection() {
 }
 let QueueModule = QueueModule_1 = class QueueModule {
     static register() {
+        if (process.env.VERCEL) {
+            return { module: QueueModule_1 };
+        }
         const connection = redisConnection();
         if (!connection) {
             return { module: QueueModule_1 };

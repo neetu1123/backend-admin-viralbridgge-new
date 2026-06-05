@@ -24,6 +24,10 @@ function redisConnection() {
 @Module({})
 export class QueueModule {
   static register(): DynamicModule {
+    if (process.env.VERCEL) {
+      return { module: QueueModule };
+    }
+
     const connection = redisConnection();
     if (!connection) {
       return { module: QueueModule };

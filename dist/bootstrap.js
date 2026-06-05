@@ -76,13 +76,15 @@ function configureApp(app) {
     }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     app.useGlobalInterceptors(new api_response_interceptor_1.ApiResponseInterceptor());
-    const config = new swagger_1.DocumentBuilder()
-        .setTitle('ViralBridge API')
-        .setDescription('The ViralBridge Backend API description')
-        .setVersion('1.0')
-        .addBearerAuth()
-        .build();
-    const document = swagger_1.SwaggerModule.createDocument(app, config);
-    swagger_1.SwaggerModule.setup('api/docs', app, document);
+    if (!process.env.VERCEL) {
+        const config = new swagger_1.DocumentBuilder()
+            .setTitle('ViralBridge API')
+            .setDescription('The ViralBridge Backend API description')
+            .setVersion('1.0')
+            .addBearerAuth()
+            .build();
+        const document = swagger_1.SwaggerModule.createDocument(app, config);
+        swagger_1.SwaggerModule.setup('api/docs', app, document);
+    }
 }
 //# sourceMappingURL=bootstrap.js.map

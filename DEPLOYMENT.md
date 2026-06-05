@@ -40,7 +40,7 @@ In Vercel → Project → Settings → Environment Variables, add:
 |----------|----------|-------------|
 | `DATABASE_URL` | Yes | Neon `postgresql://...` (not localhost, not Data API URL) |
 | `JWT_SECRET` | Yes | Long random string for admin JWT login |
-| `CORS_ORIGINS` | Yes | Your frontend URL(s), comma-separated |
+| `CORS_ORIGINS` | Yes | e.g. `https://admin-viralbridgge-new.vercel.app,http://localhost:3000` |
 | `FIREBASE_SERVICE_ACCOUNT` | Yes* | Full Firebase service account JSON as **single-line string** |
 | `CORS_ORIGINS` | Yes | Comma-separated frontend URLs, e.g. `https://your-app.vercel.app,http://localhost:3000` |
 | `REDIS_URL` | No | Redis URL for BullMQ (Upstash recommended) |
@@ -81,7 +81,7 @@ In the Next.js project (`admin-viralbridgge-new`), set:
 
 | Variable | Example |
 |----------|---------|
-| `NEXT_PUBLIC_API_URL` | `https://your-backend.vercel.app` |
+| `NEXT_PUBLIC_API_URL` | `https://backend-admin-viralbridgge-new-three.vercel.app` |
 | `NEXT_PUBLIC_SOCKET_URL` | Same as API (or separate WS host if using Railway for realtime) |
 
 ## 5. Demo login accounts
@@ -141,6 +141,7 @@ Vercel serverless **does not support WebSockets**. Options:
 | CORS error | Add frontend URL to `CORS_ORIGINS` |
 | Prisma errors on Vercel | Ensure `DATABASE_URL` is set and migrations ran |
 | P3009 failed migration on Neon | See **Fix P3009 (failed migration)** below |
+| Root URL loads forever on Vercel Hobby | Fast `/` and `/health` routes skip Nest bootstrap; Swagger/Bull disabled on `VERCEL`. Hobby limit is ~10s — use Railway if API routes still timeout. |
 
 ### Fix P3009 (failed migration on Neon)
 

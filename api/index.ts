@@ -9,6 +9,31 @@ const server = express();
 let cachedHandler: ReturnType<typeof serverless> | undefined;
 let bootstrapPromise: Promise<ReturnType<typeof serverless>> | undefined;
 
+function requestPath(url: string | undefined): string {
+  const raw = url ?? '/';
+  return raw.split('?')[0] || '/';
+}
+
+function isFastPath(path: string): boolean {
+  return path === '/' || path === '/health';
+}
+
+server.get('/health', (_req, res) => {
+  res.json({
+    status: 'ok',
+    service: 'viralbridge-api',
+    warmed: Boolean(cachedHandler),
+    vercel: Boolean(process.env.VERCEL),
+  });
+});
+
+server.get('/', (_req, res) => {
+  res.json({
+    success: true,
+    data: 'ViralBridge API is running',
+  });
+});
+
 async function bootstrapServerless() {
   if (cachedHandler) return cachedHandler;
   if (!bootstrapPromise) {
@@ -26,9 +51,16 @@ async function bootstrapServerless() {
 }
 
 export default async function handler(req: express.Request, res: express.Response) {
+  const path = requestPath(req.url);
+
+  if (isFastPath(path)) {
+    server(req, res);
+    return;
+  }
+
   try {
     const serverlessHandler = await bootstrapServerless();
-    return serverlessHandler(req, res);
+    await serverlessHandler(req, res);
   } catch (error) {
     console.error('Vercel handler bootstrap failed:', error);
     if (!res.headersSent) {

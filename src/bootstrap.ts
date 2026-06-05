@@ -44,12 +44,14 @@ export function configureApp(app: INestApplication) {
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ApiResponseInterceptor());
 
-  const config = new DocumentBuilder()
-    .setTitle('ViralBridge API')
-    .setDescription('The ViralBridge Backend API description')
-    .setVersion('1.0')
-    .addBearerAuth()
-    .build();
-  const document = SwaggerModule.createDocument(app, config);
-  SwaggerModule.setup('api/docs', app, document);
+  if (!process.env.VERCEL) {
+    const config = new DocumentBuilder()
+      .setTitle('ViralBridge API')
+      .setDescription('The ViralBridge Backend API description')
+      .setVersion('1.0')
+      .addBearerAuth()
+      .build();
+    const document = SwaggerModule.createDocument(app, config);
+    SwaggerModule.setup('api/docs', app, document);
+  }
 }
