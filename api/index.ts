@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import serverless from 'serverless-http';
+import { adminRouter } from './admin-routes';
 import { handleAuthLogin } from './auth-login';
 
 const server = express();
@@ -66,7 +67,10 @@ function isFastPath(path: string): boolean {
 }
 
 function bypassesNest(path: string, method: string): boolean {
-  return isFastPath(path) || (path === '/auth/login' && method === 'POST');
+  if (isFastPath(path)) return true;
+  if (path === '/auth/login' && method === 'POST') return true;
+  if (path.startsWith('/admin')) return true;
+  return false;
 }
 
 function warmNestInBackground(): void {
@@ -94,6 +98,8 @@ server.get('/', (_req, res) => {
     data: 'ViralBridge API is running',
   });
 });
+
+server.use('/admin', adminRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {

@@ -1,13 +1,6 @@
-import { PrismaClient } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import * as jwt from 'jsonwebtoken';
-
-let prisma: PrismaClient | undefined;
-
-function getPrisma(): PrismaClient {
-  if (!prisma) prisma = new PrismaClient();
-  return prisma;
-}
+import { getPrisma } from './lib/prisma';
 
 export async function handleAuthLogin(body: { email?: string; password?: string }) {
   const email = body?.email?.trim();
