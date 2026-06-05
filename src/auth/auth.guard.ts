@@ -7,7 +7,6 @@ import {
 } from '@nestjs/common';
 import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
-import * as admin from 'firebase-admin';
 import { PrismaService } from '../prisma/prisma.service';
 import { ROLES_KEY } from './roles.decorator';
 
@@ -79,6 +78,11 @@ export class AuthGuard implements CanActivate {
 
   private async tryResolveFirebaseUser(token: string) {
     try {
+      if (!process.env.FIREBASE_SERVICE_ACCOUNT?.trim()) {
+        return null;
+      }
+
+      const admin = await import('firebase-admin');
       if (!admin.apps.length) {
         return null;
       }

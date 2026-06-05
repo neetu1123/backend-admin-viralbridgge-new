@@ -19,7 +19,6 @@ const users_module_1 = require("./users/users.module");
 const admin_module_1 = require("./admin/admin.module");
 const brand_module_1 = require("./brand/brand.module");
 const creator_module_1 = require("./creator/creator.module");
-const app_gateway_1 = require("./app.gateway");
 const queue_module_1 = require("./queue/queue.module");
 let AppModule = class AppModule {
 };
@@ -45,7 +44,9 @@ exports.AppModule = AppModule = __decorate([
         controllers: [app_controller_1.AppController],
         providers: [
             app_service_1.AppService,
-            ...(process.env.VERCEL ? [] : [app_gateway_1.AppGateway]),
+            ...(process.env.VERCEL
+                ? []
+                : [require('./app.gateway').AppGateway]),
             {
                 provide: core_1.APP_GUARD,
                 useClass: throttler_1.ThrottlerGuard,

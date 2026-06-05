@@ -11,7 +11,6 @@ import { UsersModule } from './users/users.module';
 import { AdminModule } from './admin/admin.module';
 import { BrandModule } from './brand/brand.module';
 import { CreatorModule } from './creator/creator.module';
-import { AppGateway } from './app.gateway';
 import { QueueModule } from './queue/queue.module';
 
 @Module({
@@ -34,7 +33,9 @@ import { QueueModule } from './queue/queue.module';
   controllers: [AppController],
   providers: [
     AppService,
-    ...(process.env.VERCEL ? [] : [AppGateway]),
+    ...(process.env.VERCEL
+      ? []
+      : [require('./app.gateway').AppGateway]),
     {
       provide: APP_GUARD,
       useClass: ThrottlerGuard,
