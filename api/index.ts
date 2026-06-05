@@ -3,6 +3,8 @@ import { ExpressAdapter } from '@nestjs/platform-express';
 import express from 'express';
 import serverless from 'serverless-http';
 import { adminRouter } from './admin-routes';
+import { brandRouter } from './brand-routes';
+import { creatorRouter } from './creator-routes';
 import { handleAuthLogin } from './auth-login';
 
 const server = express();
@@ -70,6 +72,8 @@ function bypassesNest(path: string, method: string): boolean {
   if (isFastPath(path)) return true;
   if (path === '/auth/login' && method === 'POST') return true;
   if (path.startsWith('/admin')) return true;
+  if (path.startsWith('/brand')) return true;
+  if (path.startsWith('/creator')) return true;
   return false;
 }
 
@@ -100,6 +104,8 @@ server.get('/', (_req, res) => {
 });
 
 server.use('/admin', adminRouter);
+server.use('/brand', brandRouter);
+server.use('/creator', creatorRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {

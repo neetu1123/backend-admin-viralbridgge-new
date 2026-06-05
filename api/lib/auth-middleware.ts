@@ -21,10 +21,11 @@ function jwtSecret(): string {
   return process.env.JWT_SECRET || 'viralbridgge-super-secret-jwt-key-2026';
 }
 
-export async function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
+async function authenticate(req: AuthedRequest, res: Response): Promise<boolean> {
   const token = extractBearer(req);
   if (!token) {
-    return res.status(401).json({ success: false, message: 'No token provided' });
+    res.status(401).json({ success: false, message: 'No token provided' });
+    return false;
   }
 
   try {
@@ -35,17 +36,42 @@ export async function requireAdmin(req: AuthedRequest, res: Response, next: Next
     });
 
     if (!user || user.is_banned || user.is_deleted) {
-      return res.status(403).json({ success: false, message: 'User is banned or deleted' });
-    }
-
-    const roleName = user.role?.name || '';
-    if (!['SUPER_ADMIN', 'ADMIN'].includes(roleName)) {
-      return res.status(403).json({ success: false, message: 'Forbidden' });
+      res.status(403).json({ success: false, message: 'User is banned or deleted' });
+      return false;
     }
 
     req.user = user;
-    return next();
+    return true;
   } catch {
-    return res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    res.status(401).json({ success: false, message: 'Invalid or expired token' });
+    return false;
   }
 }
+
+function roleAllowed(roleName: string, allowed: string[]): boolean {
+  if (['SUPER_ADMIN', 'ADMIN'].includes(roleName)) return true;
+  return allowed.includes(roleName);
+}
+
+export function requireRoles(...allowed: string[]) {
+  return async (req: AuthedRequest, res: Response, next: NextFunction) => {
+    if (!(await authenticate(req, res))) return;
+    const roleName = req.user?.role?.name || '';
+    if (!roleAllowed(roleName, allowed)) {
+      return res.status(403).json({ success: false, message: 'Forbidden' });
+    }
+    return next();
+  };
+}
+
+export async function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (!(await authenticate(req, res))) return;
+  const roleName = req.user?.role?.name || '';
+  if (!['SUPER_ADMIN', 'ADMIN'].includes(roleName)) {
+    return res.status(403).json({ success: false, message: 'Forbidden' });
+  }
+  return next();
+}
+
+export const requireBrand = requireRoles('BRAND');
+export const requireCreator = requireRoles('CREATOR');

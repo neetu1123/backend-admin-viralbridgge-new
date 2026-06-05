@@ -1,0 +1,97 @@
+import { Router } from 'express';
+import { requireBrand, type AuthedRequest } from './lib/auth-middleware';
+import { paramId, run } from './lib/http';
+import { getBrandService } from './lib/services';
+
+const router = Router();
+const brand = () => getBrandService();
+
+router.use(requireBrand);
+
+router.get('/profile', (req: AuthedRequest, res) => run(req, res, (id) => brand().getProfile(id)));
+router.put('/profile', (req: AuthedRequest, res) => run(req, res, (id) => brand().updateProfile(id, req.body)));
+
+router.post('/campaigns', (req: AuthedRequest, res) => run(req, res, (id) => brand().createCampaign(id, req.body)));
+router.get('/campaigns', (req: AuthedRequest, res) => run(req, res, (id) => brand().getCampaigns(id, req.query as never)));
+
+router.get('/campaigns/:id/detail', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getCampaignDetail(id, paramId(req))),
+);
+router.get('/campaigns/:id/applicants', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getApplicants(id, paramId(req))),
+);
+router.get('/campaigns/:id/deliverables', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getCampaignDeliverables(id, paramId(req))),
+);
+router.post('/campaigns/:id/invite/:creatorId', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().inviteCreator(id, paramId(req), paramId(req, 'creatorId'))),
+);
+router.get('/campaigns/:id', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getCampaign(id, paramId(req))),
+);
+router.put('/campaigns/:id', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().updateCampaign(id, paramId(req), req.body)),
+);
+router.delete('/campaigns/:id', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().deleteCampaign(id, paramId(req))),
+);
+
+router.post('/applications/:id/approve', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'ACCEPTED')),
+);
+router.post('/applications/:id/reject', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'REJECTED')),
+);
+router.post('/applications/:id/shortlist', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'SHORTLISTED')),
+);
+
+router.get('/creators', (req: AuthedRequest, res) => run(req, res, () => brand().getCreators(req.query as never)));
+router.get('/my-creators', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getMyCreators(id, req.query as never)),
+);
+
+router.post('/deliverables/:id/approve', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'APPROVED')),
+);
+router.post('/deliverables/:id/revise', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'REVISION_REQUESTED', req.body?.notes)),
+);
+
+router.post('/escrows/:id/release', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().releaseEscrow(id, paramId(req))),
+);
+
+router.get('/dashboard', (req: AuthedRequest, res) => run(req, res, (id) => brand().getDashboard(id)));
+
+router.get('/wallet/transactions', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getWalletTransactions(id, req.query as never)),
+);
+router.post('/wallet/add-funds', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().addFunds(id, req.body)),
+);
+router.get('/wallet', (req: AuthedRequest, res) => run(req, res, (id) => brand().getWallet(id)));
+
+router.get('/analytics/roi', (req: AuthedRequest, res) => run(req, res, (id) => brand().getRoi(id)));
+router.get('/analytics/top-creators', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getTopCreators(id)),
+);
+router.get('/analytics', (req: AuthedRequest, res) => run(req, res, (id) => brand().getAnalytics(id)));
+
+router.get('/conversations', (req: AuthedRequest, res) => run(req, res, (id) => brand().getConversations(id)));
+router.get('/messages/:conversationId', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getMessages(id, paramId(req, 'conversationId'))),
+);
+router.post('/messages/send', (req: AuthedRequest, res) => run(req, res, (id) => brand().sendMessage(id, req.body)));
+
+router.get('/notifications', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getNotifications(id, req.query as never)),
+);
+router.patch('/notifications/:id/read', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().markNotificationRead(id, paramId(req))),
+);
+
+router.get('/settings', (req: AuthedRequest, res) => run(req, res, (id) => brand().getSettings(id)));
+router.put('/settings', (req: AuthedRequest, res) => run(req, res, (id) => brand().updateSettings(id, req.body)));
+
+export const brandRouter = router;
