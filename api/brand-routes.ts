@@ -1,18 +1,37 @@
 import { Router } from 'express';
 import { requireBrand, type AuthedRequest } from './lib/auth-middleware';
-import { paramId, run } from './lib/http';
+import { paramId, run, runWithAudit } from './lib/http';
+import { parseListQuery } from './lib/query';
 import { getBrandService } from './lib/services';
 
 const router = Router();
 const brand = () => getBrandService();
 
+const campaignId = (r: unknown) => String((r as { id?: string })?.id ?? '');
+
 router.use(requireBrand);
 
 router.get('/profile', (req: AuthedRequest, res) => run(req, res, (id) => brand().getProfile(id)));
-router.put('/profile', (req: AuthedRequest, res) => run(req, res, (id) => brand().updateProfile(id, req.body)));
+router.put('/profile', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => brand().updateProfile(id, req.body), {
+    action: 'UPDATE_BRAND_PROFILE',
+    entity: 'Brand',
+    entityId: (r) => String((r as { id?: string })?.id ?? req.user!.id),
+    metadata: () => ({ fields: Object.keys(req.body ?? {}) }),
+  }),
+);
 
-router.post('/campaigns', (req: AuthedRequest, res) => run(req, res, (id) => brand().createCampaign(id, req.body)));
-router.get('/campaigns', (req: AuthedRequest, res) => run(req, res, (id) => brand().getCampaigns(id, req.query as never)));
+router.post('/campaigns', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => brand().createCampaign(id, req.body), {
+    action: 'CREATE_CAMPAIGN',
+    entity: 'Campaign',
+    entityId: campaignId,
+    metadata: (r) => ({ title: (r as { title?: string })?.title, status: (r as { status?: string })?.status }),
+  }),
+);
+router.get('/campaigns', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getCampaigns(id, parseListQuery(req.query as Record<string, unknown>) as never)),
+);
 
 router.get('/campaigns/:id/detail', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getCampaignDetail(id, paramId(req))),
@@ -24,51 +43,100 @@ router.get('/campaigns/:id/deliverables', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getCampaignDeliverables(id, paramId(req))),
 );
 router.post('/campaigns/:id/invite/:creatorId', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().inviteCreator(id, paramId(req), paramId(req, 'creatorId'))),
+  runWithAudit(req, res, (id) => brand().inviteCreator(id, paramId(req), paramId(req, 'creatorId')), {
+    action: 'INVITE_CREATOR',
+    entity: 'Campaign',
+    entityId: () => paramId(req),
+    metadata: () => ({ creatorId: paramId(req, 'creatorId') }),
+  }),
 );
 router.get('/campaigns/:id', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getCampaign(id, paramId(req))),
 );
 router.put('/campaigns/:id', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().updateCampaign(id, paramId(req), req.body)),
+  runWithAudit(req, res, (id) => brand().updateCampaign(id, paramId(req), req.body), {
+    action: 'UPDATE_CAMPAIGN',
+    entity: 'Campaign',
+    entityId: campaignId,
+    metadata: (r) => ({ title: (r as { title?: string })?.title }),
+  }),
 );
 router.delete('/campaigns/:id', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().deleteCampaign(id, paramId(req))),
+  runWithAudit(req, res, (id) => brand().deleteCampaign(id, paramId(req)), {
+    action: 'DELETE_CAMPAIGN',
+    entity: 'Campaign',
+    entityId: () => paramId(req),
+  }),
 );
 
 router.post('/applications/:id/approve', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'ACCEPTED')),
+  runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'ACCEPTED'), {
+    action: 'APPROVE_APPLICATION',
+    entity: 'Application',
+    entityId: (r) => String((r as { id?: string })?.id ?? paramId(req)),
+    metadata: () => ({ status: 'ACCEPTED' }),
+  }),
 );
 router.post('/applications/:id/reject', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'REJECTED')),
+  runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'REJECTED'), {
+    action: 'REJECT_APPLICATION',
+    entity: 'Application',
+    entityId: (r) => String((r as { id?: string })?.id ?? paramId(req)),
+    metadata: () => ({ status: 'REJECTED' }),
+  }),
 );
 router.post('/applications/:id/shortlist', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().updateApplication(id, paramId(req), 'SHORTLISTED')),
+  runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'SHORTLISTED'), {
+    action: 'SHORTLIST_APPLICATION',
+    entity: 'Application',
+    entityId: (r) => String((r as { id?: string })?.id ?? paramId(req)),
+    metadata: () => ({ status: 'SHORTLISTED' }),
+  }),
 );
 
-router.get('/creators', (req: AuthedRequest, res) => run(req, res, () => brand().getCreators(req.query as never)));
+router.get('/creators', (req: AuthedRequest, res) =>
+  run(req, res, () => brand().getCreators(parseListQuery(req.query as Record<string, unknown>) as never)),
+);
 router.get('/my-creators', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().getMyCreators(id, req.query as never)),
+  run(req, res, (id) => brand().getMyCreators(id, parseListQuery(req.query as Record<string, unknown>) as never)),
 );
 
 router.post('/deliverables/:id/approve', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'APPROVED')),
+  runWithAudit(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'APPROVED'), {
+    action: 'APPROVE_DELIVERABLE',
+    entity: 'Deliverable',
+    entityId: () => paramId(req),
+  }),
 );
 router.post('/deliverables/:id/revise', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'REVISION_REQUESTED', req.body?.notes)),
+  runWithAudit(req, res, (id) => brand().reviewDeliverable(id, paramId(req), 'REVISION_REQUESTED', req.body?.notes), {
+    action: 'REQUEST_DELIVERABLE_REVISION',
+    entity: 'Deliverable',
+    entityId: () => paramId(req),
+    metadata: () => ({ notes: req.body?.notes }),
+  }),
 );
 
 router.post('/escrows/:id/release', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().releaseEscrow(id, paramId(req))),
+  runWithAudit(req, res, (id) => brand().releaseEscrow(id, paramId(req)), {
+    action: 'RELEASE_ESCROW',
+    entity: 'Escrow',
+    entityId: () => paramId(req),
+  }),
 );
 
 router.get('/dashboard', (req: AuthedRequest, res) => run(req, res, (id) => brand().getDashboard(id)));
 
 router.get('/wallet/transactions', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().getWalletTransactions(id, req.query as never)),
+  run(req, res, (id) => brand().getWalletTransactions(id, parseListQuery(req.query as Record<string, unknown>) as never)),
 );
 router.post('/wallet/add-funds', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().addFunds(id, req.body)),
+  runWithAudit(req, res, (id) => brand().addFunds(id, req.body), {
+    action: 'BRAND_ADD_FUNDS',
+    entity: 'Wallet',
+    entityId: (r) => String((r as { wallet?: { id?: string } })?.wallet?.id ?? req.user!.id),
+    metadata: () => ({ amount: req.body?.amount }),
+  }),
 );
 router.get('/wallet', (req: AuthedRequest, res) => run(req, res, (id) => brand().getWallet(id)));
 
@@ -82,16 +150,28 @@ router.get('/conversations', (req: AuthedRequest, res) => run(req, res, (id) => 
 router.get('/messages/:conversationId', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getMessages(id, paramId(req, 'conversationId'))),
 );
-router.post('/messages/send', (req: AuthedRequest, res) => run(req, res, (id) => brand().sendMessage(id, req.body)));
+router.post('/messages/send', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => brand().sendMessage(id, req.body), {
+    action: 'BRAND_SEND_MESSAGE',
+    entity: 'Message',
+    entityId: (r) => String((r as { id?: string })?.id ?? req.body?.conversationId ?? 'message'),
+  }),
+);
 
 router.get('/notifications', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().getNotifications(id, req.query as never)),
+  run(req, res, (id) => brand().getNotifications(id, parseListQuery(req.query as Record<string, unknown>) as never)),
 );
 router.patch('/notifications/:id/read', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().markNotificationRead(id, paramId(req))),
 );
 
 router.get('/settings', (req: AuthedRequest, res) => run(req, res, (id) => brand().getSettings(id)));
-router.put('/settings', (req: AuthedRequest, res) => run(req, res, (id) => brand().updateSettings(id, req.body)));
+router.put('/settings', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => brand().updateSettings(id, req.body), {
+    action: 'UPDATE_BRAND_SETTINGS',
+    entity: 'Brand',
+    entityId: () => req.user!.id,
+  }),
+);
 
 export const brandRouter = router;

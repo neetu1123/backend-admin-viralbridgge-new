@@ -19,11 +19,24 @@ function fail(res: any, message: string, status = 400) {
   return res.status(status).json({ success: false, message });
 }
 
-async function audit(adminId: string | undefined, action: string, entity: string, entityId: string, metadata?: unknown) {
+async function audit(
+  adminId: string | undefined,
+  action: string,
+  entity: string,
+  entityId: string,
+  metadata?: unknown,
+  actorRole?: string,
+) {
   if (!adminId) return;
   try {
     await prisma().auditLog.create({
-      data: { admin_id: adminId, action, entity, entity_id: entityId, metadata: (metadata as object) ?? {} },
+      data: {
+        admin_id: adminId,
+        action,
+        entity,
+        entity_id: entityId,
+        metadata: { ...((metadata as object) ?? {}), ...(actorRole ? { actorRole } : {}) },
+      },
     });
   } catch (error) {
     console.error('AuditLog write failed:', error);
@@ -80,7 +93,16 @@ router.patch('/users/:id/unban', async (req: AuthedRequest, res) => {
 });
 
 router.get('/campaigns', async (_req, res) =>
-  ok(res, await prisma().campaign.findMany({ include: { brand: { include: { user: true } } } })),
+  ok(
+    res,
+    await prisma().campaign.findMany({
+      include: {
+        brand: { include: { user: true } },
+        _count: { select: { applications: true } },
+      },
+      orderBy: { created_at: 'desc' },
+    }),
+  ),
 );
 
 router.get('/campaigns/flagged', async (_req, res) =>
