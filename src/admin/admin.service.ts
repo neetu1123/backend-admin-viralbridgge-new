@@ -211,7 +211,21 @@ export class AdminService {
 
   async getUsers() {
     return this.prisma.user.findMany({
-      include: { role: true },
+      where: {
+        is_deleted: false,
+        role: { name: { in: ['CREATOR', 'BRAND'] } },
+      },
+      include: {
+        role: true,
+        creator_profile: {
+          include: { _count: { select: { applications: true } } },
+        },
+        brand_profile: {
+          include: { _count: { select: { campaigns: true } } },
+        },
+        wallets: { select: { available_balance: true, pending_balance: true } },
+      },
+      orderBy: { created_at: 'desc' },
     });
   }
 
