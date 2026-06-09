@@ -338,13 +338,24 @@ export class AdminService {
 
   async updateSettings(body: { aiMatchingEnabled?: boolean }, adminId?: string) {
     const settings = await this.matchingService.getOrCreatePlatformSettings();
-    const updated = await this.prisma.platformSettings.update({
-      where: { id: 'default' },
-      data: {
-        ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
-        updated_by: adminId ?? null,
-      },
-    });
+    let updated;
+    try {
+      updated = await this.prisma.platformSettings.update({
+        where: { id: 'default' },
+        data: {
+          ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
+          updated_by: adminId ?? null,
+        },
+      });
+    } catch (error: unknown) {
+      const msg = error instanceof Error ? error.message : String(error);
+      if (msg.includes('does not exist') || msg.includes('platform_settings') || msg.includes('P2021')) {
+        throw new (require('@nestjs/common').BadRequestException)(
+          'Database not migrated. Run: npx prisma migrate deploy',
+        );
+      }
+      throw error;
+    }
     if (adminId) {
       await this.createAuditLog({
         admin_id: adminId,

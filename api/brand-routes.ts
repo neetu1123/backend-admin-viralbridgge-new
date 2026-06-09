@@ -1,11 +1,13 @@
 import { Router } from 'express';
 import { requireBrand, type AuthedRequest } from './lib/auth-middleware';
-import { paramId, run, runWithAudit } from './lib/http';
+import { fail, ok, paramId, run, runWithAudit } from './lib/http';
+import { getPrisma } from './lib/prisma';
 import { parseListQuery } from './lib/query';
 import { getBrandService } from './lib/services';
 
 const router = Router();
 const brand = () => getBrandService();
+const prisma = () => getPrisma();
 
 const campaignId = (r: unknown) => String((r as { id?: string })?.id ?? '');
 
@@ -39,9 +41,20 @@ router.get('/campaigns/:id/detail', (req: AuthedRequest, res) =>
 router.get('/campaigns/:id/applicants', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getApplicants(id, paramId(req))),
 );
-router.get('/campaigns/:id/recommendations', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().getCampaignRecommendations(id, paramId(req))),
-);
+router.get('/campaigns/:id/recommendations', async (req: AuthedRequest, res) => {
+  try {
+    const { getOrCreatePlatformSettings } = require('./lib/platform-settings') as typeof import('./lib/platform-settings');
+    const settings = await getOrCreatePlatformSettings(prisma());
+    if (!settings.ai_matching_enabled) {
+      return ok(res, { enabled: false, recommendations: [] });
+    }
+    return run(req, res, (id) => brand().getCampaignRecommendations(id, paramId(req)));
+  } catch (error) {
+    console.error('GET /brand/campaigns/:id/recommendations failed:', error);
+    const message = error instanceof Error ? error.message : 'Failed to load recommendations';
+    return fail(res, message, 500);
+  }
+});
 router.get('/campaigns/:id/deliverables', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getCampaignDeliverables(id, paramId(req))),
 );

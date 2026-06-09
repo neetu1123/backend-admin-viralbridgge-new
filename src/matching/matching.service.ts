@@ -31,18 +31,45 @@ export type MatchScoreResult = {
   reasons: string[];
 };
 
+function isMissingTableError(error: unknown): boolean {
+  const msg = error instanceof Error ? error.message : String(error);
+  return (
+    msg.includes('does not exist') ||
+    msg.includes('platform_settings') ||
+    msg.includes('ai_matches') ||
+    msg.includes('platformSettings') ||
+    msg.includes('aiMatch') ||
+    msg.includes('P2021')
+  );
+}
+
+const DEFAULT_PLATFORM_SETTINGS = {
+  id: 'default',
+  ai_matching_enabled: true,
+  updated_at: new Date(),
+  updated_by: null as string | null,
+};
+
 @Injectable()
 export class MatchingService {
   constructor(private prisma: PrismaService) {}
 
   async getOrCreatePlatformSettings() {
-    let settings = await this.prisma.platformSettings.findUnique({ where: { id: 'default' } });
-    if (!settings) {
-      settings = await this.prisma.platformSettings.create({
-        data: { id: 'default', ai_matching_enabled: true },
-      });
+    try {
+      let settings = await this.prisma.platformSettings.findUnique({ where: { id: 'default' } });
+      if (!settings) {
+        settings = await this.prisma.platformSettings.create({
+          data: { id: 'default', ai_matching_enabled: true },
+        });
+      }
+      return settings;
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        console.warn('[MatchingService] platform_settings missing — run: npx prisma migrate deploy');
+        return DEFAULT_PLATFORM_SETTINGS;
+      }
+      throw error;
     }
-    return settings;
   }
 
   async isAiMatchingEnabled() {
@@ -329,15 +356,23 @@ export class MatchingService {
 
     const appliedIds = new Set(campaign.applications.map((a) => a.creator_id));
 
-    const stored = await this.prisma.aiMatch.findMany({
-      where: {
-        campaign_id: campaignId,
-        status: { in: ['active', 'forced'] },
-      },
-      include: { creator: { include: { user: true } } },
-      orderBy: { match_score: 'desc' },
-      take: MAX_MATCHES_PER_CAMPAIGN,
-    });
+    let stored: Awaited<ReturnType<typeof this.prisma.aiMatch.findMany>> = [];
+    try {
+      stored = await this.prisma.aiMatch.findMany({
+        where: {
+          campaign_id: campaignId,
+          status: { in: ['active', 'forced'] },
+        },
+        include: { creator: { include: { user: true } } },
+        orderBy: { match_score: 'desc' },
+        take: MAX_MATCHES_PER_CAMPAIGN,
+      });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return { enabled: true, recommendations: [] };
+      }
+      throw error;
+    }
 
     const recommendations = stored
       .filter((m) => !appliedIds.has(m.creator_id))
@@ -358,17 +393,30 @@ export class MatchingService {
       return { enabled: true, recommendations };
     }
 
-    await this.runMatchingForCampaign(campaignId);
+    try {
+      await this.runMatchingForCampaign(campaignId);
+    } catch (error) {
+      if (!isMissingTableError(error)) throw error;
+      return { enabled: true, recommendations: [] };
+    }
 
-    const refreshed = await this.prisma.aiMatch.findMany({
-      where: {
-        campaign_id: campaignId,
-        status: { in: ['active', 'forced'] },
-      },
-      include: { creator: { include: { user: true } } },
-      orderBy: { match_score: 'desc' },
-      take: MAX_MATCHES_PER_CAMPAIGN,
-    });
+    let refreshed: typeof stored = [];
+    try {
+      refreshed = await this.prisma.aiMatch.findMany({
+        where: {
+          campaign_id: campaignId,
+          status: { in: ['active', 'forced'] },
+        },
+        include: { creator: { include: { user: true } } },
+        orderBy: { match_score: 'desc' },
+        take: MAX_MATCHES_PER_CAMPAIGN,
+      });
+    } catch (error) {
+      if (isMissingTableError(error)) {
+        return { enabled: true, recommendations: [] };
+      }
+      throw error;
+    }
 
     return {
       enabled: true,
