@@ -1,7 +1,9 @@
 import { Router, type Request } from 'express';
 import * as bcrypt from 'bcrypt';
+import { getAdminMatchesResponse, updateMatchStatus } from './lib/ai-matching-express';
 import { requireAdmin, type AuthedRequest } from './lib/auth-middleware';
 import { getPrisma } from './lib/prisma';
+import { getSettingsResponse, updateSettingsResponse } from './lib/platform-settings';
 
 const router = Router();
 const prisma = () => getPrisma();
@@ -257,55 +259,63 @@ router.post('/audit-logs', async (req: AuthedRequest, res) => {
 
 router.get('/settings', async (_req, res) => {
   try {
-    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
-    return ok(res, await getAdminService().getSettings());
+    return ok(res, await getSettingsResponse(prisma()));
   } catch (error) {
     console.error('GET /admin/settings failed:', error);
-    return fail(res, 'Failed to load settings', 500);
+    const message = error instanceof Error ? error.message : 'Failed to load settings';
+    return fail(res, message, 500);
   }
 });
 
 router.patch('/settings', async (req: AuthedRequest, res) => {
   try {
-    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
-    return ok(res, await getAdminService().updateSettings(req.body ?? {}, req.user?.id));
+    const result = await updateSettingsResponse(prisma(), req.body ?? {}, req.user?.id);
+    await audit(req.user?.id, 'UPDATE_PLATFORM_SETTINGS', 'platform_settings', 'default', {
+      aiMatchingEnabled: result.aiMatchingEnabled,
+    });
+    return ok(res, result);
   } catch (error) {
     console.error('PATCH /admin/settings failed:', error);
-    return fail(res, 'Failed to update settings', 500);
+    const message = error instanceof Error ? error.message : 'Failed to update settings';
+    return fail(res, message, 500);
   }
 });
 
 router.get('/matching', async (_req, res) => {
   try {
-    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
-    return ok(res, await getAdminService().getMatches());
+    return ok(res, await getAdminMatchesResponse(prisma()));
   } catch (error) {
     console.error('GET /admin/matching failed:', error);
-    return fail(res, 'Failed to load matches', 500);
+    const message = error instanceof Error ? error.message : 'Failed to load matches';
+    return fail(res, message, 500);
   }
 });
 
 router.patch('/matching/:id', async (req: AuthedRequest, res) => {
   try {
-    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
     const status = req.body?.status as 'active' | 'removed' | 'forced';
     if (!status) return fail(res, 'status is required');
-    return ok(res, await getAdminService().updateMatch(paramId(req), status, req.user?.id));
+    const result = await updateMatchStatus(prisma(), paramId(req), status);
+    await audit(req.user?.id, status === 'forced' ? 'FORCE_MATCH' : status === 'removed' ? 'REMOVE_MATCH' : 'RESTORE_MATCH', 'AiMatch', paramId(req), { status });
+    return ok(res, result);
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : 'Failed to update match';
-    const statusCode = message.includes('disabled') ? 403 : 500;
+    const statusCode = message.includes('disabled') ? 403 : message.includes('not found') ? 404 : 500;
     console.error('PATCH /admin/matching failed:', error);
     return fail(res, message, statusCode);
   }
 });
 
-router.post('/matching/run', async (_req, res) => {
+router.post('/matching/run', async (req: AuthedRequest, res) => {
   try {
-    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
-    return ok(res, await getAdminService().runMatching());
+    const { getMatchingService } = require('./lib/services') as typeof import('./lib/services');
+    const result = await getMatchingService().runMatchingForAllActiveCampaigns();
+    await audit(req.user?.id, 'RUN_AI_MATCHING', 'platform_settings', 'default', result);
+    return ok(res, result);
   } catch (error) {
     console.error('POST /admin/matching/run failed:', error);
-    return fail(res, 'Failed to run matching', 500);
+    const message = error instanceof Error ? error.message : 'Failed to run matching';
+    return fail(res, message.includes('Cannot find module') ? 'Backend rebuild required. Redeploy backend after npm run build.' : message, 500);
   }
 });
 

@@ -105,9 +105,10 @@ server.get('/', (_req, res) => {
 
 server.get('/settings/public', async (_req, res) => {
   try {
-    const { getMatchingService } = require('./lib/services') as typeof import('./lib/services');
-    const settings = await getMatchingService().getOrCreatePlatformSettings();
-    res.json({ success: true, data: { aiMatchingEnabled: settings.ai_matching_enabled } });
+    const { getPrisma } = require('./lib/prisma') as typeof import('./lib/prisma');
+    const { getSettingsResponse } = require('./lib/platform-settings') as typeof import('./lib/platform-settings');
+    const data = await getSettingsResponse(getPrisma());
+    res.json({ success: true, data: { aiMatchingEnabled: data.aiMatchingEnabled } });
   } catch (error) {
     console.error('GET /settings/public failed:', error);
     res.status(500).json({ success: false, message: 'Failed to load public settings' });
