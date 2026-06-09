@@ -80,6 +80,11 @@ export class BrandController {
     return this.brandService.getApplicants(req.user.id, id);
   }
 
+  @Get('campaigns/:id/recommendations')
+  getCampaignRecommendations(@Request() req: any, @Param('id') id: string) {
+    return this.brandService.getCampaignRecommendations(req.user.id, id);
+  }
+
   @Post('applications/:id/approve')
   approveApplication(@Request() req: any, @Param('id') id: string) {
     return this.brandService.updateApplication(req.user.id, id, 'ACCEPTED');

@@ -123,6 +123,9 @@ export class CreatorCampaignQueryDto extends PaginationQueryDto {
   @IsOptional()
   @IsIn(['created_desc', 'deadline_asc', 'budget_desc', 'budget_asc'])
   sort?: string;
+
+  @IsOptional()
+  includeMatch?: string | boolean;
 }
 
 export class ApplicationQueryDto extends PaginationQueryDto {

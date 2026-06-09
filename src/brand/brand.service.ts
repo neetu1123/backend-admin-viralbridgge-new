@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MatchingService } from '../matching/matching.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   BrandCampaignQueryDto,
@@ -19,7 +20,10 @@ import {
 
 @Injectable()
 export class BrandService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private matchingService: MatchingService,
+  ) {}
 
   async getProfile(userId: string) {
     return this.ensureBrandProfile(userId);
@@ -150,6 +154,10 @@ export class BrandService {
     await this.getOwnedCampaign(userId, id);
     await this.prisma.campaign.delete({ where: { id } });
     return { success: true };
+  }
+
+  async getCampaignRecommendations(userId: string, campaignId: string) {
+    return this.matchingService.getCampaignRecommendations(campaignId, userId);
   }
 
   async getApplicants(userId: string, campaignId: string) {

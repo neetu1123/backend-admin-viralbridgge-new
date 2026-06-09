@@ -5,6 +5,7 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MatchingService } from '../matching/matching.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -21,7 +22,10 @@ import {
 
 @Injectable()
 export class CreatorService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private matchingService: MatchingService,
+  ) {}
 
   async getProfile(userId: string) {
     return this.ensureCreatorProfile(userId);
@@ -69,9 +73,10 @@ export class CreatorService {
     });
   }
 
-  async getCampaigns(query: CreatorCampaignQueryDto) {
+  async getCampaigns(userId: string | undefined, query: CreatorCampaignQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
+    const includeMatch = query.includeMatch === true || query.includeMatch === 'true';
     const where: any = { status: { in: ['ACTIVE', 'PENDING_APPROVAL'] } };
     if (query.search) {
       where.OR = [
@@ -109,7 +114,30 @@ export class CreatorService {
       this.prisma.campaign.count({ where }),
     ]);
 
-    return { data, meta: paginationMeta(page, limit, total) };
+    const aiEnabled = includeMatch ? await this.matchingService.isAiMatchingEnabled() : false;
+    let enriched = data;
+
+    if (aiEnabled && userId) {
+      const profile = await this.prisma.creatorProfile.findUnique({ where: { user_id: userId } });
+      if (profile) {
+        const scoreMap = await this.matchingService.getCreatorCampaignMatchScores(
+          profile.id,
+          data.map((c) => c.id),
+        );
+        enriched = data.map((campaign) => {
+          const match = scoreMap.get(campaign.id);
+          return match
+            ? { ...campaign, matchScore: match.matchScore, matchReasons: match.reasons }
+            : campaign;
+        });
+      }
+    }
+
+    return {
+      data: enriched,
+      meta: paginationMeta(page, limit, total),
+      aiMatchingEnabled: aiEnabled,
+    };
   }
 
   async getCampaign(id: string) {

@@ -94,6 +94,47 @@ export class AdminController {
   @Get('dashboard/stats')
   getDashboardStats() { return this.adminService.getDashboardStats(); }
 
+  // ─── Platform Settings ────────────────────────────────────────────────────────
+
+  @Get('settings')
+  @ApiOperation({ summary: 'Get platform settings' })
+  getSettings() {
+    return this.adminService.getSettings();
+  }
+
+  @Patch('settings')
+  @ApiOperation({ summary: 'Update platform settings' })
+  updateSettings(
+    @Body() body: { aiMatchingEnabled?: boolean },
+    @Request() req: any,
+  ) {
+    return this.adminService.updateSettings(body, req.user?.id);
+  }
+
+  // ─── AI Matching ──────────────────────────────────────────────────────────────
+
+  @Get('matching')
+  @ApiOperation({ summary: 'List AI creator-campaign matches' })
+  getMatches() {
+    return this.adminService.getMatches();
+  }
+
+  @Patch('matching/:id')
+  @ApiOperation({ summary: 'Update match status (active, removed, forced)' })
+  updateMatch(
+    @Param('id') id: string,
+    @Body() body: { status: 'active' | 'removed' | 'forced' },
+    @Request() req: any,
+  ) {
+    return this.adminService.updateMatch(id, body.status, req.user?.id);
+  }
+
+  @Post('matching/run')
+  @ApiOperation({ summary: 'Recompute AI matches for all active campaigns' })
+  runMatching() {
+    return this.adminService.runMatching();
+  }
+
   // ─── Audit Logs ───────────────────────────────────────────────────────────────
 
   @Get('audit-logs')

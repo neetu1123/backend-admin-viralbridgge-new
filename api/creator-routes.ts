@@ -35,7 +35,7 @@ router.post('/upload-media-kit', (req: AuthedRequest, res) =>
 );
 
 router.get('/campaigns', (req: AuthedRequest, res) =>
-  run(req, res, () => creator().getCampaigns(parseListQuery(req.query as Record<string, unknown>) as never)),
+  run(req, res, (id) => creator().getCampaigns(id, parseListQuery(req.query as Record<string, unknown>) as never)),
 );
 router.get('/campaigns/:id', (req: AuthedRequest, res) => run(req, res, () => creator().getCampaign(paramId(req))));
 

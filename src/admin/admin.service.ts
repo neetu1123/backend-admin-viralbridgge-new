@@ -1,9 +1,13 @@
 import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
+import { MatchingService } from '../matching/matching.service';
 
 @Injectable()
 export class AdminService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private matchingService: MatchingService,
+  ) {}
 
   // ─── Audit Log Helpers ───────────────────────────────────────────────────────
 
@@ -318,7 +322,56 @@ export class AdminService {
         metadata: { status: 'ACTIVE' },
       });
     }
+    await this.matchingService.runMatchingForCampaign(id);
     return result;
+  }
+
+  // ─── Platform Settings ─────────────────────────────────────────────────────────
+
+  async getSettings() {
+    const settings = await this.matchingService.getOrCreatePlatformSettings();
+    return {
+      aiMatchingEnabled: settings.ai_matching_enabled,
+      updatedAt: settings.updated_at,
+    };
+  }
+
+  async updateSettings(body: { aiMatchingEnabled?: boolean }, adminId?: string) {
+    const settings = await this.matchingService.getOrCreatePlatformSettings();
+    const updated = await this.prisma.platformSettings.update({
+      where: { id: 'default' },
+      data: {
+        ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
+        updated_by: adminId ?? null,
+      },
+    });
+    if (adminId) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: 'UPDATE_PLATFORM_SETTINGS',
+        entity: 'platform_settings',
+        entity_id: 'default',
+        metadata: { aiMatchingEnabled: updated.ai_matching_enabled },
+      });
+    }
+    return {
+      aiMatchingEnabled: updated.ai_matching_enabled,
+      updatedAt: updated.updated_at,
+    };
+  }
+
+  // ─── AI Matching ───────────────────────────────────────────────────────────────
+
+  getMatches() {
+    return this.matchingService.getAdminMatches();
+  }
+
+  updateMatch(id: string, status: 'active' | 'removed' | 'forced', adminId?: string) {
+    return this.matchingService.updateMatchStatus(id, status, adminId);
+  }
+
+  runMatching() {
+    return this.matchingService.runMatchingForAllActiveCampaigns();
   }
 
   async rejectCampaign(id: string, adminId?: string) {

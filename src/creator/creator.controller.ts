@@ -56,8 +56,8 @@ export class CreatorController {
   }
 
   @Get('campaigns')
-  getCampaigns(@Query() query: CreatorCampaignQueryDto) {
-    return this.creatorService.getCampaigns(query);
+  getCampaigns(@Request() req: any, @Query() query: CreatorCampaignQueryDto) {
+    return this.creatorService.getCampaigns(req.user?.id, query);
   }
 
   @Get('campaigns/:id')

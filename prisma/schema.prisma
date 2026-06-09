@@ -88,6 +88,7 @@ model CreatorProfile {
   disputes         Dispute[]
   escrows          Escrow[]
   deliverables     Deliverable[]
+  ai_matches       AiMatch[]
 
   @@map("creator_profiles")
 }
@@ -136,6 +137,7 @@ model Campaign {
   escrows          Escrow[]
   disputes         Dispute[]
   campaignDeliverables Deliverable[]
+  ai_matches       AiMatch[]
 
   @@map("campaigns")
 }
@@ -296,4 +298,28 @@ model AuditLog {
   created_at       DateTime       @default(now())
 
   @@map("audit_logs")
+}
+
+model PlatformSettings {
+  id                   String   @id @default("default")
+  ai_matching_enabled  Boolean  @default(true)
+  updated_at           DateTime @updatedAt
+  updated_by           String?
+
+  @@map("platform_settings")
+}
+
+model AiMatch {
+  id           String         @id @default(uuid())
+  campaign_id  String
+  creator_id   String
+  match_score  Int
+  reasons      String[]
+  status       String         @default("active") // active, removed, forced
+  matched_at   DateTime       @default(now())
+  campaign     Campaign       @relation(fields: [campaign_id], references: [id], onDelete: Cascade)
+  creator      CreatorProfile @relation(fields: [creator_id], references: [id], onDelete: Cascade)
+
+  @@unique([campaign_id, creator_id])
+  @@map("ai_matches")
 }

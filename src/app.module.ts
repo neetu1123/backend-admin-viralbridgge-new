@@ -12,6 +12,7 @@ import { AdminModule } from './admin/admin.module';
 import { BrandModule } from './brand/brand.module';
 import { CreatorModule } from './creator/creator.module';
 import { QueueModule } from './queue/queue.module';
+import { MatchingModule } from './matching/matching.module';
 
 @Module({
   imports: [
@@ -23,6 +24,7 @@ import { QueueModule } from './queue/queue.module';
       limit: 100,
     }]),
     PrismaModule,
+    MatchingModule,
     QueueModule.register(),
     AuthModule,
     UsersModule,

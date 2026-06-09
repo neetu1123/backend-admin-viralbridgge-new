@@ -112,6 +112,12 @@ router.get('/campaigns/flagged', async (_req, res) =>
 router.post('/campaigns/:id/approve', async (req: AuthedRequest, res) => {
   const result = await prisma().campaign.update({ where: { id: paramId(req) }, data: { status: 'ACTIVE' } });
   await audit(req.user?.id, 'APPROVE_CAMPAIGN', 'Campaign', paramId(req), { status: 'ACTIVE' });
+  try {
+    const { getMatchingService } = require('./lib/services') as typeof import('./lib/services');
+    await getMatchingService().runMatchingForCampaign(paramId(req));
+  } catch (error) {
+    console.error('AI matching after approve failed:', error);
+  }
   return ok(res, result);
 });
 
@@ -247,6 +253,60 @@ router.post('/audit-logs', async (req: AuthedRequest, res) => {
     },
   });
   return ok(res, log, 201);
+});
+
+router.get('/settings', async (_req, res) => {
+  try {
+    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getAdminService().getSettings());
+  } catch (error) {
+    console.error('GET /admin/settings failed:', error);
+    return fail(res, 'Failed to load settings', 500);
+  }
+});
+
+router.patch('/settings', async (req: AuthedRequest, res) => {
+  try {
+    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getAdminService().updateSettings(req.body ?? {}, req.user?.id));
+  } catch (error) {
+    console.error('PATCH /admin/settings failed:', error);
+    return fail(res, 'Failed to update settings', 500);
+  }
+});
+
+router.get('/matching', async (_req, res) => {
+  try {
+    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getAdminService().getMatches());
+  } catch (error) {
+    console.error('GET /admin/matching failed:', error);
+    return fail(res, 'Failed to load matches', 500);
+  }
+});
+
+router.patch('/matching/:id', async (req: AuthedRequest, res) => {
+  try {
+    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
+    const status = req.body?.status as 'active' | 'removed' | 'forced';
+    if (!status) return fail(res, 'status is required');
+    return ok(res, await getAdminService().updateMatch(paramId(req), status, req.user?.id));
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : 'Failed to update match';
+    const statusCode = message.includes('disabled') ? 403 : 500;
+    console.error('PATCH /admin/matching failed:', error);
+    return fail(res, message, statusCode);
+  }
+});
+
+router.post('/matching/run', async (_req, res) => {
+  try {
+    const { getAdminService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getAdminService().runMatching());
+  } catch (error) {
+    console.error('POST /admin/matching/run failed:', error);
+    return fail(res, 'Failed to run matching', 500);
+  }
 });
 
 export const adminRouter = router;

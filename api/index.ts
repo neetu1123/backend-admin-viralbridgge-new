@@ -65,7 +65,7 @@ function requestPath(url: string | undefined): string {
 }
 
 function isFastPath(path: string): boolean {
-  return path === '/' || path === '/health';
+  return path === '/' || path === '/health' || path === '/settings/public';
 }
 
 function bypassesNest(path: string, method: string): boolean {
@@ -101,6 +101,17 @@ server.get('/', (_req, res) => {
     success: true,
     data: 'ViralBridge API is running',
   });
+});
+
+server.get('/settings/public', async (_req, res) => {
+  try {
+    const { getMatchingService } = require('./lib/services') as typeof import('./lib/services');
+    const settings = await getMatchingService().getOrCreatePlatformSettings();
+    res.json({ success: true, data: { aiMatchingEnabled: settings.ai_matching_enabled } });
+  } catch (error) {
+    console.error('GET /settings/public failed:', error);
+    res.status(500).json({ success: false, message: 'Failed to load public settings' });
+  }
 });
 
 server.use('/admin', adminRouter);

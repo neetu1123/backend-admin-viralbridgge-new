@@ -39,6 +39,9 @@ router.get('/campaigns/:id/detail', (req: AuthedRequest, res) =>
 router.get('/campaigns/:id/applicants', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getApplicants(id, paramId(req))),
 );
+router.get('/campaigns/:id/recommendations', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getCampaignRecommendations(id, paramId(req))),
+);
 router.get('/campaigns/:id/deliverables', (req: AuthedRequest, res) =>
   run(req, res, (id) => brand().getCampaignDeliverables(id, paramId(req))),
 );
