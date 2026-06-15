@@ -27,13 +27,16 @@ export class AuthGuard implements CanActivate {
     }
 
     try {
-      const user = await this.resolveUser(token);
+      const { user, jwtPayload } = await this.resolveUser(token);
 
       if (user.is_banned || user.is_deleted) {
         throw new ForbiddenException('User is banned or deleted');
       }
 
-      request['user'] = user; // Populated DB user
+      request['user'] = user;
+      if (jwtPayload) {
+        request['jwtPayload'] = jwtPayload;
+      }
 
       const requiredRoles = this.reflector.getAllAndOverride<string[]>(ROLES_KEY, [
         context.getHandler(),
@@ -57,12 +60,21 @@ export class AuthGuard implements CanActivate {
   private async resolveUser(token: string) {
     const firebaseUser = await this.tryResolveFirebaseUser(token);
     if (firebaseUser) {
-      return firebaseUser;
+      return { user: firebaseUser, jwtPayload: null };
     }
 
     const payload = await this.jwtService.verifyAsync(token, {
       secret: process.env.JWT_SECRET || 'viralbridgge-super-secret-jwt-key-2026',
     });
+
+    if (payload.jti) {
+      const revoked = await this.prisma.revokedToken.findUnique({
+        where: { jti: payload.jti },
+      });
+      if (revoked) {
+        throw new UnauthorizedException('Token has been revoked');
+      }
+    }
 
     const user = await this.prisma.user.findUnique({
       where: { id: payload.sub },
@@ -73,7 +85,7 @@ export class AuthGuard implements CanActivate {
       throw new UnauthorizedException('User not found in database');
     }
 
-    return user;
+    return { user, jwtPayload: payload };
   }
 
   private async tryResolveFirebaseUser(token: string) {

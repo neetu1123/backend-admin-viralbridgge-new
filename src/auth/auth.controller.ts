@@ -33,6 +33,7 @@ export class AuthController {
   @Post('logout')
   @ApiOperation({ summary: 'Logout user' })
   logout(@Request() req) {
-    return this.authService.logout(req.user.id);
+    const payload = req.jwtPayload || {};
+    return this.authService.logout(req.user.id, payload.jti, payload.exp);
   }
 }

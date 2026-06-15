@@ -323,3 +323,14 @@ model AiMatch {
   @@unique([campaign_id, creator_id])
   @@map("ai_matches")
 }
+
+model RevokedToken {
+  id         String   @id @default(uuid())
+  jti        String   @unique
+  user_id    String
+  expires_at DateTime
+  created_at DateTime @default(now())
+
+  @@index([user_id])
+  @@map("revoked_tokens")
+}

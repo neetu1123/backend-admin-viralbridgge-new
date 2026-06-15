@@ -1,6 +1,7 @@
 import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
+import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
@@ -10,11 +11,30 @@ export class AuthService {
     private jwtService: JwtService
   ) {}
 
+  private async signToken(user: { id: string; email: string; role?: { name: string } | null }) {
+    const jti = randomUUID();
+    const payload = {
+      sub: user.id,
+      email: user.email,
+      role: user.role?.name,
+      jti,
+    };
+    return {
+      access_token: await this.jwtService.signAsync(payload),
+      user: {
+        id: user.id,
+        name: (user as { name?: string }).name,
+        email: user.email,
+        role: user.role?.name,
+      },
+    };
+  }
+
   async register(data: any) {
     const existingUser = await this.prisma.user.findUnique({
       where: { email: data.email },
     });
-    
+
     if (existingUser) {
       throw new BadRequestException('User with this email already exists');
     }
@@ -50,10 +70,10 @@ export class AuthService {
       });
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role?.name };
+    const token = await this.signToken(user);
     return {
-      access_token: await this.jwtService.signAsync(payload),
-      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name }
+      access_token: token.access_token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
     };
   }
 
@@ -72,15 +92,30 @@ export class AuthService {
       throw new UnauthorizedException('Invalid email or password');
     }
 
-    const payload = { sub: user.id, email: user.email, role: user.role?.name || 'user' };
+    const token = await this.signToken(user);
     return {
-      access_token: await this.jwtService.signAsync(payload),
-      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name }
+      access_token: token.access_token,
+      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
     };
   }
 
-  async logout(userId: string) {
+  async logout(userId: string, jti?: string, exp?: number) {
+    if (jti) {
+      const expiresAt = exp
+        ? new Date(exp * 1000)
+        : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+
+      await this.prisma.revokedToken.upsert({
+        where: { jti },
+        update: {},
+        create: { jti, user_id: userId, expires_at: expiresAt },
+      });
+
+      await this.prisma.revokedToken.deleteMany({
+        where: { expires_at: { lt: new Date() } },
+      });
+    }
+
     return { success: true, message: 'Logged out successfully' };
   }
 }
-
