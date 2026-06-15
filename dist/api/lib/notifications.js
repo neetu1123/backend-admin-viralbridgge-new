@@ -30,7 +30,7 @@ async function createNotification(prisma, params) {
             type: params.type ?? 'SYSTEM',
             entity_type: params.entityType,
             entity_id: params.entityId,
-            metadata: params.metadata ?? {},
+            metadata: (params.metadata ?? {}),
         },
     });
     const formatted = formatNotification(notification);

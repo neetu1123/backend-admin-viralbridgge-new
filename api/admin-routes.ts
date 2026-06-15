@@ -94,22 +94,36 @@ router.patch('/users/:id/unban', async (req: AuthedRequest, res) => {
   return ok(res, result);
 });
 
-router.get('/campaigns', async (_req, res) =>
-  ok(
-    res,
-    await prisma().campaign.findMany({
+router.get('/campaigns', async (_req, res) => {
+  try {
+    const campaigns = await prisma().campaign.findMany({
       include: {
         brand: { include: { user: true } },
         _count: { select: { applications: true } },
       },
       orderBy: { created_at: 'desc' },
-    }),
-  ),
-);
+    });
+    return ok(res, campaigns);
+  } catch (error) {
+    console.error('GET /admin/campaigns failed:', error);
+    const message = error instanceof Error ? error.message : 'Failed to load campaigns';
+    return fail(res, message, 500);
+  }
+});
 
-router.get('/campaigns/flagged', async (_req, res) =>
-  ok(res, await prisma().campaign.findMany({ where: { status: 'FLAGGED' }, include: { brand: true } })),
-);
+router.get('/campaigns/flagged', async (_req, res) => {
+  try {
+    const campaigns = await prisma().campaign.findMany({
+      where: { status: 'FLAGGED' },
+      include: { brand: true },
+    });
+    return ok(res, campaigns);
+  } catch (error) {
+    console.error('GET /admin/campaigns/flagged failed:', error);
+    const message = error instanceof Error ? error.message : 'Failed to load flagged campaigns';
+    return fail(res, message, 500);
+  }
+});
 
 router.post('/campaigns/:id/approve', async (req: AuthedRequest, res) => {
   const result = await prisma().campaign.update({ where: { id: paramId(req) }, data: { status: 'ACTIVE' } });
