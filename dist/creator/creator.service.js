@@ -12,11 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatorService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const matching_service_1 = require("../matching/matching.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let CreatorService = class CreatorService {
     prisma;
-    constructor(prisma) {
+    matchingService;
+    constructor(prisma, matchingService) {
         this.prisma = prisma;
+        this.matchingService = matchingService;
     }
     async getProfile(userId) {
         return this.ensureCreatorProfile(userId);
@@ -60,9 +63,10 @@ let CreatorService = class CreatorService {
             data: { media_kit: dto.url },
         });
     }
-    async getCampaigns(query) {
+    async getCampaigns(userId, query) {
         const page = query.page ?? 1;
         const limit = query.limit ?? 20;
+        const includeMatch = query.includeMatch === true || query.includeMatch === 'true';
         const where = { status: { in: ['ACTIVE', 'PENDING_APPROVAL'] } };
         if (query.search) {
             where.OR = [
@@ -101,7 +105,25 @@ let CreatorService = class CreatorService {
             }),
             this.prisma.campaign.count({ where }),
         ]);
-        return { data, meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total) };
+        const aiEnabled = includeMatch ? await this.matchingService.isAiMatchingEnabled() : false;
+        let enriched = data;
+        if (aiEnabled && userId) {
+            const profile = await this.prisma.creatorProfile.findUnique({ where: { user_id: userId } });
+            if (profile) {
+                const scoreMap = await this.matchingService.getCreatorCampaignMatchScores(profile.id, data.map((c) => c.id));
+                enriched = data.map((campaign) => {
+                    const match = scoreMap.get(campaign.id);
+                    return match
+                        ? { ...campaign, matchScore: match.matchScore, matchReasons: match.reasons }
+                        : campaign;
+                });
+            }
+        }
+        return {
+            data: enriched,
+            meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total),
+            aiMatchingEnabled: aiEnabled,
+        };
     }
     async getCampaign(id) {
         const campaign = await this.prisma.campaign.findUnique({
@@ -384,6 +406,7 @@ let CreatorService = class CreatorService {
 exports.CreatorService = CreatorService;
 exports.CreatorService = CreatorService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        matching_service_1.MatchingService])
 ], CreatorService);
 //# sourceMappingURL=creator.service.js.map

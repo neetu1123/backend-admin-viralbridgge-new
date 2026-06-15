@@ -12,11 +12,14 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const matching_service_1 = require("../matching/matching.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let BrandService = class BrandService {
     prisma;
-    constructor(prisma) {
+    matchingService;
+    constructor(prisma, matchingService) {
         this.prisma = prisma;
+        this.matchingService = matchingService;
     }
     async getProfile(userId) {
         return this.ensureBrandProfile(userId);
@@ -138,6 +141,9 @@ let BrandService = class BrandService {
         await this.getOwnedCampaign(userId, id);
         await this.prisma.campaign.delete({ where: { id } });
         return { success: true };
+    }
+    async getCampaignRecommendations(userId, campaignId) {
+        return this.matchingService.getCampaignRecommendations(campaignId, userId);
     }
     async getApplicants(userId, campaignId) {
         await this.getOwnedCampaign(userId, campaignId);
@@ -578,6 +584,7 @@ let BrandService = class BrandService {
 exports.BrandService = BrandService;
 exports.BrandService = BrandService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        matching_service_1.MatchingService])
 ], BrandService);
 //# sourceMappingURL=brand.service.js.map

@@ -7,51 +7,51 @@ export declare class AdminController {
             users: number;
         };
     } & {
-        id: string;
         name: string;
+        id: string;
         description: string | null;
     })[]>;
     createRole(body: {
         name: string;
         description: string;
     }, req: any): Promise<{
-        id: string;
         name: string;
+        id: string;
         description: string | null;
     }>;
     updateRole(id: string, body: {
         name: string;
         description: string;
     }, req: any): Promise<{
-        id: string;
         name: string;
+        id: string;
         description: string | null;
     }>;
     deleteRole(id: string, req: any): Promise<{
-        id: string;
         name: string;
+        id: string;
         description: string | null;
     }>;
     getAdmins(): Promise<({
         role: {
-            id: string;
             name: string;
+            id: string;
             description: string | null;
         } | null;
     } & {
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     assignRoleByEmail(body: {
@@ -60,299 +60,344 @@ export declare class AdminController {
         password?: string;
         name?: string;
     }, req: any): Promise<{
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getUsers(): Promise<({
         role: {
-            id: string;
             name: string;
+            id: string;
             description: string | null;
         } | null;
-    } & {
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
-        name: string;
-        avatar: string | null;
-        role_id: string | null;
-        status: string;
-        is_verified: boolean;
-        is_banned: boolean;
-        is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
-        settings: import("@prisma/client/runtime/library").JsonValue | null;
-    })[]>;
-    getUser(id: string): Promise<{
-        role: {
+        creator_profile: ({
+            _count: {
+                applications: number;
+            };
+        } & {
             id: string;
-            name: string;
-            description: string | null;
-        } | null;
-        creator_profile: {
-            id: string;
-            created_at: Date;
             updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
             user_id: string;
-            contact_email: string | null;
-            phone: string | null;
             full_name: string | null;
             bio: string | null;
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            languages: string[];
-            locality: string | null;
             social_links: import("@prisma/client/runtime/library").JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
+            photo: string | null;
+        }) | null;
+        brand_profile: ({
+            _count: {
+                campaigns: number;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            description: string | null;
+            created_at: Date;
+            user_id: string;
+            contact_email: string | null;
+            phone: string | null;
+            company_name: string;
+            industry: string | null;
+            website: string | null;
+            logo: string | null;
+            location: string | null;
+        }) | null;
+        wallets: {
+            available_balance: number;
+            pending_balance: number;
+        }[];
+    } & {
+        name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
+        avatar: string | null;
+        role_id: string | null;
+        is_verified: boolean;
+        is_banned: boolean;
+        is_deleted: boolean;
+        settings: import("@prisma/client/runtime/library").JsonValue | null;
+    })[]>;
+    getUser(id: string): Promise<{
+        role: {
+            name: string;
+            id: string;
+            description: string | null;
+        } | null;
+        creator_profile: {
+            id: string;
+            updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
+            user_id: string;
+            full_name: string | null;
+            bio: string | null;
+            niche: string | null;
+            followers: number;
+            engagement_rate: number;
+            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            media_kit: string | null;
+            portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
             photo: string | null;
         } | null;
         brand_profile: {
             id: string;
-            created_at: Date;
             updated_at: Date;
+            description: string | null;
+            created_at: Date;
             user_id: string;
+            contact_email: string | null;
+            phone: string | null;
             company_name: string;
             industry: string | null;
             website: string | null;
-            description: string | null;
             logo: string | null;
-            contact_email: string | null;
-            phone: string | null;
             location: string | null;
         } | null;
     } & {
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateUserRole(id: string, body: {
         role_id: string;
     }, req: any): Promise<{
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     banUser(id: string, req: any): Promise<{
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     unbanUser(id: string, req: any): Promise<{
-        id: string;
-        firebase_uid: string | null;
-        email: string;
-        password: string | null;
         name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
         avatar: string | null;
         role_id: string | null;
-        status: string;
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
-        created_at: Date;
-        updated_at: Date;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getCampaigns(): Promise<({
         brand: {
             user: {
-                id: string;
-                firebase_uid: string | null;
-                email: string;
-                password: string | null;
                 name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
                 avatar: string | null;
                 role_id: string | null;
-                status: string;
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
-                created_at: Date;
-                updated_at: Date;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
             id: string;
-            created_at: Date;
             updated_at: Date;
+            description: string | null;
+            created_at: Date;
             user_id: string;
+            contact_email: string | null;
+            phone: string | null;
             company_name: string;
             industry: string | null;
             website: string | null;
-            description: string | null;
             logo: string | null;
-            contact_email: string | null;
-            phone: string | null;
             location: string | null;
         };
     } & {
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
         brand_id: string;
-        description: string;
-        languages: string[];
-        locality: string | null;
-        deliverables: string[];
         title: string;
+        description: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
     })[]>;
     getFlaggedCampaigns(): Promise<({
         brand: {
             id: string;
-            created_at: Date;
             updated_at: Date;
+            description: string | null;
+            created_at: Date;
             user_id: string;
+            contact_email: string | null;
+            phone: string | null;
             company_name: string;
             industry: string | null;
             website: string | null;
-            description: string | null;
             logo: string | null;
-            contact_email: string | null;
-            phone: string | null;
             location: string | null;
         };
     } & {
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
         brand_id: string;
-        description: string;
-        languages: string[];
-        locality: string | null;
-        deliverables: string[];
         title: string;
+        description: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
     })[]>;
     approveCampaign(id: string, req: any): Promise<{
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
         brand_id: string;
-        description: string;
-        languages: string[];
-        locality: string | null;
-        deliverables: string[];
         title: string;
+        description: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
     }>;
     rejectCampaign(id: string, req: any): Promise<{
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
         brand_id: string;
-        description: string;
-        languages: string[];
-        locality: string | null;
-        deliverables: string[];
         title: string;
+        description: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
     }>;
     flagCampaign(id: string, body: {
         reason?: string;
     }, req: any): Promise<{
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
         brand_id: string;
-        description: string;
-        languages: string[];
-        locality: string | null;
-        deliverables: string[];
         title: string;
+        description: string;
         platform: string;
         budget: number;
         remaining_budget: number;
         deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
     }>;
     getTransactions(): Promise<({
         wallet: {
             user: {
-                id: string;
-                firebase_uid: string | null;
-                email: string;
-                password: string | null;
                 name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
                 avatar: string | null;
                 role_id: string | null;
-                status: string;
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
-                created_at: Date;
-                updated_at: Date;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
             id: string;
-            created_at: Date;
             updated_at: Date;
+            created_at: Date;
             user_id: string;
             available_balance: number;
             pending_balance: number;
@@ -360,8 +405,8 @@ export declare class AdminController {
     } & {
         id: string;
         status: string;
-        created_at: Date;
         updated_at: Date;
+        created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
@@ -373,12 +418,54 @@ export declare class AdminController {
         gmv: number;
         totalAuditLogs: number;
     }>;
+    getSettings(): Promise<{
+        aiMatchingEnabled: boolean;
+        updatedAt: Date;
+    }>;
+    updateSettings(body: {
+        aiMatchingEnabled?: boolean;
+    }, req: any): Promise<{
+        aiMatchingEnabled: any;
+        updatedAt: any;
+    }>;
+    getMatches(): Promise<{
+        enabled: boolean;
+        matches: {
+            id: string;
+            campaignTitle: string;
+            campaignId: string;
+            creatorName: string;
+            creatorNiche: string;
+            matchScore: number;
+            reasons: string[];
+            status: string;
+            matchedAt: string;
+            engagement: number;
+            followers: number;
+        }[];
+    }>;
+    updateMatch(id: string, body: {
+        status: 'active' | 'removed' | 'forced';
+    }, req: any): Promise<{
+        id: string;
+        campaign_id: string;
+        creator_id: string;
+        match_score: number;
+        reasons: string[];
+        status: string;
+        matched_at: Date;
+    }>;
+    runMatching(): Promise<{
+        totalCreated: number;
+        campaigns: number;
+        enabled: boolean;
+    }>;
     getAuditLogs(page?: string, limit?: string, entity?: string, action?: string, admin_id?: string): Promise<{
         data: ({
             admin: {
+                name: string;
                 id: string;
                 email: string;
-                name: string;
             };
         } & {
             id: string;

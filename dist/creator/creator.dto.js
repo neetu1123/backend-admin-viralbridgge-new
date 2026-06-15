@@ -129,6 +129,7 @@ class CreatorCampaignQueryDto extends pagination_query_dto_1.PaginationQueryDto 
     followers;
     engagementRate;
     sort;
+    includeMatch;
 }
 exports.CreatorCampaignQueryDto = CreatorCampaignQueryDto;
 __decorate([
@@ -179,6 +180,10 @@ __decorate([
     (0, class_validator_1.IsIn)(['created_desc', 'deadline_asc', 'budget_desc', 'budget_asc']),
     __metadata("design:type", String)
 ], CreatorCampaignQueryDto.prototype, "sort", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", Object)
+], CreatorCampaignQueryDto.prototype, "includeMatch", void 0);
 class ApplicationQueryDto extends pagination_query_dto_1.PaginationQueryDto {
     status;
 }

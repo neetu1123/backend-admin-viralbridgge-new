@@ -46,6 +46,7 @@ exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
 const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
+const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 let AuthService = class AuthService {
     prisma;
@@ -53,6 +54,24 @@ let AuthService = class AuthService {
     constructor(prisma, jwtService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+    }
+    async signToken(user) {
+        const jti = (0, crypto_1.randomUUID)();
+        const payload = {
+            sub: user.id,
+            email: user.email,
+            role: user.role?.name,
+            jti,
+        };
+        return {
+            access_token: await this.jwtService.signAsync(payload),
+            user: {
+                id: user.id,
+                name: user.name,
+                email: user.email,
+                role: user.role?.name,
+            },
+        };
     }
     async register(data) {
         const existingUser = await this.prisma.user.findUnique({
@@ -88,10 +107,10 @@ let AuthService = class AuthService {
                 data: { user_id: user.id, full_name: data.name, languages: [] },
             });
         }
-        const payload = { sub: user.id, email: user.email, role: user.role?.name };
+        const token = await this.signToken(user);
         return {
-            access_token: await this.jwtService.signAsync(payload),
-            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name }
+            access_token: token.access_token,
+            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
         };
     }
     async login(data) {
@@ -106,13 +125,26 @@ let AuthService = class AuthService {
         if (!isMatch) {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
-        const payload = { sub: user.id, email: user.email, role: user.role?.name || 'user' };
+        const token = await this.signToken(user);
         return {
-            access_token: await this.jwtService.signAsync(payload),
-            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name }
+            access_token: token.access_token,
+            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
         };
     }
-    async logout(userId) {
+    async logout(userId, jti, exp) {
+        if (jti) {
+            const expiresAt = exp
+                ? new Date(exp * 1000)
+                : new Date(Date.now() + 7 * 24 * 60 * 60 * 1000);
+            await this.prisma.revokedToken.upsert({
+                where: { jti },
+                update: {},
+                create: { jti, user_id: userId, expires_at: expiresAt },
+            });
+            await this.prisma.revokedToken.deleteMany({
+                where: { expires_at: { lt: new Date() } },
+            });
+        }
         return { success: true, message: 'Logged out successfully' };
     }
 };

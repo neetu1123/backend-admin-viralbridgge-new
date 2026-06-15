@@ -36,8 +36,8 @@ let CreatorController = class CreatorController {
     uploadMediaKit(req, body) {
         return this.creatorService.uploadMediaKit(req.user.id, body);
     }
-    getCampaigns(query) {
-        return this.creatorService.getCampaigns(query);
+    getCampaigns(req, query) {
+        return this.creatorService.getCampaigns(req.user?.id, query);
     }
     getCampaign(id) {
         return this.creatorService.getCampaign(id);
@@ -125,9 +125,10 @@ __decorate([
 ], CreatorController.prototype, "uploadMediaKit", null);
 __decorate([
     (0, common_1.Get)('campaigns'),
-    __param(0, (0, common_1.Query)()),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [creator_dto_1.CreatorCampaignQueryDto]),
+    __metadata("design:paramtypes", [Object, creator_dto_1.CreatorCampaignQueryDto]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getCampaigns", null);
 __decorate([

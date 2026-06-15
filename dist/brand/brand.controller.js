@@ -51,6 +51,9 @@ let BrandController = class BrandController {
     getApplicants(req, id) {
         return this.brandService.getApplicants(req.user.id, id);
     }
+    getCampaignRecommendations(req, id) {
+        return this.brandService.getCampaignRecommendations(req.user.id, id);
+    }
     approveApplication(req, id) {
         return this.brandService.updateApplication(req.user.id, id, 'ACCEPTED');
     }
@@ -197,6 +200,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getApplicants", null);
+__decorate([
+    (0, common_1.Get)('campaigns/:id/recommendations'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "getCampaignRecommendations", null);
 __decorate([
     (0, common_1.Post)('applications/:id/approve'),
     __param(0, (0, common_1.Request)()),

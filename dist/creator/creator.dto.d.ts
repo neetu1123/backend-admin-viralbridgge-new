@@ -28,6 +28,7 @@ export declare class CreatorCampaignQueryDto extends PaginationQueryDto {
     followers?: number;
     engagementRate?: number;
     sort?: string;
+    includeMatch?: string | boolean;
 }
 export declare class ApplicationQueryDto extends PaginationQueryDto {
     status?: string;

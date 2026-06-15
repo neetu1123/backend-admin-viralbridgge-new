@@ -12,10 +12,13 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
+const matching_service_1 = require("../matching/matching.service");
 let AdminService = class AdminService {
     prisma;
-    constructor(prisma) {
+    matchingService;
+    constructor(prisma, matchingService) {
         this.prisma = prisma;
+        this.matchingService = matchingService;
     }
     async createAuditLog(params) {
         try {
@@ -184,7 +187,21 @@ let AdminService = class AdminService {
     }
     async getUsers() {
         return this.prisma.user.findMany({
-            include: { role: true },
+            where: {
+                is_deleted: false,
+                role: { name: { in: ['CREATOR', 'BRAND'] } },
+            },
+            include: {
+                role: true,
+                creator_profile: {
+                    include: { _count: { select: { applications: true } } },
+                },
+                brand_profile: {
+                    include: { _count: { select: { campaigns: true } } },
+                },
+                wallets: { select: { available_balance: true, pending_balance: true } },
+            },
+            orderBy: { created_at: 'desc' },
         });
     }
     async getUser(id) {
@@ -269,7 +286,57 @@ let AdminService = class AdminService {
                 metadata: { status: 'ACTIVE' },
             });
         }
+        await this.matchingService.runMatchingForCampaign(id);
         return result;
+    }
+    async getSettings() {
+        const settings = await this.matchingService.getOrCreatePlatformSettings();
+        return {
+            aiMatchingEnabled: settings.ai_matching_enabled,
+            updatedAt: settings.updated_at,
+        };
+    }
+    async updateSettings(body, adminId) {
+        const settings = await this.matchingService.getOrCreatePlatformSettings();
+        let updated;
+        try {
+            updated = await this.prisma.platformSettings.update({
+                where: { id: 'default' },
+                data: {
+                    ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
+                    updated_by: adminId ?? null,
+                },
+            });
+        }
+        catch (error) {
+            const msg = error instanceof Error ? error.message : String(error);
+            if (msg.includes('does not exist') || msg.includes('platform_settings') || msg.includes('P2021')) {
+                throw new (require('@nestjs/common').BadRequestException)('Database not migrated. Run: npx prisma migrate deploy');
+            }
+            throw error;
+        }
+        if (adminId) {
+            await this.createAuditLog({
+                admin_id: adminId,
+                action: 'UPDATE_PLATFORM_SETTINGS',
+                entity: 'platform_settings',
+                entity_id: 'default',
+                metadata: { aiMatchingEnabled: updated.ai_matching_enabled },
+            });
+        }
+        return {
+            aiMatchingEnabled: updated.ai_matching_enabled,
+            updatedAt: updated.updated_at,
+        };
+    }
+    getMatches() {
+        return this.matchingService.getAdminMatches();
+    }
+    updateMatch(id, status, adminId) {
+        return this.matchingService.updateMatchStatus(id, status, adminId);
+    }
+    runMatching() {
+        return this.matchingService.runMatchingForAllActiveCampaigns();
     }
     async rejectCampaign(id, adminId) {
         const result = await this.prisma.campaign.update({
@@ -326,6 +393,7 @@ let AdminService = class AdminService {
 exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
-    __metadata("design:paramtypes", [prisma_service_1.PrismaService])
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        matching_service_1.MatchingService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

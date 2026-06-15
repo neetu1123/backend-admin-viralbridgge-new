@@ -1,4 +1,5 @@
 import { ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
 const MAX_MATCHES_PER_CAMPAIGN = 10;
@@ -30,6 +31,14 @@ export type MatchScoreResult = {
   matchScore: number;
   reasons: string[];
 };
+
+type AiMatchWithCreator = Prisma.AiMatchGetPayload<{
+  include: { creator: { include: { user: true } } };
+}>;
+
+const aiMatchWithCreatorInclude = {
+  creator: { include: { user: true } },
+} satisfies Prisma.AiMatchInclude;
 
 function isMissingTableError(error: unknown): boolean {
   const msg = error instanceof Error ? error.message : String(error);
@@ -356,14 +365,14 @@ export class MatchingService {
 
     const appliedIds = new Set(campaign.applications.map((a) => a.creator_id));
 
-    let stored: Awaited<ReturnType<typeof this.prisma.aiMatch.findMany>> = [];
+    let stored: AiMatchWithCreator[] = [];
     try {
       stored = await this.prisma.aiMatch.findMany({
         where: {
           campaign_id: campaignId,
           status: { in: ['active', 'forced'] },
         },
-        include: { creator: { include: { user: true } } },
+        include: aiMatchWithCreatorInclude,
         orderBy: { match_score: 'desc' },
         take: MAX_MATCHES_PER_CAMPAIGN,
       });
@@ -400,14 +409,14 @@ export class MatchingService {
       return { enabled: true, recommendations: [] };
     }
 
-    let refreshed: typeof stored = [];
+    let refreshed: AiMatchWithCreator[] = [];
     try {
       refreshed = await this.prisma.aiMatch.findMany({
         where: {
           campaign_id: campaignId,
           status: { in: ['active', 'forced'] },
         },
-        include: { creator: { include: { user: true } } },
+        include: aiMatchWithCreatorInclude,
         orderBy: { match_score: 'desc' },
         take: MAX_MATCHES_PER_CAMPAIGN,
       });

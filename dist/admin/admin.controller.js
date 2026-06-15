@@ -61,6 +61,21 @@ let AdminController = class AdminController {
     }
     getTransactions() { return this.adminService.getTransactions(); }
     getDashboardStats() { return this.adminService.getDashboardStats(); }
+    getSettings() {
+        return this.adminService.getSettings();
+    }
+    updateSettings(body, req) {
+        return this.adminService.updateSettings(body, req.user?.id);
+    }
+    getMatches() {
+        return this.adminService.getMatches();
+    }
+    updateMatch(id, body, req) {
+        return this.adminService.updateMatch(id, body.status, req.user?.id);
+    }
+    runMatching() {
+        return this.adminService.runMatching();
+    }
     getAuditLogs(page, limit, entity, action, admin_id) {
         return this.adminService.getAuditLogs({
             page: page ? parseInt(page) : 1,
@@ -216,6 +231,46 @@ __decorate([
     __metadata("design:paramtypes", []),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getDashboardStats", null);
+__decorate([
+    (0, common_1.Get)('settings'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get platform settings' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getSettings", null);
+__decorate([
+    (0, common_1.Patch)('settings'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update platform settings' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateSettings", null);
+__decorate([
+    (0, common_1.Get)('matching'),
+    (0, swagger_1.ApiOperation)({ summary: 'List AI creator-campaign matches' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getMatches", null);
+__decorate([
+    (0, common_1.Patch)('matching/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Update match status (active, removed, forced)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateMatch", null);
+__decorate([
+    (0, common_1.Post)('matching/run'),
+    (0, swagger_1.ApiOperation)({ summary: 'Recompute AI matches for all active campaigns' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "runMatching", null);
 __decorate([
     (0, common_1.Get)('audit-logs'),
     (0, swagger_1.ApiOperation)({ summary: 'Get paginated audit logs with optional filters' }),

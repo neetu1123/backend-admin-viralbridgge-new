@@ -4,6 +4,7 @@ export declare class AuthService {
     private prisma;
     private jwtService;
     constructor(prisma: PrismaService, jwtService: JwtService);
+    private signToken;
     register(data: any): Promise<{
         access_token: string;
         user: {
@@ -22,7 +23,7 @@ export declare class AuthService {
             role: string | undefined;
         };
     }>;
-    logout(userId: string): Promise<{
+    logout(userId: string, jti?: string, exp?: number): Promise<{
         success: boolean;
         message: string;
     }>;

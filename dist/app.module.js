@@ -20,6 +20,7 @@ const admin_module_1 = require("./admin/admin.module");
 const brand_module_1 = require("./brand/brand.module");
 const creator_module_1 = require("./creator/creator.module");
 const queue_module_1 = require("./queue/queue.module");
+const matching_module_1 = require("./matching/matching.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -34,6 +35,7 @@ exports.AppModule = AppModule = __decorate([
                     limit: 100,
                 }]),
             prisma_module_1.PrismaModule,
+            matching_module_1.MatchingModule,
             queue_module_1.QueueModule.register(),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

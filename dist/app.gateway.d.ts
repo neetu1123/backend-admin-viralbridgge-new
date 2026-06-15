@@ -16,19 +16,19 @@ export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconn
         fileSize?: string;
     }): Promise<{
         sender: {
-            id: string;
-            firebase_uid: string | null;
-            email: string;
-            password: string | null;
             name: string;
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            firebase_uid: string | null;
+            password: string | null;
+            email: string;
             avatar: string | null;
             role_id: string | null;
-            status: string;
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
-            created_at: Date;
-            updated_at: Date;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
