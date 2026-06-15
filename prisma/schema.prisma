@@ -30,6 +30,9 @@ model User {
   audit_logs       AuditLog[]
   messages         Message[]
   settings         Json?
+  kyc_requests     KycRequest[]
+  creator_kyc      CreatorKyc?
+  brand_kyc        BrandKyc?
 
   @@map("users")
 }
@@ -264,11 +267,15 @@ model Notification {
   user             User           @relation(fields: [user_id], references: [id])
   title            String
   body             String
-  type             String?
+  type             String         @default("SYSTEM")
+  entity_type      String?
+  entity_id        String?
   metadata         Json?
   is_read          Boolean        @default(false)
   created_at       DateTime       @default(now())
 
+  @@index([user_id, is_read])
+  @@index([user_id, created_at])
   @@map("notifications")
 }
 
@@ -333,4 +340,66 @@ model RevokedToken {
 
   @@index([user_id])
   @@map("revoked_tokens")
+}
+
+model KycRequest {
+  id           String      @id @default(uuid())
+  user_id      String
+  user         User        @relation(fields: [user_id], references: [id])
+  user_type    String
+  status       String      @default("PENDING")
+  submitted_at DateTime    @default(now())
+  reviewed_at  DateTime?
+  reviewed_by  String?
+  remarks      String?
+  creator_kyc  CreatorKyc?
+  brand_kyc    BrandKyc?
+
+  @@index([user_id])
+  @@index([status])
+  @@map("kyc_requests")
+}
+
+model CreatorKyc {
+  id                    String      @id @default(uuid())
+  user_id               String      @unique
+  user                  User        @relation(fields: [user_id], references: [id])
+  kyc_request_id        String?     @unique
+  kyc_request           KycRequest? @relation(fields: [kyc_request_id], references: [id])
+  mobile_number         String?
+  mobile_verified       Boolean     @default(false)
+  email_verified        Boolean     @default(false)
+  instagram_handle      String?
+  youtube_handle        String?
+  tiktok_handle         String?
+  instagram_profile_url String?
+  selfie_url            String?
+  followers_count       Int         @default(0)
+  engagement_rate       Float       @default(0)
+  verification_status   String      @default("UNVERIFIED")
+  created_at            DateTime    @default(now())
+  updated_at            DateTime    @updatedAt
+
+  @@map("creator_kyc")
+}
+
+model BrandKyc {
+  id                      String      @id @default(uuid())
+  user_id                   String      @unique
+  user                      User        @relation(fields: [user_id], references: [id])
+  kyc_request_id            String?     @unique
+  kyc_request               KycRequest? @relation(fields: [kyc_request_id], references: [id])
+  company_name              String?
+  gst_number                String?
+  website                   String?
+  business_email            String?
+  business_email_verified   Boolean     @default(false)
+  linkedin_url              String?
+  logo_url                  String?
+  business_address          String?
+  verification_status       String      @default("UNVERIFIED")
+  created_at                DateTime    @default(now())
+  updated_at                DateTime    @updatedAt
+
+  @@map("brand_kyc")
 }

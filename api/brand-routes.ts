@@ -174,12 +174,33 @@ router.post('/messages/send', (req: AuthedRequest, res) =>
   }),
 );
 
-router.get('/notifications', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().getNotifications(id, parseListQuery(req.query as Record<string, unknown>) as never)),
-);
-router.patch('/notifications/:id/read', (req: AuthedRequest, res) =>
-  run(req, res, (id) => brand().markNotificationRead(id, paramId(req))),
-);
+router.get('/notifications/unread-count', async (req: AuthedRequest, res) => {
+  const { getUnreadCount } = require('./lib/notifications') as typeof import('./lib/notifications');
+  return ok(res, await getUnreadCount(prisma(), req.user!.id));
+});
+
+router.patch('/notifications/read-all', async (req: AuthedRequest, res) => {
+  const { markAllNotificationsRead } = require('./lib/notifications') as typeof import('./lib/notifications');
+  return ok(res, await markAllNotificationsRead(prisma(), req.user!.id));
+});
+
+router.get('/notifications', async (req: AuthedRequest, res) => {
+  const { listNotifications } = require('./lib/notifications') as typeof import('./lib/notifications');
+  const result = await listNotifications(prisma(), req.user!.id, {
+    page: parseInt(String(req.query.page ?? '1'), 10) || 1,
+    limit: parseInt(String(req.query.limit ?? '20'), 10) || 20,
+    type: req.query.type ? String(req.query.type) : undefined,
+    unread: req.query.unread === 'true',
+  });
+  return ok(res, result);
+});
+
+router.patch('/notifications/:id/read', async (req: AuthedRequest, res) => {
+  const { markNotificationRead } = require('./lib/notifications') as typeof import('./lib/notifications');
+  const result = await markNotificationRead(prisma(), req.user!.id, paramId(req));
+  if (!result) return fail(res, 'Notification not found', 404);
+  return ok(res, result);
+});
 
 router.get('/settings', (req: AuthedRequest, res) => run(req, res, (id) => brand().getSettings(id)));
 router.put('/settings', (req: AuthedRequest, res) =>

@@ -21,6 +21,8 @@ const brand_module_1 = require("./brand/brand.module");
 const creator_module_1 = require("./creator/creator.module");
 const queue_module_1 = require("./queue/queue.module");
 const matching_module_1 = require("./matching/matching.module");
+const notifications_module_1 = require("./notifications/notifications.module");
+const kyc_module_1 = require("./kyc/kyc.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -35,7 +37,9 @@ exports.AppModule = AppModule = __decorate([
                     limit: 100,
                 }]),
             prisma_module_1.PrismaModule,
+            notifications_module_1.NotificationsModule,
             matching_module_1.MatchingModule,
+            kyc_module_1.KycModule,
             queue_module_1.QueueModule.register(),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

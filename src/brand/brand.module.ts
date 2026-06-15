@@ -1,11 +1,12 @@
 import { Module } from '@nestjs/common';
 import { PrismaModule } from '../prisma/prisma.module';
 import { MatchingModule } from '../matching/matching.module';
+import { NotificationsModule } from '../notifications/notifications.module';
 import { BrandController } from './brand.controller';
 import { BrandService } from './brand.service';
 
 @Module({
-  imports: [PrismaModule, MatchingModule],
+  imports: [PrismaModule, MatchingModule, NotificationsModule],
   controllers: [BrandController],
   providers: [BrandService],
 })

@@ -1,12 +1,15 @@
+import { OnModuleInit } from '@nestjs/common';
 import { OnGatewayConnection, OnGatewayDisconnect } from '@nestjs/websockets';
 import { Server, Socket } from 'socket.io';
 import { PrismaService } from './prisma/prisma.service';
-export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
     private readonly prisma;
     constructor(prisma: PrismaService);
+    onModuleInit(): void;
     server: Server;
     handleConnection(client: Socket): Promise<void>;
     handleDisconnect(_client: Socket): void;
+    emitNotification(userId: string, notification: unknown): void;
     handleSendMessage(client: Socket, payload: {
         message: string;
         conversationId: string;
@@ -54,6 +57,8 @@ export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconn
         conversationId: string;
     }): Promise<void>;
     private resolveSocketUser;
+    private tryResolveJwtUser;
+    private tryResolveFirebaseUser;
     private extractSocketToken;
     private assertConversationAccess;
 }

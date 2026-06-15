@@ -13,13 +13,16 @@ exports.BrandService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const matching_service_1 = require("../matching/matching.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let BrandService = class BrandService {
     prisma;
     matchingService;
-    constructor(prisma, matchingService) {
+    notifications;
+    constructor(prisma, matchingService, notifications) {
         this.prisma = prisma;
         this.matchingService = matchingService;
+        this.notifications = notifications;
     }
     async getProfile(userId) {
         return this.ensureBrandProfile(userId);
@@ -453,29 +456,23 @@ let BrandService = class BrandService {
         });
     }
     async getNotifications(userId, query) {
-        const page = query.page ?? 1;
-        const limit = query.limit ?? 20;
-        const where = { user_id: userId };
-        if (query.isRead !== undefined)
-            where.is_read = query.isRead;
-        const [data, total] = await Promise.all([
-            this.prisma.notification.findMany({
-                where,
-                orderBy: { created_at: 'desc' },
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
-            this.prisma.notification.count({ where }),
-        ]);
-        return { data, meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total) };
+        return this.notifications.list(userId, {
+            page: query.page,
+            limit: query.limit,
+            unread: query.isRead === false ? true : undefined,
+        });
     }
     async markNotificationRead(userId, id) {
-        const notification = await this.prisma.notification.findUnique({ where: { id } });
-        if (!notification)
+        const result = await this.notifications.markRead(userId, id);
+        if (!result)
             throw new common_1.NotFoundException('Notification not found');
-        if (notification.user_id !== userId)
-            throw new common_1.ForbiddenException('Forbidden');
-        return this.prisma.notification.update({ where: { id }, data: { is_read: true } });
+        return result;
+    }
+    async getUnreadNotificationCount(userId) {
+        return this.notifications.unreadCount(userId);
+    }
+    async markAllNotificationsRead(userId) {
+        return this.notifications.markAllRead(userId);
     }
     async getSettings(userId) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
@@ -585,6 +582,7 @@ exports.BrandService = BrandService;
 exports.BrandService = BrandService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        matching_service_1.MatchingService])
+        matching_service_1.MatchingService,
+        notifications_service_1.NotificationsService])
 ], BrandService);
 //# sourceMappingURL=brand.service.js.map

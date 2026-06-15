@@ -11,12 +11,13 @@ const common_1 = require("@nestjs/common");
 const admin_controller_1 = require("./admin.controller");
 const admin_service_1 = require("./admin.service");
 const matching_module_1 = require("../matching/matching.module");
+const kyc_module_1 = require("../kyc/kyc.module");
 let AdminModule = class AdminModule {
 };
 exports.AdminModule = AdminModule;
 exports.AdminModule = AdminModule = __decorate([
     (0, common_1.Module)({
-        imports: [matching_module_1.MatchingModule],
+        imports: [matching_module_1.MatchingModule, kyc_module_1.KycModule],
         controllers: [admin_controller_1.AdminController],
         providers: [admin_service_1.AdminService],
     })

@@ -3,6 +3,8 @@ import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger'
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { AdminService } from './admin.service';
+import { KycService } from '../kyc/kyc.service';
+import { NotificationsService } from '../notifications/notifications.service';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -10,7 +12,11 @@ import { AdminService } from './admin.service';
 @Roles('SUPER_ADMIN', 'ADMIN')
 @Controller('admin')
 export class AdminController {
-  constructor(private readonly adminService: AdminService) {}
+  constructor(
+    private readonly adminService: AdminService,
+    private readonly kycService: KycService,
+    private readonly notifications: NotificationsService,
+  ) {}
 
   // ─── Roles & Admins ──────────────────────────────────────────────────────────
 
@@ -179,5 +185,87 @@ export class AdminController {
       entity_id: body.entity_id,
       metadata: body.metadata,
     });
+  }
+
+  // ─── KYC ──────────────────────────────────────────────────────────────────────
+
+  @Get('kyc')
+  getKyc(@Query('status') status?: string, @Query('user_type') user_type?: string, @Query('page') page?: string, @Query('limit') limit?: string) {
+    return this.kycService.listAdmin({
+      status,
+      user_type,
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 20,
+    });
+  }
+
+  @Post('kyc/:id/approve')
+  approveKyc(@Param('id') id: string, @Body() body: { remarks?: string }, @Request() req: any) {
+    return this.kycService.approve(id, req.user.id, body?.remarks);
+  }
+
+  @Post('kyc/:id/reject')
+  rejectKyc(@Param('id') id: string, @Body() body: { remarks?: string }, @Request() req: any) {
+    return this.kycService.reject(id, req.user.id, body?.remarks);
+  }
+
+  // ─── Notifications ────────────────────────────────────────────────────────────
+
+  @Get('notifications/unread-count')
+  getUnreadCount(@Request() req: any) {
+    return this.notifications.unreadCount(req.user.id);
+  }
+
+  @Get('notifications')
+  getNotifications(
+    @Request() req: any,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+    @Query('type') type?: string,
+    @Query('unread') unread?: string,
+  ) {
+    return this.notifications.list(req.user.id, {
+      page: page ? parseInt(page) : 1,
+      limit: limit ? parseInt(limit) : 20,
+      type,
+      unread: unread === 'true',
+    });
+  }
+
+  @Patch('notifications/read-all')
+  markAllNotificationsRead(@Request() req: any) {
+    return this.notifications.markAllRead(req.user.id);
+  }
+
+  @Patch('notifications/:id/read')
+  markNotificationRead(@Param('id') id: string, @Request() req: any) {
+    return this.notifications.markRead(req.user.id, id);
+  }
+
+  // ─── Quick Actions ────────────────────────────────────────────────────────────
+
+  @Post('invite-admin')
+  inviteAdmin(@Body() body: { email: string; role_id: string; password?: string; name?: string }, @Request() req: any) {
+    return this.adminService.assignRoleByEmail(body, req.user?.id);
+  }
+
+  @Post('test-campaign')
+  createTestCampaign(@Request() req: any) {
+    return this.adminService.createTestCampaign(req.user?.id);
+  }
+
+  @Get('withdrawals')
+  getWithdrawals(@Query('status') status?: string) {
+    return this.adminService.getWithdrawals(status ?? 'PENDING');
+  }
+
+  @Patch('withdrawals/:id/approve')
+  approveWithdrawal(@Param('id') id: string, @Request() req: any) {
+    return this.adminService.approveWithdrawal(id, req.user?.id);
+  }
+
+  @Patch('withdrawals/:id/reject')
+  rejectWithdrawal(@Param('id') id: string, @Body() body: { reason?: string }, @Request() req: any) {
+    return this.adminService.rejectWithdrawal(id, req.user?.id, body?.reason);
   }
 }

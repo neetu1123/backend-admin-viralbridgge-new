@@ -6,6 +6,7 @@ import {
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -25,6 +26,7 @@ export class CreatorService {
   constructor(
     private prisma: PrismaService,
     private matchingService: MatchingService,
+    private notifications: NotificationsService,
   ) {}
 
   async getProfile(userId: string) {
@@ -382,29 +384,25 @@ export class CreatorService {
   }
 
   async getNotifications(userId: string, query: NotificationQueryDto) {
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const where: any = { user_id: userId };
-    if (query.isRead !== undefined) where.is_read = query.isRead;
-
-    const [data, total] = await Promise.all([
-      this.prisma.notification.findMany({
-        where,
-        orderBy: { created_at: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.notification.count({ where }),
-    ]);
-
-    return { data, meta: paginationMeta(page, limit, total) };
+    return this.notifications.list(userId, {
+      page: query.page,
+      limit: query.limit,
+      unread: query.isRead === false ? true : undefined,
+    });
   }
 
   async markNotificationRead(userId: string, id: string) {
-    const notification = await this.prisma.notification.findUnique({ where: { id } });
-    if (!notification) throw new NotFoundException('Notification not found');
-    if (notification.user_id !== userId) throw new ForbiddenException('Forbidden');
-    return this.prisma.notification.update({ where: { id }, data: { is_read: true } });
+    const result = await this.notifications.markRead(userId, id);
+    if (!result) throw new NotFoundException('Notification not found');
+    return result;
+  }
+
+  async getUnreadNotificationCount(userId: string) {
+    return this.notifications.unreadCount(userId);
+  }
+
+  async markAllNotificationsRead(userId: string) {
+    return this.notifications.markAllRead(userId);
   }
 
   async getSettings(userId: string) {

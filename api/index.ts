@@ -5,6 +5,7 @@ import serverless from 'serverless-http';
 import { adminRouter } from './admin-routes';
 import { brandRouter } from './brand-routes';
 import { creatorRouter } from './creator-routes';
+import { kycRouter } from './kyc-routes';
 import { handleAuthLogin } from './auth-login';
 
 const server = express();
@@ -74,6 +75,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/admin')) return true;
   if (path.startsWith('/brand')) return true;
   if (path.startsWith('/creator')) return true;
+  if (path.startsWith('/kyc')) return true;
   return false;
 }
 
@@ -118,6 +120,7 @@ server.get('/settings/public', async (_req, res) => {
 server.use('/admin', adminRouter);
 server.use('/brand', brandRouter);
 server.use('/creator', creatorRouter);
+server.use('/kyc', kycRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {

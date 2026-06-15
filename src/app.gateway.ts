@@ -1,4 +1,4 @@
-import { ForbiddenException } from '@nestjs/common';
+import { ForbiddenException, OnModuleInit } from '@nestjs/common';
 import {
   WebSocketGateway,
   WebSocketServer,
@@ -11,14 +11,19 @@ import {
 import { Server, Socket } from 'socket.io';
 import * as admin from 'firebase-admin';
 import { PrismaService } from './prisma/prisma.service';
+import { setNotificationEmitter } from './common/notification-emitter';
 
 @WebSocketGateway({
   cors: {
     origin: '*',
   },
 })
-export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
+export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnModuleInit {
   constructor(private readonly prisma: PrismaService) {}
+
+  onModuleInit() {
+    setNotificationEmitter((userId, notification) => this.emitNotification(userId, notification));
+  }
 
   @WebSocketServer()
   server: Server;
@@ -48,6 +53,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
   }
 
   handleDisconnect(_client: Socket) {}
+
+  emitNotification(userId: string, notification: unknown) {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit('notification:new', notification);
+    }
+  }
 
   @SubscribeMessage('message:send')
   async handleSendMessage(
@@ -119,8 +130,39 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect {
 
   private async resolveSocketUser(client: Socket) {
     const token = this.extractSocketToken(client);
-    if (!token || !admin.apps.length) {
+    if (!token) {
       throw new ForbiddenException('Missing socket token');
+    }
+
+    const jwtUser = await this.tryResolveJwtUser(token);
+    if (jwtUser) return jwtUser;
+
+    return this.tryResolveFirebaseUser(token);
+  }
+
+  private async tryResolveJwtUser(token: string) {
+    try {
+      const jwt = require('jsonwebtoken');
+      const payload = jwt.verify(
+        token,
+        process.env.JWT_SECRET || 'viralbridgge-super-secret-jwt-key-2026',
+      ) as { sub: string };
+
+      const user = await this.prisma.user.findUnique({
+        where: { id: payload.sub },
+        include: { role: true },
+      });
+
+      if (!user || user.is_banned || user.is_deleted) return null;
+      return user;
+    } catch {
+      return null;
+    }
+  }
+
+  private async tryResolveFirebaseUser(token: string) {
+    if (!admin.apps.length) {
+      throw new ForbiddenException('Socket authentication failed');
     }
 
     const decoded = await admin.auth().verifyIdToken(token);

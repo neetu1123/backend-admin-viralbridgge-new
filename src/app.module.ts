@@ -13,6 +13,8 @@ import { BrandModule } from './brand/brand.module';
 import { CreatorModule } from './creator/creator.module';
 import { QueueModule } from './queue/queue.module';
 import { MatchingModule } from './matching/matching.module';
+import { NotificationsModule } from './notifications/notifications.module';
+import { KycModule } from './kyc/kyc.module';
 
 @Module({
   imports: [
@@ -24,7 +26,9 @@ import { MatchingModule } from './matching/matching.module';
       limit: 100,
     }]),
     PrismaModule,
+    NotificationsModule,
     MatchingModule,
+    KycModule,
     QueueModule.register(),
     AuthModule,
     UsersModule,

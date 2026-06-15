@@ -129,6 +129,16 @@ export class CreatorController {
     return this.creatorService.sendMessage(req.user.id, body);
   }
 
+  @Get('notifications/unread-count')
+  getUnreadNotificationCount(@Request() req: any) {
+    return this.creatorService.getUnreadNotificationCount(req.user.id);
+  }
+
+  @Patch('notifications/read-all')
+  markAllNotificationsRead(@Request() req: any) {
+    return this.creatorService.markAllNotificationsRead(req.user.id);
+  }
+
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.creatorService.getNotifications(req.user.id, query);

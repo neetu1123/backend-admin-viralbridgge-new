@@ -319,4 +319,171 @@ router.post('/matching/run', async (req: AuthedRequest, res) => {
   }
 });
 
+router.get('/kyc', async (req, res) => {
+  try {
+    const { listAdminKyc } = require('./lib/kyc') as typeof import('./lib/kyc');
+    const result = await listAdminKyc(prisma(), {
+      status: req.query.status ? String(req.query.status) : undefined,
+      user_type: req.query.user_type ? String(req.query.user_type) : undefined,
+      page: parseInt(String(req.query.page ?? '1'), 10) || 1,
+      limit: parseInt(String(req.query.limit ?? '20'), 10) || 20,
+    });
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load KYC requests', 500);
+  }
+});
+
+router.post('/kyc/:id/approve', async (req: AuthedRequest, res) => {
+  try {
+    const { approveKyc } = require('./lib/kyc') as typeof import('./lib/kyc');
+    const result = await approveKyc(prisma(), paramId(req), req.user!.id, req.body?.remarks);
+    await audit(req.user?.id, 'APPROVE_KYC', 'KycRequest', paramId(req), { remarks: req.body?.remarks });
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to approve KYC', 500);
+  }
+});
+
+router.post('/kyc/:id/reject', async (req: AuthedRequest, res) => {
+  try {
+    const { rejectKyc } = require('./lib/kyc') as typeof import('./lib/kyc');
+    const result = await rejectKyc(prisma(), paramId(req), req.user!.id, req.body?.remarks);
+    await audit(req.user?.id, 'REJECT_KYC', 'KycRequest', paramId(req), { remarks: req.body?.remarks });
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to reject KYC', 500);
+  }
+});
+
+router.get('/notifications/unread-count', async (req: AuthedRequest, res) => {
+  const { getUnreadCount } = require('./lib/notifications') as typeof import('./lib/notifications');
+  return ok(res, await getUnreadCount(prisma(), req.user!.id));
+});
+
+router.get('/notifications', async (req: AuthedRequest, res) => {
+  const { listNotifications } = require('./lib/notifications') as typeof import('./lib/notifications');
+  const result = await listNotifications(prisma(), req.user!.id, {
+    page: parseInt(String(req.query.page ?? '1'), 10) || 1,
+    limit: parseInt(String(req.query.limit ?? '20'), 10) || 20,
+    type: req.query.type ? String(req.query.type) : undefined,
+    unread: req.query.unread === 'true',
+  });
+  return ok(res, result);
+});
+
+router.patch('/notifications/read-all', async (req: AuthedRequest, res) => {
+  const { markAllNotificationsRead } = require('./lib/notifications') as typeof import('./lib/notifications');
+  return ok(res, await markAllNotificationsRead(prisma(), req.user!.id));
+});
+
+router.patch('/notifications/:id/read', async (req: AuthedRequest, res) => {
+  const { markNotificationRead } = require('./lib/notifications') as typeof import('./lib/notifications');
+  const result = await markNotificationRead(prisma(), req.user!.id, paramId(req));
+  if (!result) return fail(res, 'Notification not found', 404);
+  return ok(res, result);
+});
+
+router.get('/withdrawals', async (req, res) => {
+  const status = String(req.query.status ?? 'PENDING').toUpperCase();
+  const rows = await prisma().transaction.findMany({
+    where: { type: 'WITHDRAWAL', status },
+    include: { wallet: { include: { user: true } } },
+    orderBy: { created_at: 'desc' },
+  });
+  return ok(res, rows);
+});
+
+router.patch('/withdrawals/:id/approve', async (req: AuthedRequest, res) => {
+  const txn = await prisma().transaction.update({
+    where: { id: paramId(req) },
+    data: { status: 'COMPLETED' },
+    include: { wallet: { include: { user: true } } },
+  });
+  if (txn.wallet?.user_id) {
+    const { createNotification } = require('./lib/notifications') as typeof import('./lib/notifications');
+    await createNotification(prisma(), {
+      userId: txn.wallet.user_id,
+      title: 'Withdrawal Approved',
+      message: `Your withdrawal of $${txn.amount} has been approved.`,
+      type: 'WITHDRAWAL',
+      entityType: 'Transaction',
+      entityId: txn.id,
+    });
+  }
+  await audit(req.user?.id, 'APPROVE_WITHDRAWAL', 'Transaction', paramId(req), { amount: txn.amount });
+  return ok(res, txn);
+});
+
+router.patch('/withdrawals/:id/reject', async (req: AuthedRequest, res) => {
+  const txn = await prisma().transaction.findUnique({
+    where: { id: paramId(req) },
+    include: { wallet: true },
+  });
+  if (!txn) return fail(res, 'Withdrawal not found', 404);
+  const updated = await prisma().$transaction(async (tx) => {
+    const result = await tx.transaction.update({
+      where: { id: txn.id },
+      data: { status: 'REJECTED' },
+      include: { wallet: { include: { user: true } } },
+    });
+    if (txn.wallet) {
+      await tx.wallet.update({
+        where: { id: txn.wallet.id },
+        data: { available_balance: { increment: txn.amount } },
+      });
+    }
+    return result;
+  });
+  if (updated.wallet?.user_id) {
+    const { createNotification } = require('./lib/notifications') as typeof import('./lib/notifications');
+    await createNotification(prisma(), {
+      userId: updated.wallet.user_id,
+      title: 'Withdrawal Rejected',
+      message: req.body?.reason ?? `Your withdrawal of $${updated.amount} was rejected and funds returned to your wallet.`,
+      type: 'WITHDRAWAL',
+      entityType: 'Transaction',
+      entityId: updated.id,
+    });
+  }
+  await audit(req.user?.id, 'REJECT_WITHDRAWAL', 'Transaction', paramId(req), { amount: updated.amount });
+  return ok(res, updated);
+});
+
+router.post('/invite-admin', async (req: AuthedRequest, res) => {
+  const { email, role_id, password, name } = req.body ?? {};
+  if (!email || !role_id) return fail(res, 'email and role_id are required');
+  let user = await prisma().user.findUnique({ where: { email } });
+  if (!user) {
+    if (!password) return fail(res, 'User not found. Provide a password to create a new account.');
+    const hashedPassword = await bcrypt.hash(password, 10);
+    user = await prisma().user.create({
+      data: {
+        email,
+        password: hashedPassword,
+        name: name || email.split('@')[0],
+        role_id,
+        is_verified: true,
+        status: 'ACTIVE',
+      },
+    });
+    await audit(req.user?.id, 'INVITE_ADMIN', 'User', user.id, { email, role_id });
+  } else {
+    user = await prisma().user.update({ where: { id: user.id }, data: { role_id } });
+    await audit(req.user?.id, 'INVITE_ADMIN', 'User', user.id, { email, role_id });
+  }
+  return ok(res, user, 201);
+});
+
+router.post('/test-campaign', async (req: AuthedRequest, res) => {
+  try {
+    const { createTestCampaign } = require('./lib/kyc') as typeof import('./lib/kyc');
+    const campaign = await createTestCampaign(prisma(), req.user!.id);
+    await audit(req.user?.id, 'CREATE_TEST_CAMPAIGN', 'Campaign', campaign.id, { title: campaign.title });
+    return ok(res, campaign, 201);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to create test campaign', 500);
+  }
+});
+
 export const adminRouter = router;

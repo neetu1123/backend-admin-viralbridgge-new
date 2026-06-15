@@ -501,4 +501,128 @@ export declare class AdminService {
         gmv: number;
         totalAuditLogs: number;
     }>;
+    getWithdrawals(status?: string): Promise<({
+        wallet: {
+            user: {
+                name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
+                avatar: string | null;
+                role_id: string | null;
+                is_verified: boolean;
+                is_banned: boolean;
+                is_deleted: boolean;
+                settings: import("@prisma/client/runtime/library").JsonValue | null;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+    } & {
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        type: string;
+        wallet_id: string;
+        amount: number;
+        reference_id: string | null;
+    })[]>;
+    approveWithdrawal(id: string, adminId?: string): Promise<{
+        wallet: {
+            user: {
+                name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
+                avatar: string | null;
+                role_id: string | null;
+                is_verified: boolean;
+                is_banned: boolean;
+                is_deleted: boolean;
+                settings: import("@prisma/client/runtime/library").JsonValue | null;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+    } & {
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        type: string;
+        wallet_id: string;
+        amount: number;
+        reference_id: string | null;
+    }>;
+    rejectWithdrawal(id: string, adminId?: string, reason?: string): Promise<{
+        wallet: {
+            user: {
+                name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
+                avatar: string | null;
+                role_id: string | null;
+                is_verified: boolean;
+                is_banned: boolean;
+                is_deleted: boolean;
+                settings: import("@prisma/client/runtime/library").JsonValue | null;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+    } & {
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        type: string;
+        wallet_id: string;
+        amount: number;
+        reference_id: string | null;
+    }>;
+    createTestCampaign(adminId?: string): Promise<{
+        id: string;
+        status: string;
+        updated_at: Date;
+        brand_id: string;
+        title: string;
+        description: string;
+        platform: string;
+        budget: number;
+        remaining_budget: number;
+        deadline: Date;
+        deliverables: string[];
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
+    }>;
 }

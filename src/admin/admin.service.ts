@@ -442,4 +442,98 @@ export class AdminService {
       totalAuditLogs: auditLogs,
     };
   }
+
+  async getWithdrawals(status = 'PENDING') {
+    return this.prisma.transaction.findMany({
+      where: { type: 'WITHDRAWAL', status: status.toUpperCase() },
+      include: { wallet: { include: { user: true } } },
+      orderBy: { created_at: 'desc' },
+    });
+  }
+
+  async approveWithdrawal(id: string, adminId?: string) {
+    const txn = await this.prisma.transaction.update({
+      where: { id },
+      data: { status: 'COMPLETED' },
+      include: { wallet: { include: { user: true } } },
+    });
+    if (adminId) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: 'APPROVE_WITHDRAWAL',
+        entity: 'Transaction',
+        entity_id: id,
+        metadata: { amount: txn.amount },
+      });
+    }
+    return txn;
+  }
+
+  async rejectWithdrawal(id: string, adminId?: string, reason?: string) {
+    const txn = await this.prisma.transaction.findUnique({
+      where: { id },
+      include: { wallet: true },
+    });
+    if (!txn) throw new (require('@nestjs/common').NotFoundException)('Withdrawal not found');
+
+    const updated = await this.prisma.$transaction(async (tx) => {
+      const result = await tx.transaction.update({
+        where: { id },
+        data: { status: 'REJECTED' },
+        include: { wallet: { include: { user: true } } },
+      });
+      if (txn.wallet) {
+        await tx.wallet.update({
+          where: { id: txn.wallet.id },
+          data: { available_balance: { increment: txn.amount } },
+        });
+      }
+      return result;
+    });
+
+    if (adminId) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: 'REJECT_WITHDRAWAL',
+        entity: 'Transaction',
+        entity_id: id,
+        metadata: { amount: updated.amount, reason },
+      });
+    }
+    return updated;
+  }
+
+  async createTestCampaign(adminId?: string) {
+    const brandUser = await this.prisma.user.findFirst({
+      where: { role: { name: 'BRAND' } },
+      include: { brand_profile: true },
+    });
+    if (!brandUser?.brand_profile) {
+      throw new (require('@nestjs/common').BadRequestException)('No brand profile found');
+    }
+    const campaign = await this.prisma.campaign.create({
+      data: {
+        brand_id: brandUser.brand_profile.id,
+        title: `Test Campaign ${new Date().toISOString().slice(0, 10)}`,
+        description: 'Admin-created test campaign for platform validation.',
+        platform: 'Instagram',
+        budget: 1000,
+        remaining_budget: 1000,
+        status: 'DRAFT',
+        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
+        deliverables: ['1 Reel'],
+        languages: ['English'],
+      },
+    });
+    if (adminId) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: 'CREATE_TEST_CAMPAIGN',
+        entity: 'Campaign',
+        entity_id: campaign.id,
+        metadata: { title: campaign.title },
+      });
+    }
+    return campaign;
+  }
 }

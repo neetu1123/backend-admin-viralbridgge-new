@@ -18,10 +18,16 @@ const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const admin_service_1 = require("./admin.service");
+const kyc_service_1 = require("../kyc/kyc.service");
+const notifications_service_1 = require("../notifications/notifications.service");
 let AdminController = class AdminController {
     adminService;
-    constructor(adminService) {
+    kycService;
+    notifications;
+    constructor(adminService, kycService, notifications) {
         this.adminService = adminService;
+        this.kycService = kycService;
+        this.notifications = notifications;
     }
     getRoles() { return this.adminService.getRoles(); }
     createRole(body, req) {
@@ -96,6 +102,52 @@ let AdminController = class AdminController {
             entity_id: body.entity_id,
             metadata: body.metadata,
         });
+    }
+    getKyc(status, user_type, page, limit) {
+        return this.kycService.listAdmin({
+            status,
+            user_type,
+            page: page ? parseInt(page) : 1,
+            limit: limit ? parseInt(limit) : 20,
+        });
+    }
+    approveKyc(id, body, req) {
+        return this.kycService.approve(id, req.user.id, body?.remarks);
+    }
+    rejectKyc(id, body, req) {
+        return this.kycService.reject(id, req.user.id, body?.remarks);
+    }
+    getUnreadCount(req) {
+        return this.notifications.unreadCount(req.user.id);
+    }
+    getNotifications(req, page, limit, type, unread) {
+        return this.notifications.list(req.user.id, {
+            page: page ? parseInt(page) : 1,
+            limit: limit ? parseInt(limit) : 20,
+            type,
+            unread: unread === 'true',
+        });
+    }
+    markAllNotificationsRead(req) {
+        return this.notifications.markAllRead(req.user.id);
+    }
+    markNotificationRead(id, req) {
+        return this.notifications.markRead(req.user.id, id);
+    }
+    inviteAdmin(body, req) {
+        return this.adminService.assignRoleByEmail(body, req.user?.id);
+    }
+    createTestCampaign(req) {
+        return this.adminService.createTestCampaign(req.user?.id);
+    }
+    getWithdrawals(status) {
+        return this.adminService.getWithdrawals(status ?? 'PENDING');
+    }
+    approveWithdrawal(id, req) {
+        return this.adminService.approveWithdrawal(id, req.user?.id);
+    }
+    rejectWithdrawal(id, body, req) {
+        return this.adminService.rejectWithdrawal(id, req.user?.id, body?.reason);
     }
 };
 exports.AdminController = AdminController;
@@ -304,12 +356,114 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "createAuditLog", null);
+__decorate([
+    (0, common_1.Get)('kyc'),
+    __param(0, (0, common_1.Query)('status')),
+    __param(1, (0, common_1.Query)('user_type')),
+    __param(2, (0, common_1.Query)('page')),
+    __param(3, (0, common_1.Query)('limit')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, String, String, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getKyc", null);
+__decorate([
+    (0, common_1.Post)('kyc/:id/approve'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "approveKyc", null);
+__decorate([
+    (0, common_1.Post)('kyc/:id/reject'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "rejectKyc", null);
+__decorate([
+    (0, common_1.Get)('notifications/unread-count'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getUnreadCount", null);
+__decorate([
+    (0, common_1.Get)('notifications'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)('page')),
+    __param(2, (0, common_1.Query)('limit')),
+    __param(3, (0, common_1.Query)('type')),
+    __param(4, (0, common_1.Query)('unread')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, String, String, String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getNotifications", null);
+__decorate([
+    (0, common_1.Patch)('notifications/read-all'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "markAllNotificationsRead", null);
+__decorate([
+    (0, common_1.Patch)('notifications/:id/read'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "markNotificationRead", null);
+__decorate([
+    (0, common_1.Post)('invite-admin'),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "inviteAdmin", null);
+__decorate([
+    (0, common_1.Post)('test-campaign'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "createTestCampaign", null);
+__decorate([
+    (0, common_1.Get)('withdrawals'),
+    __param(0, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getWithdrawals", null);
+__decorate([
+    (0, common_1.Patch)('withdrawals/:id/approve'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "approveWithdrawal", null);
+__decorate([
+    (0, common_1.Patch)('withdrawals/:id/reject'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "rejectWithdrawal", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, roles_decorator_1.Roles)('SUPER_ADMIN', 'ADMIN'),
     (0, common_1.Controller)('admin'),
-    __metadata("design:paramtypes", [admin_service_1.AdminService])
+    __metadata("design:paramtypes", [admin_service_1.AdminService,
+        kyc_service_1.KycService,
+        notifications_service_1.NotificationsService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

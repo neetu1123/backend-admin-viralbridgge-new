@@ -189,6 +189,16 @@ export class BrandController {
     return this.brandService.sendMessage(req.user.id, body);
   }
 
+  @Get('notifications/unread-count')
+  getUnreadNotificationCount(@Request() req: any) {
+    return this.brandService.getUnreadNotificationCount(req.user.id);
+  }
+
+  @Patch('notifications/read-all')
+  markAllNotificationsRead(@Request() req: any) {
+    return this.brandService.markAllNotificationsRead(req.user.id);
+  }
+
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.brandService.getNotifications(req.user.id, query);

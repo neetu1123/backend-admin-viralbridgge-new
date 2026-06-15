@@ -1,10 +1,12 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
+import { NotificationsService } from '../notifications/notifications.service';
 import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
 export declare class BrandService {
     private prisma;
     private matchingService;
-    constructor(prisma: PrismaService, matchingService: MatchingService);
+    private notifications;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -295,14 +297,14 @@ export declare class BrandService {
                     title: string;
                     created_at: Date;
                     type: string | null;
+                    submitted_at: Date | null;
+                    reviewed_at: Date | null;
                     notes: string | null;
                     application_id: string | null;
                     media_url: string | null;
                     thumbnail_url: string | null;
                     revision_notes: string | null;
                     due_date: Date | null;
-                    submitted_at: Date | null;
-                    reviewed_at: Date | null;
                 }[];
             } & {
                 message: string | null;
@@ -417,14 +419,14 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             })[];
         } & {
             id: string;
@@ -488,14 +490,14 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -553,14 +555,14 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -628,14 +630,14 @@ export declare class BrandService {
             title: string;
             created_at: Date;
             type: string | null;
+            submitted_at: Date | null;
+            reviewed_at: Date | null;
             notes: string | null;
             application_id: string | null;
             media_url: string | null;
             thumbnail_url: string | null;
             revision_notes: string | null;
             due_date: Date | null;
-            submitted_at: Date | null;
-            reviewed_at: Date | null;
         })[];
         payments: ({
             creator: {
@@ -1009,14 +1011,14 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -1091,14 +1093,14 @@ export declare class BrandService {
         title: string;
         created_at: Date;
         type: string | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
         notes: string | null;
         application_id: string | null;
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
         due_date: Date | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
     })[]>;
     reviewDeliverable(userId: string, deliverableId: string, status: string, notes?: string): Promise<{
         id: string;
@@ -1109,14 +1111,14 @@ export declare class BrandService {
         title: string;
         created_at: Date;
         type: string | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
         notes: string | null;
         application_id: string | null;
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
         due_date: Date | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
     }>;
     releaseEscrow(userId: string, escrowId: string): Promise<{
         id: string;
@@ -1359,30 +1361,39 @@ export declare class BrandService {
     getNotifications(userId: string, query: NotificationQueryDto): Promise<{
         data: {
             id: string;
-            title: string;
-            created_at: Date;
             user_id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            type: string | null;
-            body: string;
+            type: string;
+            title: string;
+            message: string;
+            entity_type: string | null;
+            entity_id: string | null;
             is_read: boolean;
+            created_at: Date;
+            metadata: {} | null;
         }[];
-        meta: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPages: number;
-        };
+        total: number;
+        unreadCount: number;
+        page: number;
+        limit: number;
+        totalPages: number;
     }>;
     markNotificationRead(userId: string, id: string): Promise<{
         id: string;
-        title: string;
-        created_at: Date;
         user_id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string | null;
-        body: string;
+        type: string;
+        title: string;
+        message: string;
+        entity_type: string | null;
+        entity_id: string | null;
         is_read: boolean;
+        created_at: Date;
+        metadata: {} | null;
+    }>;
+    getUnreadNotificationCount(userId: string): Promise<{
+        count: number;
+    }>;
+    markAllNotificationsRead(userId: string): Promise<{
+        success: boolean;
     }>;
     getSettings(userId: string): Promise<string | number | boolean | import("@prisma/client/runtime/library").JsonObject | import("@prisma/client/runtime/library").JsonArray>;
     updateSettings(userId: string, settings: Record<string, any>): Promise<{

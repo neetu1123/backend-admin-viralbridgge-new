@@ -64,6 +64,11 @@ export function requireRoles(...allowed: string[]) {
   };
 }
 
+export async function requireAuth(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (!(await authenticate(req, res))) return;
+  return next();
+}
+
 export async function requireAdmin(req: AuthedRequest, res: Response, next: NextFunction) {
   if (!(await authenticate(req, res))) return;
   const roleName = req.user?.role?.name || '';

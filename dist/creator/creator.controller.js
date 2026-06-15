@@ -78,6 +78,12 @@ let CreatorController = class CreatorController {
     sendMessage(req, body) {
         return this.creatorService.sendMessage(req.user.id, body);
     }
+    getUnreadNotificationCount(req) {
+        return this.creatorService.getUnreadNotificationCount(req.user.id);
+    }
+    markAllNotificationsRead(req) {
+        return this.creatorService.markAllNotificationsRead(req.user.id);
+    }
     getNotifications(req, query) {
         return this.creatorService.getNotifications(req.user.id, query);
     }
@@ -232,6 +238,20 @@ __decorate([
     __metadata("design:paramtypes", [Object, creator_dto_1.SendMessageDto]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "sendMessage", null);
+__decorate([
+    (0, common_1.Get)('notifications/unread-count'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "getUnreadNotificationCount", null);
+__decorate([
+    (0, common_1.Patch)('notifications/read-all'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "markAllNotificationsRead", null);
 __decorate([
     (0, common_1.Get)('notifications'),
     __param(0, (0, common_1.Request)()),

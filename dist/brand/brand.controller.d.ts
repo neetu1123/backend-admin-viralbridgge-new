@@ -293,14 +293,14 @@ export declare class BrandController {
                     title: string;
                     created_at: Date;
                     type: string | null;
+                    submitted_at: Date | null;
+                    reviewed_at: Date | null;
                     notes: string | null;
                     application_id: string | null;
                     media_url: string | null;
                     thumbnail_url: string | null;
                     revision_notes: string | null;
                     due_date: Date | null;
-                    submitted_at: Date | null;
-                    reviewed_at: Date | null;
                 }[];
             } & {
                 message: string | null;
@@ -415,14 +415,14 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             })[];
         } & {
             id: string;
@@ -486,14 +486,14 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -551,14 +551,14 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -626,14 +626,14 @@ export declare class BrandController {
             title: string;
             created_at: Date;
             type: string | null;
+            submitted_at: Date | null;
+            reviewed_at: Date | null;
             notes: string | null;
             application_id: string | null;
             media_url: string | null;
             thumbnail_url: string | null;
             revision_notes: string | null;
             due_date: Date | null;
-            submitted_at: Date | null;
-            reviewed_at: Date | null;
         })[];
         payments: ({
             creator: {
@@ -1133,14 +1133,14 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                submitted_at: Date | null;
+                reviewed_at: Date | null;
                 notes: string | null;
                 application_id: string | null;
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
                 due_date: Date | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -1215,14 +1215,14 @@ export declare class BrandController {
         title: string;
         created_at: Date;
         type: string | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
         notes: string | null;
         application_id: string | null;
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
         due_date: Date | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
     })[]>;
     approveDeliverable(req: any, id: string): Promise<{
         id: string;
@@ -1233,14 +1233,14 @@ export declare class BrandController {
         title: string;
         created_at: Date;
         type: string | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
         notes: string | null;
         application_id: string | null;
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
         due_date: Date | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
     }>;
     reviseDeliverable(req: any, id: string, body: RevisionDto): Promise<{
         id: string;
@@ -1251,14 +1251,14 @@ export declare class BrandController {
         title: string;
         created_at: Date;
         type: string | null;
+        submitted_at: Date | null;
+        reviewed_at: Date | null;
         notes: string | null;
         application_id: string | null;
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
         due_date: Date | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
     }>;
     releaseEscrow(req: any, id: string): Promise<{
         id: string;
@@ -1498,33 +1498,42 @@ export declare class BrandController {
         conversation_id: string;
         sender_id: string;
     }>;
+    getUnreadNotificationCount(req: any): Promise<{
+        count: number;
+    }>;
+    markAllNotificationsRead(req: any): Promise<{
+        success: boolean;
+    }>;
     getNotifications(req: any, query: NotificationQueryDto): Promise<{
         data: {
             id: string;
-            title: string;
-            created_at: Date;
             user_id: string;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            type: string | null;
-            body: string;
+            type: string;
+            title: string;
+            message: string;
+            entity_type: string | null;
+            entity_id: string | null;
             is_read: boolean;
+            created_at: Date;
+            metadata: {} | null;
         }[];
-        meta: {
-            page: number;
-            limit: number;
-            total: number;
-            totalPages: number;
-        };
+        total: number;
+        unreadCount: number;
+        page: number;
+        limit: number;
+        totalPages: number;
     }>;
     markNotificationRead(req: any, id: string): Promise<{
         id: string;
-        title: string;
-        created_at: Date;
         user_id: string;
-        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-        type: string | null;
-        body: string;
+        type: string;
+        title: string;
+        message: string;
+        entity_type: string | null;
+        entity_id: string | null;
         is_read: boolean;
+        created_at: Date;
+        metadata: {} | null;
     }>;
     getSettings(req: any): Promise<string | number | boolean | import("@prisma/client/runtime/library").JsonObject | import("@prisma/client/runtime/library").JsonArray>;
     updateSettings(req: any, body: Record<string, any>): Promise<{
