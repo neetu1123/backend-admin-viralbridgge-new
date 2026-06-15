@@ -83,6 +83,34 @@ router.post('/wallet/withdraw', (req: AuthedRequest, res) =>
 );
 router.get('/wallet', (req: AuthedRequest, res) => run(req, res, (id) => creator().getWallet(id)));
 
+router.get('/escrows', async (req: AuthedRequest, res) => {
+  try {
+    const { listUserEscrows } = require('./lib/disputes') as typeof import('./lib/disputes');
+    return ok(res, await listUserEscrows(prisma(), req.user!.id, 'creator'));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load escrows', 500);
+  }
+});
+
+router.get('/disputes', async (req: AuthedRequest, res) => {
+  try {
+    const { listUserDisputes } = require('./lib/disputes') as typeof import('./lib/disputes');
+    return ok(res, await listUserDisputes(prisma(), req.user!.id, 'creator'));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load disputes', 500);
+  }
+});
+
+router.post('/disputes', async (req: AuthedRequest, res) => {
+  try {
+    const { openCreatorDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await openCreatorDispute(prisma(), req.user!.id, req.body ?? {});
+    return ok(res, result, 201);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to open dispute', 500);
+  }
+});
+
 router.get('/conversations', (req: AuthedRequest, res) => run(req, res, (id) => creator().getConversations(id)));
 router.get('/messages/:conversationId', (req: AuthedRequest, res) =>
   run(req, res, (id) => creator().getMessages(id, paramId(req, 'conversationId'))),

@@ -1,0 +1,1 @@
+{"version":3,"file":"notification-emitter.js","sourceRoot":"","sources":["../../../src/common/notification-emitter.ts"],"names":[],"mappings":";;AAIA,wDAEC;AAED,sDAEC;AARD,IAAI,OAAO,GAA+B,IAAI,CAAC;AAE/C,SAAgB,sBAAsB,CAAC,EAAuB;IAC5D,OAAO,GAAG,EAAE,CAAC;AACf,CAAC;AAED,SAAgB,qBAAqB,CAAC,MAAc,EAAE,YAAqB;IACzE,OAAO,EAAE,CAAC,MAAM,EAAE,YAAY,CAAC,CAAC;AAClC,CAAC"}

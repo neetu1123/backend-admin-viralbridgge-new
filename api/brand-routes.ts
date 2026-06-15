@@ -141,6 +141,34 @@ router.post('/escrows/:id/release', (req: AuthedRequest, res) =>
   }),
 );
 
+router.get('/escrows', async (req: AuthedRequest, res) => {
+  try {
+    const { listUserEscrows } = require('./lib/disputes') as typeof import('./lib/disputes');
+    return ok(res, await listUserEscrows(prisma(), req.user!.id, 'brand'));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load escrows', 500);
+  }
+});
+
+router.get('/disputes', async (req: AuthedRequest, res) => {
+  try {
+    const { listUserDisputes } = require('./lib/disputes') as typeof import('./lib/disputes');
+    return ok(res, await listUserDisputes(prisma(), req.user!.id, 'brand'));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load disputes', 500);
+  }
+});
+
+router.post('/disputes', async (req: AuthedRequest, res) => {
+  try {
+    const { openBrandDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await openBrandDispute(prisma(), req.user!.id, req.body ?? {});
+    return ok(res, result, 201);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to open dispute', 500);
+  }
+});
+
 router.get('/dashboard', (req: AuthedRequest, res) => run(req, res, (id) => brand().getDashboard(id)));
 
 router.get('/wallet/transactions', (req: AuthedRequest, res) =>

@@ -249,9 +249,38 @@ export class AdminController {
     return this.adminService.assignRoleByEmail(body, req.user?.id);
   }
 
-  @Post('test-campaign')
-  createTestCampaign(@Request() req: any) {
-    return this.adminService.createTestCampaign(req.user?.id);
+  @Get('brands')
+  listBrands(
+    @Query('search') search?: string,
+    @Query('industry') industry?: string,
+    @Query('status') status?: string,
+    @Query('verified') verified?: string,
+    @Query('page') page?: string,
+    @Query('limit') limit?: string,
+  ) {
+    return this.adminService.listBrands({
+      search,
+      industry,
+      status,
+      verified,
+      page: page ? parseInt(page, 10) : 1,
+      limit: limit ? parseInt(limit, 10) : 20,
+    });
+  }
+
+  @Get('brands/:id')
+  getBrand(@Param('id') id: string) {
+    return this.adminService.getBrandDetail(id);
+  }
+
+  @Post('campaigns/create-for-brand')
+  createCampaignForBrand(@Body() body: Record<string, unknown>, @Request() req: any) {
+    return this.adminService.createCampaignForBrand(req.user.id, body);
+  }
+
+  @Post('campaigns/create-with-brand')
+  createCampaignWithBrand(@Body() body: Record<string, unknown>, @Request() req: any) {
+    return this.adminService.createCampaignWithBrand(req.user.id, body);
   }
 
   @Get('withdrawals')

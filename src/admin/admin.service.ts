@@ -503,37 +503,57 @@ export class AdminService {
     return updated;
   }
 
-  async createTestCampaign(adminId?: string) {
-    const brandUser = await this.prisma.user.findFirst({
-      where: { role: { name: 'BRAND' } },
-      include: { brand_profile: true },
+  private adminCampaignsModule() {
+    return require(require('path').join(__dirname, '../../api/lib/admin-campaigns')) as typeof import('../../api/lib/admin-campaigns');
+  }
+
+  private auditCampaignForBrand = async (data: {
+    adminId: string;
+    brandId: string;
+    campaignId: string;
+    metadata?: unknown;
+  }) => {
+    await this.createAuditLog({
+      admin_id: data.adminId,
+      action: 'CREATE_CAMPAIGN_FOR_BRAND',
+      entity: 'Campaign',
+      entity_id: data.campaignId,
+      metadata: { brand_id: data.brandId, ...(data.metadata as object) },
     });
-    if (!brandUser?.brand_profile) {
-      throw new (require('@nestjs/common').BadRequestException)('No brand profile found');
-    }
-    const campaign = await this.prisma.campaign.create({
-      data: {
-        brand_id: brandUser.brand_profile.id,
-        title: `Test Campaign ${new Date().toISOString().slice(0, 10)}`,
-        description: 'Admin-created test campaign for platform validation.',
-        platform: 'Instagram',
-        budget: 1000,
-        remaining_budget: 1000,
-        status: 'DRAFT',
-        deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-        deliverables: ['1 Reel'],
-        languages: ['English'],
-      },
-    });
-    if (adminId) {
-      await this.createAuditLog({
-        admin_id: adminId,
-        action: 'CREATE_TEST_CAMPAIGN',
-        entity: 'Campaign',
-        entity_id: campaign.id,
-        metadata: { title: campaign.title },
-      });
-    }
-    return campaign;
+  };
+
+  async listBrands(query: {
+    search?: string;
+    industry?: string;
+    status?: string;
+    verified?: string;
+    page?: number;
+    limit?: number;
+  }) {
+    return this.adminCampaignsModule().listAdminBrands(this.prisma, query);
+  }
+
+  async getBrandDetail(id: string) {
+    const result = await this.adminCampaignsModule().getAdminBrandDetail(this.prisma, id);
+    if (!result) throw new NotFoundException('Brand not found');
+    return result;
+  }
+
+  async createCampaignForBrand(adminId: string, body: Record<string, unknown>) {
+    return this.adminCampaignsModule().createCampaignForBrand(
+      this.prisma,
+      adminId,
+      body,
+      this.auditCampaignForBrand,
+    );
+  }
+
+  async createCampaignWithBrand(adminId: string, body: Record<string, unknown>) {
+    return this.adminCampaignsModule().createCampaignWithBrand(
+      this.prisma,
+      adminId,
+      body,
+      this.auditCampaignForBrand,
+    );
   }
 }

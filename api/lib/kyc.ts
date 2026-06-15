@@ -255,27 +255,4 @@ export async function rejectKyc(
   return request;
 }
 
-export async function createTestCampaign(prisma: PrismaClient, adminId: string) {
-  const brandUser = await prisma.user.findFirst({
-    where: { role: { name: 'BRAND' } },
-    include: { brand_profile: true },
-  });
-  if (!brandUser?.brand_profile) throw new Error('No brand profile found to attach test campaign');
-
-  return prisma.campaign.create({
-    data: {
-      brand_id: brandUser.brand_profile.id,
-      title: `Test Campaign ${new Date().toISOString().slice(0, 10)}`,
-      description: 'Admin-created test campaign for platform validation.',
-      platform: 'Instagram',
-      budget: 1000,
-      remaining_budget: 1000,
-      status: 'DRAFT',
-      deadline: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000),
-      deliverables: ['1 Reel'],
-      languages: ['English'],
-    },
-  });
-}
-
 export { KYC_STATUSES };

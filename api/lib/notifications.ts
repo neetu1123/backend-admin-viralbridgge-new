@@ -56,7 +56,7 @@ export async function createNotification(
       type: params.type ?? 'SYSTEM',
       entity_type: params.entityType,
       entity_id: params.entityId,
-      metadata: params.metadata ?? {},
+      metadata: (params.metadata ?? {}) as object,
     },
   });
   const formatted = formatNotification(notification);

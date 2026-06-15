@@ -136,6 +136,66 @@ router.post('/campaigns/:id/flag', async (req: AuthedRequest, res) => {
   return ok(res, result);
 });
 
+async function auditCampaignForBrand(data: {
+  adminId: string;
+  brandId: string;
+  campaignId: string;
+  metadata?: unknown;
+}) {
+  await audit(data.adminId, 'CREATE_CAMPAIGN_FOR_BRAND', 'Campaign', data.campaignId, {
+    brand_id: data.brandId,
+    ...(data.metadata as object),
+  });
+}
+
+router.get('/brands', async (req, res) => {
+  try {
+    const { listAdminBrands } = require('./lib/admin-campaigns') as typeof import('./lib/admin-campaigns');
+    const result = await listAdminBrands(prisma(), {
+      search: req.query.search ? String(req.query.search) : undefined,
+      industry: req.query.industry ? String(req.query.industry) : undefined,
+      status: req.query.status ? String(req.query.status) : undefined,
+      verified: req.query.verified ? String(req.query.verified) : undefined,
+      page: parseInt(String(req.query.page ?? '1'), 10) || 1,
+      limit: parseInt(String(req.query.limit ?? '20'), 10) || 20,
+    });
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load brands', 500);
+  }
+});
+
+router.get('/brands/:id', async (req, res) => {
+  try {
+    const { getAdminBrandDetail } = require('./lib/admin-campaigns') as typeof import('./lib/admin-campaigns');
+    const result = await getAdminBrandDetail(prisma(), paramId(req));
+    if (!result) return fail(res, 'Brand not found', 404);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load brand', 500);
+  }
+});
+
+router.post('/campaigns/create-for-brand', async (req: AuthedRequest, res) => {
+  try {
+    const { createCampaignForBrand } = require('./lib/admin-campaigns') as typeof import('./lib/admin-campaigns');
+    const result = await createCampaignForBrand(prisma(), req.user!.id, req.body ?? {}, auditCampaignForBrand);
+    return ok(res, result, 201);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to create campaign', 500);
+  }
+});
+
+router.post('/campaigns/create-with-brand', async (req: AuthedRequest, res) => {
+  try {
+    const { createCampaignWithBrand } = require('./lib/admin-campaigns') as typeof import('./lib/admin-campaigns');
+    const result = await createCampaignWithBrand(prisma(), req.user!.id, req.body ?? {}, auditCampaignForBrand);
+    return ok(res, result, 201);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to create brand and campaign', 500);
+  }
+});
+
 router.get('/transactions', async (_req, res) =>
   ok(res, await prisma().transaction.findMany({ include: { wallet: { include: { user: true } } } })),
 );
@@ -319,6 +379,86 @@ router.post('/matching/run', async (req: AuthedRequest, res) => {
   }
 });
 
+router.get('/disputes/stats', async (_req, res) => {
+  try {
+    const { getAdminDisputeStats } = require('./lib/disputes') as typeof import('./lib/disputes');
+    return ok(res, await getAdminDisputeStats(prisma()));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load dispute stats', 500);
+  }
+});
+
+router.get('/disputes', async (req, res) => {
+  try {
+    const { listAdminDisputes } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await listAdminDisputes(prisma(), {
+      status: req.query.status ? String(req.query.status) : undefined,
+      priority: req.query.priority ? String(req.query.priority) : undefined,
+      raised_by: req.query.raised_by ? String(req.query.raised_by) : undefined,
+      page: parseInt(String(req.query.page ?? '1'), 10) || 1,
+      limit: parseInt(String(req.query.limit ?? '50'), 10) || 50,
+    });
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load disputes', 500);
+  }
+});
+
+router.get('/disputes/:id', async (req, res) => {
+  try {
+    const { getAdminDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await getAdminDispute(prisma(), paramId(req));
+    if (!result) return fail(res, 'Dispute not found', 404);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load dispute', 500);
+  }
+});
+
+router.patch('/disputes/:id/escalate', async (req: AuthedRequest, res) => {
+  try {
+    const { updateAdminDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await updateAdminDispute(prisma(), paramId(req), 'escalate', req.body);
+    await audit(req.user?.id, 'ESCALATE_DISPUTE', 'Dispute', paramId(req), req.body);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to escalate dispute', 500);
+  }
+});
+
+router.patch('/disputes/:id/resolve', async (req: AuthedRequest, res) => {
+  try {
+    const { updateAdminDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await updateAdminDispute(prisma(), paramId(req), 'resolve', req.body);
+    await audit(req.user?.id, 'RESOLVE_DISPUTE', 'Dispute', paramId(req), req.body);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to resolve dispute', 500);
+  }
+});
+
+router.patch('/disputes/:id/refund', async (req: AuthedRequest, res) => {
+  try {
+    const { updateAdminDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await updateAdminDispute(prisma(), paramId(req), 'refund', req.body);
+    await audit(req.user?.id, 'REFUND_DISPUTE', 'Dispute', paramId(req), req.body);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to refund dispute', 500);
+  }
+});
+
+router.patch('/disputes/:id/partial-payout', async (req: AuthedRequest, res) => {
+  try {
+    const { updateAdminDispute } = require('./lib/disputes') as typeof import('./lib/disputes');
+    const result = await updateAdminDispute(prisma(), paramId(req), 'partial', req.body);
+    await audit(req.user?.id, 'PARTIAL_PAYOUT_DISPUTE', 'Dispute', paramId(req), req.body);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to process partial payout', 500);
+  }
+});
+
 router.get('/kyc', async (req, res) => {
   try {
     const { listAdminKyc } = require('./lib/kyc') as typeof import('./lib/kyc');
@@ -473,17 +613,6 @@ router.post('/invite-admin', async (req: AuthedRequest, res) => {
     await audit(req.user?.id, 'INVITE_ADMIN', 'User', user.id, { email, role_id });
   }
   return ok(res, user, 201);
-});
-
-router.post('/test-campaign', async (req: AuthedRequest, res) => {
-  try {
-    const { createTestCampaign } = require('./lib/kyc') as typeof import('./lib/kyc');
-    const campaign = await createTestCampaign(prisma(), req.user!.id);
-    await audit(req.user?.id, 'CREATE_TEST_CAMPAIGN', 'Campaign', campaign.id, { title: campaign.title });
-    return ok(res, campaign, 201);
-  } catch (error) {
-    return fail(res, error instanceof Error ? error.message : 'Failed to create test campaign', 500);
-  }
 });
 
 export const adminRouter = router;

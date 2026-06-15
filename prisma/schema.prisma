@@ -120,21 +120,23 @@ model BrandProfile {
 }
 
 model Campaign {
-  id               String       @id @default(uuid())
-  brand_id         String
-  brand            BrandProfile @relation(fields: [brand_id], references: [id])
-  title            String
-  description      String
-  platform         String
-  budget           Float
-  remaining_budget Float
-  deadline         DateTime
-  deliverables     String[]
-  status           String       @default("DRAFT") // ACTIVE, DRAFT, PENDING_APPROVAL, FLAGGED, COMPLETED, FROZEN
-  locality         String?
-  languages        String[]
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
+  id                   String       @id @default(uuid())
+  brand_id             String
+  brand                BrandProfile @relation(fields: [brand_id], references: [id])
+  title                String
+  description          String
+  platform             String
+  budget               Float
+  remaining_budget     Float
+  deadline             DateTime
+  deliverables         String[]
+  status               String       @default("DRAFT") // ACTIVE, DRAFT, PENDING_APPROVAL, FLAGGED, COMPLETED, FROZEN
+  locality             String?
+  languages            String[]
+  created_by_admin_id  String?
+  metadata             Json?
+  created_at           DateTime     @default(now())
+  updated_at           DateTime     @updatedAt
 
   applications     Application[]
   escrows          Escrow[]
