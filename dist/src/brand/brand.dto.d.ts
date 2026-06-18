@@ -48,6 +48,17 @@ export declare class RevisionDto {
 }
 export declare class FundsDto {
     amount: number;
+    razorpay_order_id?: string;
+    razorpay_payment_id?: string;
+    razorpay_signature?: string;
+}
+export declare class CreatePaymentOrderDto {
+    amount: number;
+}
+export declare class VerifyPaymentDto {
+    razorpay_order_id: string;
+    razorpay_payment_id: string;
+    razorpay_signature: string;
 }
 export declare class SendMessageDto {
     conversationId: string;

@@ -540,8 +540,13 @@ router.patch('/notifications/:id/read', async (req: AuthedRequest, res) => {
 
 router.get('/withdrawals', async (req, res) => {
   const status = String(req.query.status ?? 'PENDING').toUpperCase();
+  const statuses =
+    status === 'APPROVED' ? ['APPROVED', 'COMPLETED'] : [status];
   const rows = await prisma().transaction.findMany({
-    where: { type: 'WITHDRAWAL', status },
+    where: {
+      type: 'WITHDRAWAL',
+      status: statuses.length === 1 ? statuses[0] : { in: statuses },
+    },
     include: { wallet: { include: { user: true } } },
     orderBy: { created_at: 'desc' },
   });
@@ -551,7 +556,7 @@ router.get('/withdrawals', async (req, res) => {
 router.patch('/withdrawals/:id/approve', async (req: AuthedRequest, res) => {
   const txn = await prisma().transaction.update({
     where: { id: paramId(req) },
-    data: { status: 'COMPLETED' },
+    data: { status: 'APPROVED' },
     include: { wallet: { include: { user: true } } },
   });
   if (txn.wallet?.user_id) {

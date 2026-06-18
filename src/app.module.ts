@@ -15,6 +15,7 @@ import { QueueModule } from './queue/queue.module';
 import { MatchingModule } from './matching/matching.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { KycModule } from './kyc/kyc.module';
+import { PaymentsModule } from './payments/payments.module';
 
 @Module({
   imports: [
@@ -29,6 +30,7 @@ import { KycModule } from './kyc/kyc.module';
     NotificationsModule,
     MatchingModule,
     KycModule,
+    PaymentsModule,
     QueueModule.register(),
     AuthModule,
     UsersModule,

@@ -23,6 +23,7 @@ const queue_module_1 = require("./queue/queue.module");
 const matching_module_1 = require("./matching/matching.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const kyc_module_1 = require("./kyc/kyc.module");
+const payments_module_1 = require("./payments/payments.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -40,6 +41,7 @@ exports.AppModule = AppModule = __decorate([
             notifications_module_1.NotificationsModule,
             matching_module_1.MatchingModule,
             kyc_module_1.KycModule,
+            payments_module_1.PaymentsModule,
             queue_module_1.QueueModule.register(),
             auth_module_1.AuthModule,
             users_module_1.UsersModule,

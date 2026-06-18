@@ -1,12 +1,16 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { WithdrawalService } from '../payments/withdrawal.service';
+import { WalletService } from '../payments/wallet.service';
 import { ApplyCampaignDto, ApplicationQueryDto, CreatorCampaignQueryDto, NotificationQueryDto, SendMessageDto, SubmitDeliverableDto, TransactionQueryDto, UpdateCreatorProfileDto, UploadDto, WithdrawDto } from './creator.dto';
 export declare class CreatorService {
     private prisma;
     private matchingService;
     private notifications;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService);
+    private walletService;
+    private withdrawalService;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;

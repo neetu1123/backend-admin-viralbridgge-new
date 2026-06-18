@@ -213,8 +213,10 @@ model Escrow {
   status           String         @default("HELD") // HELD, RELEASED, REFUNDED, DISPUTED
 
   created_at       DateTime       @default(now())
+  released_at      DateTime?
   updated_at       DateTime       @updatedAt
 
+  @@index([campaign_id, creator_id, brand_id])
   @@map("escrows")
 }
 
@@ -290,10 +292,30 @@ model Dispute {
   brand_id         String
   brand            BrandProfile   @relation(fields: [brand_id], references: [id])
   reason           String
-  status           String         @default("OPEN")
+  raised_by        String         @default("brand") // brand, creator
+  status           String         @default("OPEN") // OPEN, IN_REVIEW, RESOLVED, REFUNDED
+  resolution_notes String?
   created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
 
+  @@index([campaign_id, creator_id, status])
   @@map("disputes")
+}
+
+model PaymentOrder {
+  id                  String   @id @default(uuid())
+  user_id             String
+  razorpay_order_id   String   @unique
+  razorpay_payment_id String?
+  amount              Float
+  currency            String   @default("INR")
+  status              String   @default("CREATED") // CREATED, PAID, FAILED
+  metadata            Json?
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  @@index([user_id, status])
+  @@map("payment_orders")
 }
 
 model AuditLog {

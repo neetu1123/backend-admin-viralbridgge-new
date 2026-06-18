@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.UpdateSettingsDto = exports.SendMessageDto = exports.FundsDto = exports.RevisionDto = exports.CreatorDiscoveryQueryDto = exports.NotificationQueryDto = exports.TransactionQueryDto = exports.BrandCampaignQueryDto = exports.CampaignDto = exports.UpdateBrandProfileDto = void 0;
+exports.UpdateSettingsDto = exports.SendMessageDto = exports.VerifyPaymentDto = exports.CreatePaymentOrderDto = exports.FundsDto = exports.RevisionDto = exports.CreatorDiscoveryQueryDto = exports.NotificationQueryDto = exports.TransactionQueryDto = exports.BrandCampaignQueryDto = exports.CampaignDto = exports.UpdateBrandProfileDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
@@ -237,6 +237,9 @@ __decorate([
 ], RevisionDto.prototype, "notes", void 0);
 class FundsDto {
     amount;
+    razorpay_order_id;
+    razorpay_payment_id;
+    razorpay_signature;
 }
 exports.FundsDto = FundsDto;
 __decorate([
@@ -244,6 +247,48 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], FundsDto.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], FundsDto.prototype, "razorpay_order_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], FundsDto.prototype, "razorpay_payment_id", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], FundsDto.prototype, "razorpay_signature", void 0);
+class CreatePaymentOrderDto {
+    amount;
+}
+exports.CreatePaymentOrderDto = CreatePaymentOrderDto;
+__decorate([
+    (0, class_validator_1.IsNumber)(),
+    (0, class_validator_1.Min)(1),
+    __metadata("design:type", Number)
+], CreatePaymentOrderDto.prototype, "amount", void 0);
+class VerifyPaymentDto {
+    razorpay_order_id;
+    razorpay_payment_id;
+    razorpay_signature;
+}
+exports.VerifyPaymentDto = VerifyPaymentDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], VerifyPaymentDto.prototype, "razorpay_order_id", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], VerifyPaymentDto.prototype, "razorpay_payment_id", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], VerifyPaymentDto.prototype, "razorpay_signature", void 0);
 class SendMessageDto {
     conversationId;
     message;

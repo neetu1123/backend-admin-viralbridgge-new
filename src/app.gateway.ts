@@ -12,6 +12,7 @@ import { Server, Socket } from 'socket.io';
 import * as admin from 'firebase-admin';
 import { PrismaService } from './prisma/prisma.service';
 import { setNotificationEmitter } from './common/notification-emitter';
+import { setWalletEventEmitter } from './common/wallet-event-emitter';
 
 @WebSocketGateway({
   cors: {
@@ -23,6 +24,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
 
   onModuleInit() {
     setNotificationEmitter((userId, notification) => this.emitNotification(userId, notification));
+    setWalletEventEmitter((userId, event, payload) => this.emitWalletEvent(userId, event, payload));
   }
 
   @WebSocketServer()
@@ -57,6 +59,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
   emitNotification(userId: string, notification: unknown) {
     if (this.server) {
       this.server.to(`user:${userId}`).emit('notification:new', notification);
+    }
+  }
+
+  emitWalletEvent(userId: string, event: string, payload: unknown) {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit(event, payload);
     }
   }
 

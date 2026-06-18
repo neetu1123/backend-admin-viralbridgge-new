@@ -1,12 +1,18 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { WalletService } from '../payments/wallet.service';
+import { EscrowService } from '../payments/escrow.service';
+import { RazorpayService } from '../payments/razorpay.service';
 import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
 export declare class BrandService {
     private prisma;
     private matchingService;
     private notifications;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService);
+    private walletService;
+    private escrowService;
+    private razorpayService;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, razorpayService: RazorpayService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -368,6 +374,7 @@ export declare class BrandService {
                 brand_id: string;
                 created_at: Date;
                 amount: number;
+                released_at: Date | null;
             })[];
             campaignDeliverables: ({
                 application: {
@@ -693,6 +700,7 @@ export declare class BrandService {
             brand_id: string;
             created_at: Date;
             amount: number;
+            released_at: Date | null;
         })[];
     }>;
     updateCampaign(userId: string, id: string, dto: CampaignDto): Promise<{
@@ -1141,6 +1149,51 @@ export declare class BrandService {
         due_date: Date | null;
     }>;
     releaseEscrow(userId: string, escrowId: string): Promise<{
+        campaign: {
+            title: string;
+        };
+        creator: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
+            user_id: string;
+            full_name: string | null;
+            bio: string | null;
+            niche: string | null;
+            followers: number;
+            engagement_rate: number;
+            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            media_kit: string | null;
+            portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
+            photo: string | null;
+        };
+        brand: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            description: string | null;
+            created_at: Date;
+            user_id: string;
+            contact_email: string | null;
+            phone: string | null;
+            company_name: string;
+            industry: string | null;
+            website: string | null;
+            logo: string | null;
+            location: string | null;
+        };
+    } & {
         id: string;
         campaign_id: string;
         creator_id: string;
@@ -1149,6 +1202,7 @@ export declare class BrandService {
         brand_id: string;
         created_at: Date;
         amount: number;
+        released_at: Date | null;
     }>;
     getDashboard(userId: string): Promise<{
         totalCampaigns: number;
@@ -1206,7 +1260,69 @@ export declare class BrandService {
             amount: number;
             reference_id: string | null;
         };
+    } | {
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        alreadyProcessed: boolean;
     }>;
+    createPaymentOrder(userId: string, amount: number): Promise<{
+        orderId: string;
+        amount: number;
+        currency: string;
+        keyId: null;
+        paymentOrderId: string;
+        mock: boolean;
+    } | {
+        orderId: string;
+        amount: number;
+        currency: string;
+        keyId: string | undefined;
+        paymentOrderId: string;
+        mock: boolean;
+    }>;
+    verifyPayment(userId: string, dto: {
+        razorpay_order_id: string;
+        razorpay_payment_id: string;
+        razorpay_signature: string;
+    }): Promise<{
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        transaction: {
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            type: string;
+            wallet_id: string;
+            amount: number;
+            reference_id: string | null;
+        };
+    } | {
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        alreadyProcessed: boolean;
+    }>;
+    getRazorpayKey(): {
+        keyId: string | null;
+    };
     getWalletTransactions(userId: string, query: TransactionQueryDto): Promise<{
         data: {
             id: string;

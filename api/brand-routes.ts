@@ -182,6 +182,15 @@ router.post('/wallet/add-funds', (req: AuthedRequest, res) =>
     metadata: () => ({ amount: req.body?.amount }),
   }),
 );
+router.post('/wallet/create-order', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().createPaymentOrder(id, Number(req.body?.amount))),
+);
+router.post('/wallet/verify-payment', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().verifyPayment(id, req.body)),
+);
+router.get('/wallet/razorpay-key', (_req, res) => {
+  ok(res, brand().getRazorpayKey());
+});
 router.get('/wallet', (req: AuthedRequest, res) => run(req, res, (id) => brand().getWallet(id)));
 
 router.get('/analytics/roi', (req: AuthedRequest, res) => run(req, res, (id) => brand().getRoi(id)));

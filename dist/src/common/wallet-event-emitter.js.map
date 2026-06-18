@@ -1,0 +1,1 @@
+{"version":3,"file":"wallet-event-emitter.js","sourceRoot":"","sources":["../../../src/common/wallet-event-emitter.ts"],"names":[],"mappings":";;AAIA,sDAEC;AAED,0CAEC;AARD,IAAI,OAAO,GAA8B,IAAI,CAAC;AAE9C,SAAgB,qBAAqB,CAAC,EAAsB;IAC1D,OAAO,GAAG,EAAE,CAAC;AACf,CAAC;AAED,SAAgB,eAAe,CAAC,MAAc,EAAE,KAAa,EAAE,OAAgB;IAC7E,OAAO,EAAE,CAAC,MAAM,EAAE,KAAK,EAAE,OAAO,CAAC,CAAC;AACpC,CAAC"}

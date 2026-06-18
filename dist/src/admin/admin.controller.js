@@ -156,15 +156,6 @@ let AdminController = class AdminController {
     createCampaignWithBrand(body, req) {
         return this.adminService.createCampaignWithBrand(req.user.id, body);
     }
-    getWithdrawals(status) {
-        return this.adminService.getWithdrawals(status ?? 'PENDING');
-    }
-    approveWithdrawal(id, req) {
-        return this.adminService.approveWithdrawal(id, req.user?.id);
-    }
-    rejectWithdrawal(id, body, req) {
-        return this.adminService.rejectWithdrawal(id, req.user?.id, body?.reason);
-    }
 };
 exports.AdminController = AdminController;
 __decorate([
@@ -476,30 +467,6 @@ __decorate([
     __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "createCampaignWithBrand", null);
-__decorate([
-    (0, common_1.Get)('withdrawals'),
-    __param(0, (0, common_1.Query)('status')),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String]),
-    __metadata("design:returntype", void 0)
-], AdminController.prototype, "getWithdrawals", null);
-__decorate([
-    (0, common_1.Patch)('withdrawals/:id/approve'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object]),
-    __metadata("design:returntype", void 0)
-], AdminController.prototype, "approveWithdrawal", null);
-__decorate([
-    (0, common_1.Patch)('withdrawals/:id/reject'),
-    __param(0, (0, common_1.Param)('id')),
-    __param(1, (0, common_1.Body)()),
-    __param(2, (0, common_1.Request)()),
-    __metadata("design:type", Function),
-    __metadata("design:paramtypes", [String, Object, Object]),
-    __metadata("design:returntype", void 0)
-], AdminController.prototype, "rejectWithdrawal", null);
 exports.AdminController = AdminController = __decorate([
     (0, swagger_1.ApiTags)('Admin'),
     (0, swagger_1.ApiBearerAuth)(),

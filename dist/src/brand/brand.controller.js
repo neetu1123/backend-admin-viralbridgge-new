@@ -93,6 +93,15 @@ let BrandController = class BrandController {
     addFunds(req, body) {
         return this.brandService.addFunds(req.user.id, body);
     }
+    createPaymentOrder(req, body) {
+        return this.brandService.createPaymentOrder(req.user.id, body.amount);
+    }
+    verifyPayment(req, body) {
+        return this.brandService.verifyPayment(req.user.id, body);
+    }
+    getRazorpayKey() {
+        return this.brandService.getRazorpayKey();
+    }
     getWalletTransactions(req, query) {
         return this.brandService.getWalletTransactions(req.user.id, query);
     }
@@ -317,6 +326,28 @@ __decorate([
     __metadata("design:paramtypes", [Object, brand_dto_1.FundsDto]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "addFunds", null);
+__decorate([
+    (0, common_1.Post)('wallet/create-order'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, brand_dto_1.CreatePaymentOrderDto]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "createPaymentOrder", null);
+__decorate([
+    (0, common_1.Post)('wallet/verify-payment'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, brand_dto_1.VerifyPaymentDto]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "verifyPayment", null);
+__decorate([
+    (0, common_1.Get)('wallet/razorpay-key'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "getRazorpayKey", null);
 __decorate([
     (0, common_1.Get)('wallet/transactions'),
     __param(0, (0, common_1.Request)()),

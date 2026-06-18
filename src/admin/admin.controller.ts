@@ -282,19 +282,4 @@ export class AdminController {
   createCampaignWithBrand(@Body() body: Record<string, unknown>, @Request() req: any) {
     return this.adminService.createCampaignWithBrand(req.user.id, body);
   }
-
-  @Get('withdrawals')
-  getWithdrawals(@Query('status') status?: string) {
-    return this.adminService.getWithdrawals(status ?? 'PENDING');
-  }
-
-  @Patch('withdrawals/:id/approve')
-  approveWithdrawal(@Param('id') id: string, @Request() req: any) {
-    return this.adminService.approveWithdrawal(id, req.user?.id);
-  }
-
-  @Patch('withdrawals/:id/reject')
-  rejectWithdrawal(@Param('id') id: string, @Body() body: { reason?: string }, @Request() req: any) {
-    return this.adminService.rejectWithdrawal(id, req.user?.id, body?.reason);
-  }
 }

@@ -1,5 +1,5 @@
 import { BrandService } from './brand.service';
-import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, RevisionDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
+import { BrandCampaignQueryDto, CampaignDto, CreatePaymentOrderDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, RevisionDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto, VerifyPaymentDto } from './brand.dto';
 export declare class BrandController {
     private readonly brandService;
     constructor(brandService: BrandService);
@@ -364,6 +364,7 @@ export declare class BrandController {
                 brand_id: string;
                 created_at: Date;
                 amount: number;
+                released_at: Date | null;
             })[];
             campaignDeliverables: ({
                 application: {
@@ -689,6 +690,7 @@ export declare class BrandController {
             brand_id: string;
             created_at: Date;
             amount: number;
+            released_at: Date | null;
         })[];
     }>;
     updateCampaign(req: any, id: string, body: CampaignDto): Promise<{
@@ -1285,6 +1287,51 @@ export declare class BrandController {
         due_date: Date | null;
     }>;
     releaseEscrow(req: any, id: string): Promise<{
+        campaign: {
+            title: string;
+        };
+        creator: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
+            user_id: string;
+            full_name: string | null;
+            bio: string | null;
+            niche: string | null;
+            followers: number;
+            engagement_rate: number;
+            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            media_kit: string | null;
+            portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
+            photo: string | null;
+        };
+        brand: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            description: string | null;
+            created_at: Date;
+            user_id: string;
+            contact_email: string | null;
+            phone: string | null;
+            company_name: string;
+            industry: string | null;
+            website: string | null;
+            logo: string | null;
+            location: string | null;
+        };
+    } & {
         id: string;
         campaign_id: string;
         creator_id: string;
@@ -1293,6 +1340,7 @@ export declare class BrandController {
         brand_id: string;
         created_at: Date;
         amount: number;
+        released_at: Date | null;
     }>;
     getDashboard(req: any): Promise<{
         totalCampaigns: number;
@@ -1350,7 +1398,65 @@ export declare class BrandController {
             amount: number;
             reference_id: string | null;
         };
+    } | {
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        alreadyProcessed: boolean;
     }>;
+    createPaymentOrder(req: any, body: CreatePaymentOrderDto): Promise<{
+        orderId: string;
+        amount: number;
+        currency: string;
+        keyId: null;
+        paymentOrderId: string;
+        mock: boolean;
+    } | {
+        orderId: string;
+        amount: number;
+        currency: string;
+        keyId: string | undefined;
+        paymentOrderId: string;
+        mock: boolean;
+    }>;
+    verifyPayment(req: any, body: VerifyPaymentDto): Promise<{
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        transaction: {
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            type: string;
+            wallet_id: string;
+            amount: number;
+            reference_id: string | null;
+        };
+    } | {
+        wallet: {
+            id: string;
+            updated_at: Date;
+            created_at: Date;
+            user_id: string;
+            available_balance: number;
+            pending_balance: number;
+        };
+        alreadyProcessed: boolean;
+    }>;
+    getRazorpayKey(): {
+        keyId: string | null;
+    };
     getWalletTransactions(req: any, query: TransactionQueryDto): Promise<{
         data: {
             id: string;

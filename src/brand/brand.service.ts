@@ -7,6 +7,9 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { WalletService } from '../payments/wallet.service';
+import { EscrowService } from '../payments/escrow.service';
+import { RazorpayService } from '../payments/razorpay.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   BrandCampaignQueryDto,
@@ -25,6 +28,9 @@ export class BrandService {
     private prisma: PrismaService,
     private matchingService: MatchingService,
     private notifications: NotificationsService,
+    private walletService: WalletService,
+    private escrowService: EscrowService,
+    private razorpayService: RazorpayService,
   ) {}
 
   async getProfile(userId: string) {
@@ -174,7 +180,10 @@ export class BrandService {
   async updateApplication(userId: string, applicationId: string, status: string) {
     const application = await this.prisma.application.findUnique({
       where: { id: applicationId },
-      include: { campaign: true, creator: { include: { user: true } } },
+      include: {
+        campaign: { include: { brand: { include: { user: true } } } },
+        creator: { include: { user: true } },
+      },
     });
     if (!application) throw new NotFoundException('Application not found');
     await this.getOwnedCampaign(userId, application.campaign_id);
@@ -327,38 +336,7 @@ export class BrandService {
   }
 
   async releaseEscrow(userId: string, escrowId: string) {
-    const escrow = await this.prisma.escrow.findUnique({
-      where: { id: escrowId },
-      include: { brand: true, creator: true },
-    });
-    if (!escrow) throw new NotFoundException('Escrow not found');
-    if (escrow.brand.user_id !== userId) throw new ForbiddenException('Forbidden');
-    if (escrow.status === 'RELEASED') return escrow;
-
-    return this.prisma.$transaction(async (tx) => {
-      const creatorWallet = await tx.wallet.upsert({
-        where: { user_id: escrow.creator.user_id },
-        update: {},
-        create: { user_id: escrow.creator.user_id },
-      });
-      await tx.wallet.update({
-        where: { id: creatorWallet.id },
-        data: { available_balance: { increment: escrow.amount } },
-      });
-      await tx.transaction.create({
-        data: {
-          wallet_id: creatorWallet.id,
-          type: 'ESCROW_RELEASE',
-          amount: escrow.amount,
-          status: 'COMPLETED',
-          reference_id: escrow.id,
-        },
-      });
-      return tx.escrow.update({
-        where: { id: escrow.id },
-        data: { status: 'RELEASED' },
-      });
-    });
+    return this.escrowService.releaseEscrow(userId, escrowId);
   }
 
   async getDashboard(userId: string) {
@@ -394,47 +372,27 @@ export class BrandService {
   }
 
   async getWallet(userId: string) {
-    return this.ensureWallet(userId);
+    return this.walletService.getWallet(userId);
   }
 
   async addFunds(userId: string, dto: FundsDto) {
-    const wallet = await this.ensureWallet(userId);
-    return this.prisma.$transaction(async (tx) => {
-      const updatedWallet = await tx.wallet.update({
-        where: { id: wallet.id },
-        data: { available_balance: { increment: dto.amount } },
-      });
-      const transaction = await tx.transaction.create({
-        data: {
-          wallet_id: wallet.id,
-          type: 'DEPOSIT',
-          amount: dto.amount,
-          status: 'COMPLETED',
-        },
-      });
-      return { wallet: updatedWallet, transaction };
-    });
+    return this.walletService.addFunds(userId, dto);
+  }
+
+  async createPaymentOrder(userId: string, amount: number) {
+    return this.razorpayService.createOrder(userId, amount);
+  }
+
+  async verifyPayment(userId: string, dto: { razorpay_order_id: string; razorpay_payment_id: string; razorpay_signature: string }) {
+    return this.walletService.verifyAndCredit(userId, dto);
+  }
+
+  getRazorpayKey() {
+    return { keyId: this.razorpayService.getPublicKey() };
   }
 
   async getWalletTransactions(userId: string, query: TransactionQueryDto) {
-    const wallet = await this.ensureWallet(userId);
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const where: any = { wallet_id: wallet.id };
-    if (query.type) where.type = query.type;
-    if (query.status) where.status = query.status;
-
-    const [data, total] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where,
-        orderBy: { created_at: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.transaction.count({ where }),
-    ]);
-
-    return { data, meta: paginationMeta(page, limit, total) };
+    return this.walletService.getTransactions(userId, query);
   }
 
   async getAnalytics(userId: string) {
@@ -596,23 +554,8 @@ export class BrandService {
     }
 
     const amount = application.proposed_price ?? application.campaign.budget;
-    const existingEscrow = await this.prisma.escrow.findFirst({
-      where: {
-        campaign_id: application.campaign_id,
-        creator_id: application.creator_id,
-      },
-    });
-
-    if (!existingEscrow && amount > 0) {
-      await this.prisma.escrow.create({
-        data: {
-          campaign_id: application.campaign_id,
-          brand_id: application.campaign.brand_id,
-          creator_id: application.creator_id,
-          amount,
-          status: 'HELD',
-        },
-      });
+    if (amount > 0) {
+      await this.escrowService.lockFundsOnApplicationAccept(application);
     }
 
     const existingDeliverables = await this.prisma.deliverable.count({

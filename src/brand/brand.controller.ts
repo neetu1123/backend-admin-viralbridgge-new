@@ -18,6 +18,7 @@ import { BrandService } from './brand.service';
 import {
   BrandCampaignQueryDto,
   CampaignDto,
+  CreatePaymentOrderDto,
   CreatorDiscoveryQueryDto,
   FundsDto,
   NotificationQueryDto,
@@ -25,6 +26,7 @@ import {
   SendMessageDto,
   TransactionQueryDto,
   UpdateBrandProfileDto,
+  VerifyPaymentDto,
 } from './brand.dto';
 
 @ApiTags('Brand')
@@ -152,6 +154,21 @@ export class BrandController {
   @Post('wallet/add-funds')
   addFunds(@Request() req: any, @Body() body: FundsDto) {
     return this.brandService.addFunds(req.user.id, body);
+  }
+
+  @Post('wallet/create-order')
+  createPaymentOrder(@Request() req: any, @Body() body: CreatePaymentOrderDto) {
+    return this.brandService.createPaymentOrder(req.user.id, body.amount);
+  }
+
+  @Post('wallet/verify-payment')
+  verifyPayment(@Request() req: any, @Body() body: VerifyPaymentDto) {
+    return this.brandService.verifyPayment(req.user.id, body);
+  }
+
+  @Get('wallet/razorpay-key')
+  getRazorpayKey() {
+    return this.brandService.getRazorpayKey();
   }
 
   @Get('wallet/transactions')

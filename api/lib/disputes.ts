@@ -13,7 +13,10 @@ function encodeRaisedBy(reason: string, raisedBy: 'brand' | 'creator') {
   return `<!--raised_by:${raisedBy}-->${reason}`;
 }
 
-function decodeReason(reason: string): { reason: string; raisedBy: 'brand' | 'creator' } {
+function decodeReason(reason: string, raisedByField?: string): { reason: string; raisedBy: 'brand' | 'creator' } {
+  if (raisedByField === 'brand' || raisedByField === 'creator') {
+    return { reason, raisedBy: raisedByField };
+  }
   const match = reason.match(/^<!--raised_by:(brand|creator)-->/);
   if (!match) return { reason, raisedBy: 'brand' };
   return {
@@ -52,6 +55,7 @@ async function formatDisputeRow(prisma: PrismaClient, row: {
   creator_id: string;
   brand_id: string;
   reason: string;
+  raised_by?: string;
   status: string;
   created_at: Date;
   campaign?: { id: string; title: string } | null;
@@ -60,7 +64,7 @@ async function formatDisputeRow(prisma: PrismaClient, row: {
 }) {
   const escrow = await findEscrow(prisma, row.campaign_id, row.creator_id, row.brand_id);
   const amount = escrow?.amount ?? 0;
-  const { reason, raisedBy } = decodeReason(row.reason);
+  const { reason, raisedBy } = decodeReason(row.reason, row.raised_by);
 
   return {
     id: row.id,
@@ -279,7 +283,8 @@ export async function openBrandDispute(
         campaign_id: body.campaign_id,
         creator_id: body.creator_id,
         brand_id: brand.id,
-        reason: encodeRaisedBy(body.reason, 'brand'),
+        reason: body.reason,
+        raised_by: 'brand',
         status: 'OPEN',
       },
       include: disputeInclude,
@@ -333,7 +338,8 @@ export async function openCreatorDispute(
         campaign_id: body.campaign_id,
         creator_id: creator.id,
         brand_id: campaign.brand_id,
-        reason: encodeRaisedBy(body.reason, 'creator'),
+        reason: body.reason,
+        raised_by: 'creator',
         status: 'OPEN',
       },
       include: disputeInclude,

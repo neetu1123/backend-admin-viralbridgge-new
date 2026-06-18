@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const prisma_module_1 = require("../prisma/prisma.module");
 const matching_module_1 = require("../matching/matching.module");
 const notifications_module_1 = require("../notifications/notifications.module");
+const payments_module_1 = require("../payments/payments.module");
 const creator_controller_1 = require("./creator.controller");
 const creator_service_1 = require("./creator.service");
 let CreatorModule = class CreatorModule {
@@ -18,7 +19,7 @@ let CreatorModule = class CreatorModule {
 exports.CreatorModule = CreatorModule;
 exports.CreatorModule = CreatorModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule],
+        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule, payments_module_1.PaymentsModule],
         controllers: [creator_controller_1.CreatorController],
         providers: [creator_service_1.CreatorService],
     })

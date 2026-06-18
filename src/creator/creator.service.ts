@@ -7,6 +7,8 @@ import {
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { WithdrawalService } from '../payments/withdrawal.service';
+import { WalletService } from '../payments/wallet.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -27,6 +29,8 @@ export class CreatorService {
     private prisma: PrismaService,
     private matchingService: MatchingService,
     private notifications: NotificationsService,
+    private walletService: WalletService,
+    private withdrawalService: WithdrawalService,
   ) {}
 
   async getProfile(userId: string) {
@@ -293,51 +297,15 @@ export class CreatorService {
   }
 
   async getWallet(userId: string) {
-    return this.ensureWallet(userId);
+    return this.walletService.getWallet(userId);
   }
 
   async withdraw(userId: string, dto: WithdrawDto) {
-    const wallet = await this.ensureWallet(userId);
-    if (wallet.available_balance < dto.amount) {
-      throw new BadRequestException('Insufficient wallet balance');
-    }
-
-    return this.prisma.$transaction(async (tx) => {
-      const updatedWallet = await tx.wallet.update({
-        where: { id: wallet.id },
-        data: { available_balance: { decrement: dto.amount } },
-      });
-      const transaction = await tx.transaction.create({
-        data: {
-          wallet_id: wallet.id,
-          type: 'WITHDRAWAL',
-          amount: dto.amount,
-          status: 'PENDING',
-        },
-      });
-      return { wallet: updatedWallet, transaction };
-    });
+    return this.withdrawalService.requestWithdrawal(userId, dto);
   }
 
   async getWalletTransactions(userId: string, query: TransactionQueryDto) {
-    const wallet = await this.ensureWallet(userId);
-    const page = query.page ?? 1;
-    const limit = query.limit ?? 20;
-    const where: any = { wallet_id: wallet.id };
-    if (query.type) where.type = query.type;
-    if (query.status) where.status = query.status;
-
-    const [data, total] = await Promise.all([
-      this.prisma.transaction.findMany({
-        where,
-        orderBy: { created_at: 'desc' },
-        skip: (page - 1) * limit,
-        take: limit,
-      }),
-      this.prisma.transaction.count({ where }),
-    ]);
-
-    return { data, meta: paginationMeta(page, limit, total) };
+    return this.walletService.getTransactions(userId, query);
   }
 
   async getConversations(userId: string) {

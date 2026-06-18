@@ -14,15 +14,21 @@ const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const matching_service_1 = require("../matching/matching.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const withdrawal_service_1 = require("../payments/withdrawal.service");
+const wallet_service_1 = require("../payments/wallet.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let CreatorService = class CreatorService {
     prisma;
     matchingService;
     notifications;
-    constructor(prisma, matchingService, notifications) {
+    walletService;
+    withdrawalService;
+    constructor(prisma, matchingService, notifications, walletService, withdrawalService) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
+        this.walletService = walletService;
+        this.withdrawalService = withdrawalService;
     }
     async getProfile(userId) {
         return this.ensureCreatorProfile(userId);
@@ -258,48 +264,13 @@ let CreatorService = class CreatorService {
         return updated;
     }
     async getWallet(userId) {
-        return this.ensureWallet(userId);
+        return this.walletService.getWallet(userId);
     }
     async withdraw(userId, dto) {
-        const wallet = await this.ensureWallet(userId);
-        if (wallet.available_balance < dto.amount) {
-            throw new common_1.BadRequestException('Insufficient wallet balance');
-        }
-        return this.prisma.$transaction(async (tx) => {
-            const updatedWallet = await tx.wallet.update({
-                where: { id: wallet.id },
-                data: { available_balance: { decrement: dto.amount } },
-            });
-            const transaction = await tx.transaction.create({
-                data: {
-                    wallet_id: wallet.id,
-                    type: 'WITHDRAWAL',
-                    amount: dto.amount,
-                    status: 'PENDING',
-                },
-            });
-            return { wallet: updatedWallet, transaction };
-        });
+        return this.withdrawalService.requestWithdrawal(userId, dto);
     }
     async getWalletTransactions(userId, query) {
-        const wallet = await this.ensureWallet(userId);
-        const page = query.page ?? 1;
-        const limit = query.limit ?? 20;
-        const where = { wallet_id: wallet.id };
-        if (query.type)
-            where.type = query.type;
-        if (query.status)
-            where.status = query.status;
-        const [data, total] = await Promise.all([
-            this.prisma.transaction.findMany({
-                where,
-                orderBy: { created_at: 'desc' },
-                skip: (page - 1) * limit,
-                take: limit,
-            }),
-            this.prisma.transaction.count({ where }),
-        ]);
-        return { data, meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total) };
+        return this.walletService.getTransactions(userId, query);
     }
     async getConversations(userId) {
         const profile = await this.ensureCreatorProfile(userId);
@@ -405,6 +376,8 @@ exports.CreatorService = CreatorService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         matching_service_1.MatchingService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        wallet_service_1.WalletService,
+        withdrawal_service_1.WithdrawalService])
 ], CreatorService);
 //# sourceMappingURL=creator.service.js.map

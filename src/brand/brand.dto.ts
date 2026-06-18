@@ -163,6 +163,35 @@ export class FundsDto {
   @IsNumber()
   @Min(1)
   amount: number;
+
+  @IsOptional()
+  @IsString()
+  razorpay_order_id?: string;
+
+  @IsOptional()
+  @IsString()
+  razorpay_payment_id?: string;
+
+  @IsOptional()
+  @IsString()
+  razorpay_signature?: string;
+}
+
+export class CreatePaymentOrderDto {
+  @IsNumber()
+  @Min(1)
+  amount: number;
+}
+
+export class VerifyPaymentDto {
+  @IsString()
+  razorpay_order_id: string;
+
+  @IsString()
+  razorpay_payment_id: string;
+
+  @IsString()
+  razorpay_signature: string;
 }
 
 export class SendMessageDto {
