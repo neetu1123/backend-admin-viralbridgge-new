@@ -504,7 +504,7 @@ export class AdminService {
   }
 
   private adminCampaignsModule() {
-    return require(require('path').join(__dirname, '../../api/lib/admin-campaigns')) as typeof import('../../api/lib/admin-campaigns');
+    return require(require('path').join(__dirname, '../../../api/lib/admin-campaigns')) as typeof import('../../api/lib/admin-campaigns');
   }
 
   private auditCampaignForBrand = async (data: {

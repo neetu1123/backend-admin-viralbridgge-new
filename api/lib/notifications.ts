@@ -61,8 +61,10 @@ export async function createNotification(
   });
   const formatted = formatNotification(notification);
   try {
-    const { emitNotificationEvent } = require('../../src/common/notification-emitter') as typeof import('../../src/common/notification-emitter');
-    emitNotificationEvent(params.userId, formatted);
+    const { emitNotificationEvent } = require('../../dist/src/common/notification-emitter') as {
+      emitNotificationEvent?: (userId: string, notification: ReturnType<typeof formatNotification>) => void;
+    };
+    emitNotificationEvent?.(params.userId, formatted);
   } catch {
     // Socket not available in serverless express path
   }

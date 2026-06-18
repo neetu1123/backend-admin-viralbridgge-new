@@ -446,7 +446,7 @@ let AdminService = class AdminService {
         return updated;
     }
     adminCampaignsModule() {
-        return require(require('path').join(__dirname, '../../api/lib/admin-campaigns'));
+        return require(require('path').join(__dirname, '../../../api/lib/admin-campaigns'));
     }
     auditCampaignForBrand = async (data) => {
         await this.createAuditLog({

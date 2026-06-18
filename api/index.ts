@@ -136,8 +136,8 @@ async function bootstrapServerless() {
   if (cachedHandler) return cachedHandler;
   if (!bootstrapPromise) {
     bootstrapPromise = (async () => {
-      const { AppModule } = require('../dist/app.module') as typeof import('../dist/app.module');
-      const { configureApp } = require('../dist/bootstrap') as typeof import('../dist/bootstrap');
+      const { AppModule } = require('../dist/src/app.module') as typeof import('../dist/src/app.module');
+      const { configureApp } = require('../dist/src/bootstrap') as typeof import('../dist/src/bootstrap');
 
       const app = await NestFactory.create(AppModule, new ExpressAdapter(server), {
         logger: process.env.VERCEL ? false : ['error', 'warn', 'log'],

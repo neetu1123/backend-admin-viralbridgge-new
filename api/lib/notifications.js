@@ -35,8 +35,8 @@ async function createNotification(prisma, params) {
     });
     const formatted = formatNotification(notification);
     try {
-        const { emitNotificationEvent } = require('../../dist/src/common/notification-emitter');
-        emitNotificationEvent?.(params.userId, formatted);
+        const { emitNotificationEvent } = require('../../src/common/notification-emitter');
+        emitNotificationEvent(params.userId, formatted);
     }
     catch {
     }
