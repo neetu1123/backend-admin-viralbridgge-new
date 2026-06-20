@@ -1,0 +1,228 @@
+"use strict";
+var __decorate = (this && this.__decorate) || function (decorators, target, key, desc) {
+    var c = arguments.length, r = c < 3 ? target : desc === null ? desc = Object.getOwnPropertyDescriptor(target, key) : desc, d;
+    if (typeof Reflect === "object" && typeof Reflect.decorate === "function") r = Reflect.decorate(decorators, target, key, desc);
+    else for (var i = decorators.length - 1; i >= 0; i--) if (d = decorators[i]) r = (c < 3 ? d(r) : c > 3 ? d(target, key, r) : d(target, key)) || r;
+    return c > 3 && r && Object.defineProperty(target, key, r), r;
+};
+var __metadata = (this && this.__metadata) || function (k, v) {
+    if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
+};
+Object.defineProperty(exports, "__esModule", { value: true });
+exports.CreatorAnalyticsService = void 0;
+const common_1 = require("@nestjs/common");
+const prisma_service_1 = require("../prisma/prisma.service");
+const analytics_cache_service_1 = require("./analytics-cache.service");
+const analytics_emitter_1 = require("../common/analytics-emitter");
+const analytics_date_util_1 = require("./analytics-date.util");
+let CreatorAnalyticsService = class CreatorAnalyticsService {
+    prisma;
+    cache;
+    constructor(prisma, cache) {
+        this.prisma = prisma;
+        this.cache = cache;
+    }
+    async getDashboard(userId, query) {
+        return this.cached(`creator:dashboard:${userId}`, query, userId, async (range, profileId) => {
+            const dateFilter = { gte: range.from, lte: range.to };
+            const [totalEarningsAgg, pendingEarningsAgg, campaignsCompleted, totalApplications, acceptedApplications,] = await Promise.all([
+                this.prisma.transaction.aggregate({
+                    where: {
+                        wallet: { user_id: userId },
+                        type: 'ESCROW_RELEASE',
+                        status: 'COMPLETED',
+                        created_at: dateFilter,
+                    },
+                    _sum: { amount: true },
+                }),
+                this.prisma.escrow.aggregate({
+                    where: { creator_id: profileId, status: 'HELD' },
+                    _sum: { amount: true },
+                }),
+                this.prisma.application.count({
+                    where: { creator_id: profileId, status: 'COMPLETED', updated_at: dateFilter },
+                }),
+                this.prisma.application.count({
+                    where: { creator_id: profileId, created_at: dateFilter },
+                }),
+                this.prisma.application.count({
+                    where: {
+                        creator_id: profileId,
+                        status: { in: ['ACCEPTED', 'COMPLETED'] },
+                        created_at: dateFilter,
+                    },
+                }),
+            ]);
+            const totalEarnings = totalEarningsAgg._sum.amount ?? 0;
+            const pendingEarnings = pendingEarningsAgg._sum.amount ?? 0;
+            const applicationSuccessRate = totalApplications > 0 ? Number(((acceptedApplications / totalApplications) * 100).toFixed(1)) : 0;
+            return {
+                period: range.period,
+                from: range.from.toISOString(),
+                to: range.to.toISOString(),
+                kpis: {
+                    totalEarnings,
+                    pendingEarnings,
+                    campaignsCompleted,
+                    applicationSuccessRate,
+                    totalApplications,
+                    acceptedApplications,
+                },
+            };
+        });
+    }
+    async getEarnings(userId, query) {
+        return this.cached(`creator:earnings:${userId}`, query, userId, async (range, profileId) => {
+            const releases = await this.prisma.transaction.findMany({
+                where: {
+                    wallet: { user_id: userId },
+                    type: 'ESCROW_RELEASE',
+                    status: 'COMPLETED',
+                    created_at: { gte: range.from, lte: range.to },
+                },
+                select: { amount: true, created_at: true },
+                orderBy: { created_at: 'asc' },
+            });
+            const monthlyMap = new Map();
+            for (const row of releases) {
+                const key = (0, analytics_date_util_1.monthKey)(row.created_at);
+                monthlyMap.set(key, (monthlyMap.get(key) ?? 0) + row.amount);
+            }
+            const monthlyEarningsTrend = [...monthlyMap.entries()]
+                .sort(([a], [b]) => a.localeCompare(b))
+                .map(([key, earnings]) => ({ month: (0, analytics_date_util_1.formatMonthLabel)(key), earnings, key }));
+            const applications = await this.prisma.application.groupBy({
+                by: ['status'],
+                where: { creator_id: profileId, created_at: { gte: range.from, lte: range.to } },
+                _count: { _all: true },
+            });
+            const funnelOrder = ['PENDING', 'SHORTLISTED', 'ACCEPTED', 'REJECTED', 'COMPLETED'];
+            const funnelMap = Object.fromEntries(applications.map((a) => [a.status, a._count._all]));
+            const applicationFunnel = funnelOrder.map((status) => ({
+                status,
+                count: funnelMap[status] ?? 0,
+            }));
+            const appsWithCampaign = await this.prisma.application.findMany({
+                where: { creator_id: profileId, created_at: { gte: range.from, lte: range.to } },
+                select: { campaign: { select: { platform: true } } },
+            });
+            const platformCounts = new Map();
+            for (const app of appsWithCampaign) {
+                const platform = app.campaign.platform || 'Other';
+                platformCounts.set(platform, (platformCounts.get(platform) ?? 0) + 1);
+            }
+            const categoryBreakdown = [...platformCounts.entries()]
+                .map(([name, count]) => ({ name, count }))
+                .sort((a, b) => b.count - a.count);
+            return {
+                period: range.period,
+                monthlyEarningsTrend,
+                applicationFunnel,
+                categoryBreakdown,
+            };
+        });
+    }
+    async getProfilePerformance(userId, query) {
+        return this.cached(`creator:profile:${userId}`, query, userId, async (range, profileId) => {
+            const dateFilter = { gte: range.from, lte: range.to };
+            const [messagesReceived, invitationsReceived, campaignOffers] = await Promise.all([
+                this.prisma.message.count({
+                    where: {
+                        conversation: { creator_id: profileId },
+                        sender_id: { not: userId },
+                        created_at: dateFilter,
+                    },
+                }),
+                this.prisma.notification.count({
+                    where: {
+                        user_id: userId,
+                        type: 'CAMPAIGN',
+                        created_at: dateFilter,
+                    },
+                }),
+                this.prisma.application.count({
+                    where: { creator_id: profileId, created_at: dateFilter },
+                }),
+            ]);
+            return {
+                period: range.period,
+                metrics: {
+                    profileViews: 0,
+                    profileViewsAvailable: false,
+                    invitationsReceived,
+                    messagesReceived,
+                    campaignOffers,
+                },
+            };
+        });
+    }
+    async getTopBrands(userId, query) {
+        return this.cached(`creator:top-brands:${userId}`, query, userId, async (range, profileId) => {
+            const applications = await this.prisma.application.findMany({
+                where: {
+                    creator_id: profileId,
+                    status: { in: ['ACCEPTED', 'COMPLETED'] },
+                    created_at: { gte: range.from, lte: range.to },
+                },
+                include: {
+                    campaign: { include: { brand: true } },
+                },
+            });
+            const escrows = await this.prisma.escrow.findMany({
+                where: {
+                    creator_id: profileId,
+                    status: 'RELEASED',
+                    released_at: { gte: range.from, lte: range.to },
+                },
+                select: { brand_id: true, amount: true },
+            });
+            const brandMap = new Map();
+            for (const app of applications) {
+                const brandId = app.campaign.brand_id;
+                const existing = brandMap.get(brandId) ?? {
+                    brandName: app.campaign.brand.company_name,
+                    campaignCount: 0,
+                    earnings: 0,
+                };
+                existing.campaignCount += 1;
+                brandMap.set(brandId, existing);
+            }
+            for (const escrow of escrows) {
+                const existing = brandMap.get(escrow.brand_id);
+                if (existing) {
+                    existing.earnings += escrow.amount;
+                }
+            }
+            const topBrands = [...brandMap.entries()]
+                .map(([brandId, data]) => ({ brandId, ...data }))
+                .sort((a, b) => b.earnings - a.earnings || b.campaignCount - a.campaignCount)
+                .slice(0, 10);
+            return { period: range.period, topBrands };
+        });
+    }
+    async cached(prefix, query, userId, fn) {
+        const range = (0, analytics_date_util_1.resolveDateRange)(query);
+        const key = this.cache.cacheKey(prefix, {
+            period: range.period,
+            from: range.from.toISOString(),
+            to: range.to.toISOString(),
+        });
+        const cached = await this.cache.get(key);
+        if (cached)
+            return cached;
+        const profile = await this.prisma.creatorProfile.findUnique({ where: { user_id: userId } });
+        if (!profile)
+            throw new common_1.NotFoundException('Creator profile not found');
+        const result = await fn(range, profile.id);
+        await this.cache.set(key, result);
+        (0, analytics_emitter_1.emitAnalyticsUpdate)(userId, { type: 'analytics:update', scope: 'creator', cached: false });
+        return result;
+    }
+};
+exports.CreatorAnalyticsService = CreatorAnalyticsService;
+exports.CreatorAnalyticsService = CreatorAnalyticsService = __decorate([
+    (0, common_1.Injectable)(),
+    __metadata("design:paramtypes", [prisma_service_1.PrismaService,
+        analytics_cache_service_1.AnalyticsCacheService])
+], CreatorAnalyticsService);
+//# sourceMappingURL=creator-analytics.service.js.map

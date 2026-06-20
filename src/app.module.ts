@@ -17,6 +17,7 @@ import { NotificationsModule } from './notifications/notifications.module';
 import { KycModule } from './kyc/kyc.module';
 import { OrganizationModule } from './organization/organization.module';
 import { SecurityModule } from './security/security.module';
+import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentsModule } from './payments/payments.module';
 
 @Module({
@@ -41,6 +42,7 @@ import { PaymentsModule } from './payments/payments.module';
     CreatorModule,
     OrganizationModule,
     SecurityModule,
+    AnalyticsModule,
   ],
   controllers: [AppController],
   providers: [

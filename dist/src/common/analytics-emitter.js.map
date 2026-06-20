@@ -1,0 +1,1 @@
+{"version":3,"file":"analytics-emitter.js","sourceRoot":"","sources":["../../../src/common/analytics-emitter.ts"],"names":[],"mappings":";;AAIA,4DAEC;AAED,kDAEC;AARD,IAAI,OAAO,GAA4B,IAAI,CAAC;AAE5C,SAAgB,wBAAwB,CAAC,EAAoB;IAC3D,OAAO,GAAG,EAAE,CAAC;AACf,CAAC;AAED,SAAgB,mBAAmB,CAAC,MAAc,EAAE,OAAgB;IAClE,OAAO,EAAE,CAAC,MAAM,EAAE,OAAO,CAAC,CAAC;AAC7B,CAAC"}

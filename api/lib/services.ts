@@ -6,6 +6,8 @@ type MatchingServiceType = import('../../dist/src/matching/matching.service').Ma
 type AdminServiceType = import('../../dist/src/admin/admin.service').AdminService;
 type OrganizationServiceType = import('../../dist/src/organization/organization.service').OrganizationService;
 type SecurityServiceType = import('../../dist/src/security/security.service').SecurityService;
+type CreatorAnalyticsServiceType = import('../../dist/src/analytics/creator-analytics.service').CreatorAnalyticsService;
+type AdminAnalyticsServiceType = import('../../dist/src/analytics/admin-analytics.service').AdminAnalyticsService;
 
 let brandService: BrandServiceType | undefined;
 let creatorService: CreatorServiceType | undefined;
@@ -13,6 +15,8 @@ let matchingService: MatchingServiceType | undefined;
 let adminService: AdminServiceType | undefined;
 let organizationService: OrganizationServiceType | undefined;
 let securityService: SecurityServiceType | undefined;
+let creatorAnalyticsService: CreatorAnalyticsServiceType | undefined;
+let adminAnalyticsService: AdminAnalyticsServiceType | undefined;
 let notificationsService: import('../../dist/src/notifications/notifications.service').NotificationsService | undefined;
 
 function getNotificationsService() {
@@ -74,4 +78,25 @@ export function getSecurityService(): SecurityServiceType {
     );
   }
   return securityService;
+}
+
+function getAnalyticsCacheService() {
+  const { AnalyticsCacheService } = require('../../dist/src/analytics/analytics-cache.service') as typeof import('../../dist/src/analytics/analytics-cache.service');
+  return new AnalyticsCacheService();
+}
+
+export function getCreatorAnalyticsService(): CreatorAnalyticsServiceType {
+  if (!creatorAnalyticsService) {
+    const { CreatorAnalyticsService } = require('../../dist/src/analytics/creator-analytics.service') as typeof import('../../dist/src/analytics/creator-analytics.service');
+    creatorAnalyticsService = new CreatorAnalyticsService(getPrisma() as never, getAnalyticsCacheService());
+  }
+  return creatorAnalyticsService;
+}
+
+export function getAdminAnalyticsService(): AdminAnalyticsServiceType {
+  if (!adminAnalyticsService) {
+    const { AdminAnalyticsService } = require('../../dist/src/analytics/admin-analytics.service') as typeof import('../../dist/src/analytics/admin-analytics.service');
+    adminAnalyticsService = new AdminAnalyticsService(getPrisma() as never, getAnalyticsCacheService());
+  }
+  return adminAnalyticsService;
 }

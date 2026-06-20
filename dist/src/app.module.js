@@ -25,6 +25,7 @@ const notifications_module_1 = require("./notifications/notifications.module");
 const kyc_module_1 = require("./kyc/kyc.module");
 const organization_module_1 = require("./organization/organization.module");
 const security_module_1 = require("./security/security.module");
+const analytics_module_1 = require("./analytics/analytics.module");
 const payments_module_1 = require("./payments/payments.module");
 let AppModule = class AppModule {
 };
@@ -52,6 +53,7 @@ exports.AppModule = AppModule = __decorate([
             creator_module_1.CreatorModule,
             organization_module_1.OrganizationModule,
             security_module_1.SecurityModule,
+            analytics_module_1.AnalyticsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [
