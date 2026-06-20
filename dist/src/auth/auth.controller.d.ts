@@ -11,7 +11,9 @@ export declare class AuthController {
             role: string | undefined;
         };
     }>;
-    login(body: any): Promise<{
+    login(body: any, req: {
+        headers: Record<string, string | string[] | undefined>;
+    }): Promise<{
         access_token: string;
         user: {
             id: string;

@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("./auth.guard");
 const auth_service_1 = require("./auth.service");
+const security_session_helper_1 = require("../security/security-session.helper");
 let AuthController = class AuthController {
     authService;
     constructor(authService) {
@@ -25,8 +26,13 @@ let AuthController = class AuthController {
     async register(body) {
         return this.authService.register(body);
     }
-    async login(body) {
-        return this.authService.login(body);
+    async login(body, req) {
+        const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined;
+        return this.authService.login(body, {
+            ipAddress: (0, security_session_helper_1.extractClientIp)(req.headers),
+            userAgent,
+            location: 'Unknown',
+        });
     }
     getMe(req) {
         return req.user;
@@ -49,8 +55,9 @@ __decorate([
     (0, common_1.Post)('login'),
     (0, swagger_1.ApiOperation)({ summary: 'Login user with email and password' }),
     __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, Object]),
     __metadata("design:returntype", Promise)
 ], AuthController.prototype, "login", null);
 __decorate([

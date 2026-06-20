@@ -1,17 +1,21 @@
-import { Injectable, UnauthorizedException, BadRequestException } from '@nestjs/common';
+import { Injectable, UnauthorizedException, BadRequestException, Inject, forwardRef } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { SecurityService } from '../security/security.service';
+import type { SessionMeta } from '../security/security-session.helper';
 
 @Injectable()
 export class AuthService {
   constructor(
     private prisma: PrismaService,
-    private jwtService: JwtService
+    private jwtService: JwtService,
+    @Inject(forwardRef(() => SecurityService))
+    private securityService: SecurityService,
   ) {}
 
-  private async signToken(user: { id: string; email: string; role?: { name: string } | null }) {
+  private async signToken(user: { id: string; email: string; name?: string; role?: { name: string } | null }) {
     const jti = randomUUID();
     const payload = {
       sub: user.id,
@@ -21,9 +25,10 @@ export class AuthService {
     };
     return {
       access_token: await this.jwtService.signAsync(payload),
+      jti,
       user: {
         id: user.id,
-        name: (user as { name?: string }).name,
+        name: user.name,
         email: user.email,
         role: user.role?.name,
       },
@@ -77,7 +82,7 @@ export class AuthService {
     };
   }
 
-  async login(data: any) {
+  async login(data: any, meta?: SessionMeta) {
     const user = await this.prisma.user.findUnique({
       where: { email: data.email },
       include: { role: true },
@@ -93,6 +98,11 @@ export class AuthService {
     }
 
     const token = await this.signToken(user);
+    if (meta) {
+      await this.securityService.recordLogin(user.id, token.jti, meta).catch((error) => {
+        console.error('Failed to record login session:', error);
+      });
+    }
     return {
       access_token: token.access_token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },

@@ -26,7 +26,8 @@
     "postinstall": "prisma generate",
     "vercel-build": "prisma generate && nest build",
     "vercel-build:migrate": "prisma generate && node scripts/vercel-migrate.mjs && nest build",
-    "seed": "node prisma/seed.js"
+    "seed": "node prisma/seed.js",
+    "backfill:organizations": "node scripts/backfill-organizations.mjs"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",

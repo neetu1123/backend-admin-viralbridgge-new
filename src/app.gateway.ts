@@ -13,6 +13,7 @@ import * as admin from 'firebase-admin';
 import { PrismaService } from './prisma/prisma.service';
 import { setNotificationEmitter } from './common/notification-emitter';
 import { setWalletEventEmitter } from './common/wallet-event-emitter';
+import { setSecurityEventEmitter } from './common/security-emitter';
 
 @WebSocketGateway({
   cors: {
@@ -25,6 +26,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
   onModuleInit() {
     setNotificationEmitter((userId, notification) => this.emitNotification(userId, notification));
     setWalletEventEmitter((userId, event, payload) => this.emitWalletEvent(userId, event, payload));
+    setSecurityEventEmitter((userId, activity) => this.emitSecurityActivity(userId, activity));
   }
 
   @WebSocketServer()
@@ -65,6 +67,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
   emitWalletEvent(userId: string, event: string, payload: unknown) {
     if (this.server) {
       this.server.to(`user:${userId}`).emit(event, payload);
+    }
+  }
+
+  emitSecurityActivity(userId: string, activity: unknown) {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit('security:activity', activity);
     }
   }
 

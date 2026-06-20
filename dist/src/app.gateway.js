@@ -53,6 +53,7 @@ const admin = __importStar(require("firebase-admin"));
 const prisma_service_1 = require("./prisma/prisma.service");
 const notification_emitter_1 = require("./common/notification-emitter");
 const wallet_event_emitter_1 = require("./common/wallet-event-emitter");
+const security_emitter_1 = require("./common/security-emitter");
 let AppGateway = class AppGateway {
     prisma;
     constructor(prisma) {
@@ -61,6 +62,7 @@ let AppGateway = class AppGateway {
     onModuleInit() {
         (0, notification_emitter_1.setNotificationEmitter)((userId, notification) => this.emitNotification(userId, notification));
         (0, wallet_event_emitter_1.setWalletEventEmitter)((userId, event, payload) => this.emitWalletEvent(userId, event, payload));
+        (0, security_emitter_1.setSecurityEventEmitter)((userId, activity) => this.emitSecurityActivity(userId, activity));
     }
     server;
     async handleConnection(client) {
@@ -92,6 +94,11 @@ let AppGateway = class AppGateway {
     emitWalletEvent(userId, event, payload) {
         if (this.server) {
             this.server.to(`user:${userId}`).emit(event, payload);
+        }
+    }
+    emitSecurityActivity(userId, activity) {
+        if (this.server) {
+            this.server.to(`user:${userId}`).emit('security:activity', activity);
         }
     }
     async handleSendMessage(client, payload) {

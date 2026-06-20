@@ -15,6 +15,8 @@ import { QueueModule } from './queue/queue.module';
 import { MatchingModule } from './matching/matching.module';
 import { NotificationsModule } from './notifications/notifications.module';
 import { KycModule } from './kyc/kyc.module';
+import { OrganizationModule } from './organization/organization.module';
+import { SecurityModule } from './security/security.module';
 import { PaymentsModule } from './payments/payments.module';
 
 @Module({
@@ -37,6 +39,8 @@ import { PaymentsModule } from './payments/payments.module';
     AdminModule,
     BrandModule,
     CreatorModule,
+    OrganizationModule,
+    SecurityModule,
   ],
   controllers: [AppController],
   providers: [

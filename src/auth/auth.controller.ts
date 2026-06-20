@@ -2,6 +2,7 @@ import { Controller, Get, Post, UseGuards, Request, Body } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { extractClientIp } from '../security/security-session.helper';
 
 @ApiTags('Auth')
 @Controller('auth')
@@ -16,8 +17,13 @@ export class AuthController {
 
   @Post('login')
   @ApiOperation({ summary: 'Login user with email and password' })
-  async login(@Body() body: any) {
-    return this.authService.login(body);
+  async login(@Body() body: any, @Request() req: { headers: Record<string, string | string[] | undefined> }) {
+    const userAgent = typeof req.headers['user-agent'] === 'string' ? req.headers['user-agent'] : undefined;
+    return this.authService.login(body, {
+      ipAddress: extractClientIp(req.headers),
+      userAgent,
+      location: 'Unknown',
+    });
   }
 
   @ApiBearerAuth()

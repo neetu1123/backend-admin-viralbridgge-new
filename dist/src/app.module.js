@@ -23,6 +23,8 @@ const queue_module_1 = require("./queue/queue.module");
 const matching_module_1 = require("./matching/matching.module");
 const notifications_module_1 = require("./notifications/notifications.module");
 const kyc_module_1 = require("./kyc/kyc.module");
+const organization_module_1 = require("./organization/organization.module");
+const security_module_1 = require("./security/security.module");
 const payments_module_1 = require("./payments/payments.module");
 let AppModule = class AppModule {
 };
@@ -48,6 +50,8 @@ exports.AppModule = AppModule = __decorate([
             admin_module_1.AdminModule,
             brand_module_1.BrandModule,
             creator_module_1.CreatorModule,
+            organization_module_1.OrganizationModule,
+            security_module_1.SecurityModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

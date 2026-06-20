@@ -1,12 +1,14 @@
-import { Module } from '@nestjs/common';
+import { Module, forwardRef } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaModule } from '../prisma/prisma.module';
+import { SecurityModule } from '../security/security.module';
 
 @Module({
   imports: [
     PrismaModule,
+    forwardRef(() => SecurityModule),
     JwtModule.register({
       global: true,
       secret: process.env.JWT_SECRET || 'viralbridgge-super-secret-jwt-key-2026',

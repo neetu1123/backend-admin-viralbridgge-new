@@ -9,6 +9,7 @@ export type AuthedRequest = Request & {
     email: string;
     role?: { name: string } | null;
   };
+  jwtPayload?: { jti?: string; sub?: string; exp?: number };
 };
 
 function extractBearer(req: Request): string | undefined {
@@ -29,7 +30,7 @@ async function authenticate(req: AuthedRequest, res: Response): Promise<boolean>
   }
 
   try {
-    const payload = jwt.verify(token, jwtSecret()) as { sub: string };
+    const payload = jwt.verify(token, jwtSecret()) as { sub: string; jti?: string; exp?: number };
     const user = await getPrisma().user.findUnique({
       where: { id: payload.sub },
       include: { role: true },
@@ -40,7 +41,16 @@ async function authenticate(req: AuthedRequest, res: Response): Promise<boolean>
       return false;
     }
 
+    if (payload.jti) {
+      const revoked = await getPrisma().revokedToken.findUnique({ where: { jti: payload.jti } });
+      if (revoked) {
+        res.status(401).json({ success: false, message: 'Token has been revoked' });
+        return false;
+      }
+    }
+
     req.user = user;
+    req.jwtPayload = payload;
     return true;
   } catch {
     res.status(401).json({ success: false, message: 'Invalid or expired token' });
@@ -80,3 +90,4 @@ export async function requireAdmin(req: AuthedRequest, res: Response, next: Next
 
 export const requireBrand = requireRoles('BRAND');
 export const requireCreator = requireRoles('CREATOR');
+export const requireBrandOrCreator = requireRoles('BRAND', 'CREATOR');

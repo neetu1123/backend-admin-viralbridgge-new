@@ -11,6 +11,7 @@ export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconn
     handleDisconnect(_client: Socket): void;
     emitNotification(userId: string, notification: unknown): void;
     emitWalletEvent(userId: string, event: string, payload: unknown): void;
+    emitSecurityActivity(userId: string, activity: unknown): void;
     handleSendMessage(client: Socket, payload: {
         message: string;
         conversationId: string;

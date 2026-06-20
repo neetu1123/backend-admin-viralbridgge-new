@@ -1,0 +1,1 @@
+{"version":3,"file":"security-emitter.js","sourceRoot":"","sources":["../../../src/common/security-emitter.ts"],"names":[],"mappings":";;AAIA,0DAEC;AAED,8DAEC;AARD,IAAI,OAAO,GAA2B,IAAI,CAAC;AAE3C,SAAgB,uBAAuB,CAAC,EAAmB;IACzD,OAAO,GAAG,EAAE,CAAC;AACf,CAAC;AAED,SAAgB,yBAAyB,CAAC,MAAc,EAAE,QAAiB;IACzE,OAAO,EAAE,CAAC,MAAM,EAAE,QAAQ,CAAC,CAAC;AAC9B,CAAC"}

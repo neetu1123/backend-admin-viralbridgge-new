@@ -41,6 +41,9 @@ var __importStar = (this && this.__importStar) || (function () {
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var __param = (this && this.__param) || function (paramIndex, decorator) {
+    return function (target, key) { decorator(target, key, paramIndex); }
+};
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.AuthService = void 0;
 const common_1 = require("@nestjs/common");
@@ -48,12 +51,15 @@ const jwt_1 = require("@nestjs/jwt");
 const bcrypt = __importStar(require("bcrypt"));
 const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
+const security_service_1 = require("../security/security.service");
 let AuthService = class AuthService {
     prisma;
     jwtService;
-    constructor(prisma, jwtService) {
+    securityService;
+    constructor(prisma, jwtService, securityService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.securityService = securityService;
     }
     async signToken(user) {
         const jti = (0, crypto_1.randomUUID)();
@@ -65,6 +71,7 @@ let AuthService = class AuthService {
         };
         return {
             access_token: await this.jwtService.signAsync(payload),
+            jti,
             user: {
                 id: user.id,
                 name: user.name,
@@ -113,7 +120,7 @@ let AuthService = class AuthService {
             user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
         };
     }
-    async login(data) {
+    async login(data, meta) {
         const user = await this.prisma.user.findUnique({
             where: { email: data.email },
             include: { role: true },
@@ -126,6 +133,11 @@ let AuthService = class AuthService {
             throw new common_1.UnauthorizedException('Invalid email or password');
         }
         const token = await this.signToken(user);
+        if (meta) {
+            await this.securityService.recordLogin(user.id, token.jti, meta).catch((error) => {
+                console.error('Failed to record login session:', error);
+            });
+        }
         return {
             access_token: token.access_token,
             user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
@@ -151,7 +163,9 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
+    __param(2, (0, common_1.Inject)((0, common_1.forwardRef)(() => security_service_1.SecurityService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        jwt_1.JwtService])
+        jwt_1.JwtService,
+        security_service_1.SecurityService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

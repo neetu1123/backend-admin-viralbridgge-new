@@ -33,6 +33,12 @@ model User {
   kyc_requests     KycRequest[]
   creator_kyc      CreatorKyc?
   brand_kyc        BrandKyc?
+  owned_organizations Organization[] @relation("OrganizationOwner")
+  organization_members OrganizationMember[]
+  organization_invitations_sent OrganizationInvitation[] @relation("InvitationInviter")
+  security_setting     SecuritySetting?
+  user_sessions        UserSession[]
+  security_activities  SecurityActivity[]
 
   @@map("users")
 }
@@ -92,6 +98,7 @@ model CreatorProfile {
   escrows          Escrow[]
   deliverables     Deliverable[]
   ai_matches       AiMatch[]
+  organization     Organization?
 
   @@map("creator_profiles")
 }
@@ -115,6 +122,7 @@ model BrandProfile {
   conversations    Conversation[]
   disputes         Dispute[]
   escrows          Escrow[]
+  organization     Organization?
 
   @@map("brand_profiles")
 }
@@ -426,4 +434,111 @@ model BrandKyc {
   updated_at                DateTime    @updatedAt
 
   @@map("brand_kyc")
+}
+
+model Organization {
+  id                String   @id @default(uuid())
+  type              String   // BRAND | CREATOR
+  name              String
+  owner_user_id     String
+  owner             User     @relation("OrganizationOwner", fields: [owner_user_id], references: [id])
+  brand_profile_id  String?  @unique
+  brand_profile     BrandProfile? @relation(fields: [brand_profile_id], references: [id])
+  creator_profile_id String? @unique
+  creator_profile   CreatorProfile? @relation(fields: [creator_profile_id], references: [id])
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+
+  members           OrganizationMember[]
+  invitations       OrganizationInvitation[]
+
+  @@index([type, owner_user_id])
+  @@map("organizations")
+}
+
+model OrganizationMember {
+  id              String   @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  user_id         String
+  user            User     @relation(fields: [user_id], references: [id])
+  role            String   // OWNER, CAMPAIGN_MANAGER, FINANCE_MANAGER, VIEWER, MANAGER, EDITOR
+  status          String   @default("ACTIVE") // ACTIVE, REMOVED
+  invited_by_id   String?
+  last_active_at  DateTime?
+  joined_at       DateTime @default(now())
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([organization_id, user_id])
+  @@index([user_id, status])
+  @@map("organization_members")
+}
+
+model OrganizationInvitation {
+  id              String   @id @default(uuid())
+  organization_id String
+  organization    Organization @relation(fields: [organization_id], references: [id], onDelete: Cascade)
+  email           String
+  role            String
+  token           String   @unique @default(uuid())
+  invited_by_id   String
+  invited_by      User     @relation("InvitationInviter", fields: [invited_by_id], references: [id])
+  status          String   @default("PENDING") // PENDING, ACCEPTED, CANCELLED, EXPIRED
+  expires_at      DateTime
+  accepted_at     DateTime?
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@index([email, status])
+  @@index([token])
+  @@map("organization_invitations")
+}
+
+model SecuritySetting {
+  id                   String    @id @default(uuid())
+  user_id              String    @unique
+  user                 User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  two_factor_enabled   Boolean   @default(false)
+  two_factor_type      String?   // SMS
+  phone_number         String?
+  mfa_enrollment_id    String?
+  last_password_change DateTime?
+  created_at           DateTime  @default(now())
+  updated_at           DateTime  @updatedAt
+
+  @@map("security_settings")
+}
+
+model UserSession {
+  id            String   @id @default(uuid())
+  user_id       String
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  session_token String?  @unique
+  device_name   String?
+  browser       String?
+  ip_address    String?
+  location      String?
+  is_active     Boolean  @default(true)
+  last_active   DateTime @default(now())
+  created_at    DateTime @default(now())
+
+  @@index([user_id, is_active])
+  @@map("user_sessions")
+}
+
+model SecurityActivity {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  type       String   // NEW_LOGIN, PASSWORD_CHANGED, 2FA_ENABLED, 2FA_DISABLED, SESSION_REMOVED, LOGOUT_ALL
+  device     String?
+  browser    String?
+  ip_address String?
+  location   String?
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  @@index([user_id, created_at])
+  @@map("security_activities")
 }

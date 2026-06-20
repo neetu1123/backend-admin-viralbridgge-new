@@ -6,6 +6,8 @@ import { adminRouter } from './admin-routes';
 import { brandRouter } from './brand-routes';
 import { creatorRouter } from './creator-routes';
 import { kycRouter } from './kyc-routes';
+import { organizationRouter } from './organization-routes';
+import { securityRouter } from './security-routes';
 import { handleAuthLogin } from './auth-login';
 
 const server = express();
@@ -76,6 +78,8 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/brand')) return true;
   if (path.startsWith('/creator')) return true;
   if (path.startsWith('/kyc')) return true;
+  if (path.startsWith('/organization')) return true;
+  if (path.startsWith('/security')) return true;
   return false;
 }
 
@@ -121,10 +125,12 @@ server.use('/admin', adminRouter);
 server.use('/brand', brandRouter);
 server.use('/creator', creatorRouter);
 server.use('/kyc', kycRouter);
+server.use('/organization', organizationRouter);
+server.use('/security', securityRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {
-    const result = await handleAuthLogin(req.body);
+    const result = await handleAuthLogin(req.body, req.headers as Record<string, string | string[] | undefined>);
     res.status(result.status).json(result.body);
   } catch (error) {
     console.error('Fast login failed:', error);
