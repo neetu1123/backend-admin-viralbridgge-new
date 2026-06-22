@@ -1,4 +1,4 @@
-export const DEFAULT_FROM_EMAIL = 'ViralBridge <invites@viralbridge.com>';
+export const DEFAULT_FROM_EMAIL = 'James <James@getstrsites.com>';
 
 export const DEFAULT_APP_URL = 'https://admin-viralbridgge-new.vercel.app';
 

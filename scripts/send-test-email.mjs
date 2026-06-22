@@ -15,7 +15,7 @@ if (!apiKey || apiKey === 're_xxxxxxxx') {
 }
 
 const resend = new Resend(apiKey);
-const from = process.env.RESEND_FROM_EMAIL?.trim() || 'onboarding@resend.dev';
+const from = process.env.RESEND_FROM_EMAIL?.trim() || 'James <James@getstrsites.com>';
 const to = process.env.RESEND_TEST_TO?.trim() || 'neetuchaurasiya5041@gmail.com';
 
 const { data, error } = await resend.emails.send({
