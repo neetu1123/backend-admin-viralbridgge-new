@@ -13,6 +13,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.EmailService = void 0;
 const common_1 = require("@nestjs/common");
 const config_1 = require("@nestjs/config");
+const resend_1 = require("resend");
 const email_constants_1 = require("./email.constants");
 const invitation_accepted_template_1 = require("./templates/invitation-accepted.template");
 const member_removed_template_1 = require("./templates/member-removed.template");
@@ -20,12 +21,13 @@ const team_invitation_template_1 = require("./templates/team-invitation.template
 let EmailService = EmailService_1 = class EmailService {
     config;
     logger = new common_1.Logger(EmailService_1.name);
-    apiKey;
+    resend;
     fromEmail;
     appUrl;
     constructor(config) {
         this.config = config;
-        this.apiKey = this.config.get('RESEND_API_KEY')?.trim() ?? '';
+        const apiKey = this.config.get('RESEND_API_KEY')?.trim() ?? '';
+        this.resend = apiKey ? new resend_1.Resend(apiKey) : null;
         this.fromEmail = this.config.get('RESEND_FROM_EMAIL')?.trim() || email_constants_1.DEFAULT_FROM_EMAIL;
         this.appUrl = (this.config.get('APP_URL') ??
             this.config.get('FRONTEND_URL') ??
@@ -35,7 +37,14 @@ let EmailService = EmailService_1 = class EmailService {
         return `${this.appUrl}/team/invitation/${token}`;
     }
     isConfigured() {
-        return Boolean(this.apiKey);
+        return Boolean(this.resend);
+    }
+    async sendTestEmail(to = 'neetuchaurasiya5041@gmail.com') {
+        await this.send({
+            to,
+            subject: 'Hello World',
+            html: '<p>Congrats on sending your <strong>first email</strong>!</p>',
+        });
     }
     async sendTeamInvitation(params) {
         await this.send({
@@ -66,27 +75,19 @@ let EmailService = EmailService_1 = class EmailService {
         });
     }
     async send(payload) {
-        if (!this.apiKey) {
+        if (!this.resend) {
             this.logger.error('RESEND_API_KEY is not configured — cannot send email');
             throw new Error('Email service is not configured. Set RESEND_API_KEY on the server.');
         }
-        const response = await fetch(email_constants_1.RESEND_API_URL, {
-            method: 'POST',
-            headers: {
-                Authorization: `Bearer ${this.apiKey}`,
-                'Content-Type': 'application/json',
-            },
-            body: JSON.stringify({
-                from: this.fromEmail,
-                to: [payload.to],
-                subject: payload.subject,
-                html: payload.html,
-            }),
+        const { error } = await this.resend.emails.send({
+            from: this.fromEmail,
+            to: payload.to,
+            subject: payload.subject,
+            html: payload.html,
         });
-        if (!response.ok) {
-            const body = await response.text().catch(() => '');
-            this.logger.error(`Resend API error (${response.status}): ${body}`);
-            throw new Error(`Failed to send email (${response.status})`);
+        if (error) {
+            this.logger.error(`Resend API error: ${error.message}`);
+            throw new Error(`Failed to send email: ${error.message}`);
         }
     }
 };

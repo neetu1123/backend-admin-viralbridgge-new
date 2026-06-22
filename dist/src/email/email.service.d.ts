@@ -3,12 +3,13 @@ import { type InvitationAcceptedEmailParams, type MemberRemovedEmailParams, type
 export declare class EmailService {
     private readonly config;
     private readonly logger;
-    private readonly apiKey;
+    private readonly resend;
     private readonly fromEmail;
     private readonly appUrl;
     constructor(config: ConfigService);
     buildInvitationAcceptUrl(token: string): string;
     isConfigured(): boolean;
+    sendTestEmail(to?: string): Promise<void>;
     sendTeamInvitation(params: TeamInvitationEmailParams): Promise<void>;
     sendReInvitation(params: TeamInvitationEmailParams): Promise<void>;
     sendInvitationAccepted(params: InvitationAcceptedEmailParams): Promise<void>;

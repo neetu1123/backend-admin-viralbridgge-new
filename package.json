@@ -28,7 +28,8 @@
     "vercel-build": "prisma generate && nest build",
     "vercel-build:migrate": "prisma generate && node scripts/vercel-migrate.mjs && nest build",
     "seed": "node prisma/seed.js",
-    "backfill:organizations": "node scripts/backfill-organizations.mjs"
+    "backfill:organizations": "node scripts/backfill-organizations.mjs",
+    "email:test": "node --env-file=.env scripts/send-test-email.mjs"
   },
   "dependencies": {
     "@nestjs/bullmq": "^11.0.4",
@@ -54,6 +55,7 @@
     "pg": "^8.20.0",
     "razorpay": "^2.9.6",
     "reflect-metadata": "^0.2.2",
+    "resend": "^6.14.0",
     "rxjs": "^7.8.1",
     "serverless-http": "^4.0.0",
     "swagger-ui-express": "^5.0.1"
