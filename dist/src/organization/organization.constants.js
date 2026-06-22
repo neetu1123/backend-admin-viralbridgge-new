@@ -1,6 +1,6 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.INVITATION_EXPIRY_DAYS = exports.ORG_ROLE_PERMISSIONS = exports.ORG_ROLE_LABELS = exports.CREATOR_ORG_ROLES = exports.BRAND_ORG_ROLES = exports.ORGANIZATION_TYPES = void 0;
+exports.INVITATION_STATUSES = exports.INVITATION_EXPIRY_DAYS = exports.ORG_ROLE_PERMISSIONS = exports.ORG_ROLE_LABELS = exports.CREATOR_ORG_ROLES = exports.BRAND_ORG_ROLES = exports.ORGANIZATION_TYPES = void 0;
 exports.rolesForOrgType = rolesForOrgType;
 exports.isValidOrgRole = isValidOrgRole;
 exports.permissionsForRole = permissionsForRole;
@@ -31,6 +31,12 @@ exports.ORG_ROLE_PERMISSIONS = {
     },
 };
 exports.INVITATION_EXPIRY_DAYS = 7;
+exports.INVITATION_STATUSES = {
+    PENDING: 'PENDING',
+    ACCEPTED: 'ACCEPTED',
+    EXPIRED: 'EXPIRED',
+    REVOKED: 'REVOKED',
+};
 function rolesForOrgType(type) {
     return type === 'BRAND' ? exports.BRAND_ORG_ROLES : exports.CREATOR_ORG_ROLES;
 }

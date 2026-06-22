@@ -19,6 +19,7 @@ import { OrganizationModule } from './organization/organization.module';
 import { SecurityModule } from './security/security.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentsModule } from './payments/payments.module';
+import { EmailModule } from './email/email.module';
 
 @Module({
   imports: [
@@ -31,6 +32,7 @@ import { PaymentsModule } from './payments/payments.module';
     }]),
     PrismaModule,
     NotificationsModule,
+    EmailModule,
     MatchingModule,
     KycModule,
     PaymentsModule,

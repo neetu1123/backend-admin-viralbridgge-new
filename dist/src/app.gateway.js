@@ -55,6 +55,7 @@ const notification_emitter_1 = require("./common/notification-emitter");
 const wallet_event_emitter_1 = require("./common/wallet-event-emitter");
 const security_emitter_1 = require("./common/security-emitter");
 const analytics_emitter_1 = require("./common/analytics-emitter");
+const team_emitter_1 = require("./common/team-emitter");
 let AppGateway = class AppGateway {
     prisma;
     constructor(prisma) {
@@ -65,6 +66,7 @@ let AppGateway = class AppGateway {
         (0, wallet_event_emitter_1.setWalletEventEmitter)((userId, event, payload) => this.emitWalletEvent(userId, event, payload));
         (0, security_emitter_1.setSecurityEventEmitter)((userId, activity) => this.emitSecurityActivity(userId, activity));
         (0, analytics_emitter_1.setAnalyticsEventEmitter)((userId, payload) => this.emitAnalyticsUpdate(userId, payload));
+        (0, team_emitter_1.setTeamEventEmitter)((userId, event, payload) => this.emitTeamEvent(userId, event, payload));
     }
     server;
     async handleConnection(client) {
@@ -106,6 +108,11 @@ let AppGateway = class AppGateway {
     emitAnalyticsUpdate(userId, payload) {
         if (this.server) {
             this.server.to(`user:${userId}`).emit('analytics:update', payload);
+        }
+    }
+    emitTeamEvent(userId, event, payload) {
+        if (this.server) {
+            this.server.to(`user:${userId}`).emit(event, payload);
         }
     }
     async handleSendMessage(client, payload) {

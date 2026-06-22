@@ -7,8 +7,11 @@ import {
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
+import { emitTeamAccepted, emitTeamInvited } from '../common/team-emitter';
 import {
   INVITATION_EXPIRY_DAYS,
+  INVITATION_STATUSES,
   ORG_ROLE_LABELS,
   OrganizationType,
   isValidOrgRole,
@@ -22,6 +25,7 @@ export class OrganizationService {
   constructor(
     private prisma: PrismaService,
     private notifications: NotificationsService,
+    private email: EmailService,
   ) {}
 
   async getTeam(userId: string) {
@@ -101,34 +105,85 @@ export class OrganizationService {
         invited_by_id: userId,
         expires_at: expiresAt,
       },
-      include: { invited_by: { select: { name: true } } },
+      include: { invited_by: { select: { name: true, email: true } } },
     });
+
+    let emailSent = false;
+    try {
+      await this.email.sendTeamInvitation({
+        to: email,
+        organizationName: organization.name,
+        inviterName: invitation.invited_by.name,
+        roleLabel: ORG_ROLE_LABELS[dto.role] ?? dto.role,
+        expiresAt,
+        acceptUrl: this.email.buildInvitationAcceptUrl(invitation.token),
+      });
+      emailSent = true;
+    } catch (error) {
+      await this.prisma.organizationInvitation.delete({ where: { id: invitation.id } }).catch(() => undefined);
+      const message = error instanceof Error ? error.message : 'Failed to send invitation email';
+      throw new BadRequestException(message);
+    }
 
     await this.createAuditLog(userId, 'ORG_MEMBER_INVITED', 'OrganizationInvitation', invitation.id, {
       email,
       role: dto.role,
       organizationId: organization.id,
+      emailSent: true,
     });
 
-    const invitee = await this.prisma.user.findFirst({
-      where: { email: { equals: email, mode: 'insensitive' } },
+    await this.notifyMemberInvited({
+      organization,
+      invitation,
+      role: dto.role,
+      inviterId: userId,
     });
-    if (invitee) {
-      await this.notifications.create({
-        userId: invitee.id,
-        title: 'Team invitation',
-        message: `You have been invited to join ${organization.name} as ${ORG_ROLE_LABELS[dto.role] ?? dto.role}.`,
-        type: 'TEAM',
-        entityType: 'OrganizationInvitation',
-        entityId: invitation.id,
-        metadata: { token: invitation.token, organizationName: organization.name, role: dto.role },
-      });
-    }
 
     const formatted = this.formatInvitation(invitation);
     return {
       invitation: formatted,
       permissionPreview: { role: dto.role, permissions: permissionsForRole(orgType, dto.role) },
+      emailSent,
+    };
+  }
+
+  async getInvitationByToken(token: string) {
+    const invitation = await this.prisma.organizationInvitation.findUnique({
+      where: { token },
+      include: {
+        organization: { select: { id: true, name: true, type: true } },
+        invited_by: { select: { name: true } },
+      },
+    });
+    if (!invitation) throw new NotFoundException('Invitation not found');
+
+    const now = new Date();
+    const isExpired = invitation.expires_at < now;
+    const normalizedStatus = this.normalizeInvitationStatus(invitation.status);
+
+    if (normalizedStatus === INVITATION_STATUSES.PENDING && isExpired) {
+      await this.prisma.organizationInvitation.update({
+        where: { id: invitation.id },
+        data: { status: INVITATION_STATUSES.EXPIRED },
+      });
+    }
+
+    const status =
+      normalizedStatus === INVITATION_STATUSES.PENDING && isExpired
+        ? INVITATION_STATUSES.EXPIRED
+        : normalizedStatus;
+
+    return {
+      organizationName: invitation.organization.name,
+      organizationType: invitation.organization.type,
+      role: invitation.role,
+      roleLabel: ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+      invitedBy: invitation.invited_by.name,
+      email: invitation.email,
+      expiresAt: invitation.expires_at.toISOString(),
+      status,
+      isExpired: status === INVITATION_STATUSES.EXPIRED,
+      canAccept: status === INVITATION_STATUSES.PENDING && !isExpired,
     };
   }
 
@@ -144,13 +199,13 @@ export class OrganizationService {
       include: { organization: true },
     });
     if (!invitation) throw new NotFoundException('Invitation not found');
-    if (invitation.status !== 'PENDING') {
-      throw new BadRequestException(`Invitation is ${invitation.status.toLowerCase()}`);
+    if (this.normalizeInvitationStatus(invitation.status) !== INVITATION_STATUSES.PENDING) {
+      throw new BadRequestException(`Invitation is ${this.normalizeInvitationStatus(invitation.status).toLowerCase()}`);
     }
     if (invitation.expires_at < new Date()) {
       await this.prisma.organizationInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'EXPIRED' },
+        data: { status: INVITATION_STATUSES.EXPIRED },
       });
       throw new BadRequestException('Invitation has expired');
     }
@@ -184,7 +239,7 @@ export class OrganizationService {
     const member = await this.prisma.$transaction(async (tx) => {
       await tx.organizationInvitation.update({
         where: { id: invitation.id },
-        data: { status: 'ACCEPTED', accepted_at: new Date() },
+        data: { status: INVITATION_STATUSES.ACCEPTED, accepted_at: new Date() },
       });
 
       if (existing) {
@@ -229,6 +284,30 @@ export class OrganizationService {
       entityType: 'OrganizationMember',
       entityId: member.id,
     });
+
+    const owner = await this.prisma.user.findUnique({
+      where: { id: invitation.organization.owner_user_id },
+      select: { email: true },
+    });
+    if (owner?.email) {
+      await this.email.sendInvitationAccepted({
+        to: owner.email,
+        memberName: user.name,
+        memberEmail: user.email,
+        organizationName: invitation.organization.name,
+        roleLabel: ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+      }).catch((err) => console.error('Accept notification email failed:', err));
+    }
+
+    const acceptPayload = {
+      organizationId: invitation.organization_id,
+      organizationName: invitation.organization.name,
+      memberId: member.id,
+      memberName: user.name,
+      role: invitation.role,
+    };
+    emitTeamAccepted(invitation.organization.owner_user_id, acceptPayload);
+    emitTeamAccepted(userId, acceptPayload);
 
     return this.formatMember(member);
   }
@@ -296,6 +375,8 @@ export class OrganizationService {
       role: member.role,
     });
 
+    const remover = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
+
     await this.notifications.create({
       userId: member.user_id,
       title: 'Removed from team',
@@ -304,6 +385,12 @@ export class OrganizationService {
       entityType: 'OrganizationMember',
       entityId: member.id,
     });
+
+    await this.email.sendMemberRemoved({
+      to: member.user.email,
+      organizationName: organization.name,
+      removedByName: remover?.name ?? 'Organization owner',
+    }).catch((err) => console.error('Member removed email failed:', err));
 
     return { removed: true, member: this.formatMember({ ...updated, status: 'REMOVED' }) };
   }
@@ -327,8 +414,23 @@ export class OrganizationService {
       include: { invited_by: { select: { name: true } } },
     });
 
+    try {
+      await this.email.sendReInvitation({
+        to: invitation.email,
+        organizationName: organization.name,
+        inviterName: updated.invited_by.name,
+        roleLabel: ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+        expiresAt,
+        acceptUrl: this.email.buildInvitationAcceptUrl(updated.token),
+      });
+    } catch (error) {
+      const message = error instanceof Error ? error.message : 'Failed to send invitation email';
+      throw new BadRequestException(message);
+    }
+
     await this.createAuditLog(userId, 'ORG_INVITATION_RESENT', 'OrganizationInvitation', invitation.id, {
       email: invitation.email,
+      emailSent: true,
     });
 
     const invitee = await this.prisma.user.findFirst({
@@ -343,6 +445,12 @@ export class OrganizationService {
         entityType: 'OrganizationInvitation',
         entityId: updated.id,
         metadata: { token: updated.token },
+      });
+      emitTeamInvited(invitee.id, {
+        invitationId: updated.id,
+        organizationName: organization.name,
+        role: invitation.role,
+        token: updated.token,
       });
     }
 
@@ -360,11 +468,11 @@ export class OrganizationService {
 
     const updated = await this.prisma.organizationInvitation.update({
       where: { id: invitation.id },
-      data: { status: 'CANCELLED' },
+      data: { status: INVITATION_STATUSES.REVOKED },
       include: { invited_by: { select: { name: true } } },
     });
 
-    await this.createAuditLog(userId, 'ORG_INVITATION_CANCELLED', 'OrganizationInvitation', invitation.id, {
+    await this.createAuditLog(userId, 'ORG_INVITATION_REVOKED', 'OrganizationInvitation', invitation.id, {
       email: invitation.email,
     });
 
@@ -610,11 +718,63 @@ export class OrganizationService {
       email: inv.email,
       role: inv.role,
       roleLabel: ORG_ROLE_LABELS[inv.role] ?? inv.role,
-      status: inv.status,
+      status: this.normalizeInvitationStatus(inv.status),
       invitedBy: inv.invited_by?.name ?? 'Unknown',
       expiresAt: inv.expires_at.toISOString(),
       createdAt: inv.created_at.toISOString(),
     };
+  }
+
+  private normalizeInvitationStatus(status: string): string {
+    if (status === 'CANCELLED') return INVITATION_STATUSES.REVOKED;
+    return status;
+  }
+
+  private async notifyMemberInvited(params: {
+    organization: { id: string; name: string; owner_user_id: string };
+    invitation: { id: string; email: string; token: string; invited_by: { name: string } };
+    role: string;
+    inviterId: string;
+  }) {
+    const { organization, invitation, role } = params;
+    const roleLabel = ORG_ROLE_LABELS[role] ?? role;
+    const payload = {
+      invitationId: invitation.id,
+      organizationId: organization.id,
+      organizationName: organization.name,
+      role,
+      roleLabel,
+      token: invitation.token,
+      acceptUrl: this.email.buildInvitationAcceptUrl(invitation.token),
+    };
+
+    const invitee = await this.prisma.user.findFirst({
+      where: { email: { equals: invitation.email, mode: 'insensitive' } },
+    });
+    if (invitee) {
+      await this.notifications.create({
+        userId: invitee.id,
+        title: 'Team invitation',
+        message: `You have been invited to join ${organization.name} as ${roleLabel}.`,
+        type: 'TEAM',
+        entityType: 'OrganizationInvitation',
+        entityId: invitation.id,
+        metadata: payload,
+      });
+      emitTeamInvited(invitee.id, payload);
+    }
+
+    if (organization.owner_user_id !== params.inviterId) {
+      await this.notifications.create({
+        userId: organization.owner_user_id,
+        title: 'Member invited',
+        message: `${invitation.invited_by.name} invited ${invitation.email} to join ${organization.name} as ${roleLabel}.`,
+        type: 'TEAM',
+        entityType: 'OrganizationInvitation',
+        entityId: invitation.id,
+        metadata: payload,
+      });
+    }
   }
 
   private async createAuditLog(

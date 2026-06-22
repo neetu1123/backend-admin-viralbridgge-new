@@ -484,7 +484,7 @@ model OrganizationInvitation {
   token           String   @unique @default(uuid())
   invited_by_id   String
   invited_by      User     @relation("InvitationInviter", fields: [invited_by_id], references: [id])
-  status          String   @default("PENDING") // PENDING, ACCEPTED, CANCELLED, EXPIRED
+  status          String   @default("PENDING") // PENDING, ACCEPTED, REVOKED, EXPIRED (legacy: CANCELLED)
   expires_at      DateTime
   accepted_at     DateTime?
   created_at      DateTime @default(now())

@@ -1,11 +1,13 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { OrganizationType } from './organization.constants';
 import { AcceptInvitationDto, ChangeMemberRoleDto, InviteMemberDto } from './organization.dto';
 export declare class OrganizationService {
     private prisma;
     private notifications;
-    constructor(prisma: PrismaService, notifications: NotificationsService);
+    private email;
+    constructor(prisma: PrismaService, notifications: NotificationsService, email: EmailService);
     getTeam(userId: string): Promise<{
         organizationType: "CREATOR" | "BRAND";
         organizationId: string;
@@ -52,6 +54,19 @@ export declare class OrganizationService {
             role: string;
             permissions: string[];
         };
+        emailSent: boolean;
+    }>;
+    getInvitationByToken(token: string): Promise<{
+        organizationName: string;
+        organizationType: string;
+        role: string;
+        roleLabel: string;
+        invitedBy: string;
+        email: string;
+        expiresAt: string;
+        status: string;
+        isExpired: boolean;
+        canAccept: boolean;
     }>;
     acceptInvitation(userId: string, dto: AcceptInvitationDto): Promise<{
         id: string;
@@ -140,5 +155,7 @@ export declare class OrganizationService {
     private touchLastActive;
     private formatMember;
     private formatInvitation;
+    private normalizeInvitationStatus;
+    private notifyMemberInvited;
     private createAuditLog;
 }

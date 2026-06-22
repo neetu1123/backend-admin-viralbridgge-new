@@ -13,6 +13,7 @@ export declare class AppGateway implements OnGatewayConnection, OnGatewayDisconn
     emitWalletEvent(userId: string, event: string, payload: unknown): void;
     emitSecurityActivity(userId: string, activity: unknown): void;
     emitAnalyticsUpdate(userId: string, payload: unknown): void;
+    emitTeamEvent(userId: string, event: string, payload: unknown): void;
     handleSendMessage(client: Socket, payload: {
         message: string;
         conversationId: string;

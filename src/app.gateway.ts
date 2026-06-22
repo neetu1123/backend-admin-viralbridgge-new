@@ -15,6 +15,7 @@ import { setNotificationEmitter } from './common/notification-emitter';
 import { setWalletEventEmitter } from './common/wallet-event-emitter';
 import { setSecurityEventEmitter } from './common/security-emitter';
 import { setAnalyticsEventEmitter } from './common/analytics-emitter';
+import { setTeamEventEmitter } from './common/team-emitter';
 
 @WebSocketGateway({
   cors: {
@@ -29,6 +30,7 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
     setWalletEventEmitter((userId, event, payload) => this.emitWalletEvent(userId, event, payload));
     setSecurityEventEmitter((userId, activity) => this.emitSecurityActivity(userId, activity));
     setAnalyticsEventEmitter((userId, payload) => this.emitAnalyticsUpdate(userId, payload));
+    setTeamEventEmitter((userId, event, payload) => this.emitTeamEvent(userId, event, payload));
   }
 
   @WebSocketServer()
@@ -81,6 +83,12 @@ export class AppGateway implements OnGatewayConnection, OnGatewayDisconnect, OnM
   emitAnalyticsUpdate(userId: string, payload: unknown) {
     if (this.server) {
       this.server.to(`user:${userId}`).emit('analytics:update', payload);
+    }
+  }
+
+  emitTeamEvent(userId: string, event: string, payload: unknown) {
+    if (this.server) {
+      this.server.to(`user:${userId}`).emit(event, payload);
     }
   }
 

@@ -35,6 +35,13 @@ export const ORG_ROLE_PERMISSIONS: Record<OrganizationType, Record<string, strin
 
 export const INVITATION_EXPIRY_DAYS = 7;
 
+export const INVITATION_STATUSES = {
+  PENDING: 'PENDING',
+  ACCEPTED: 'ACCEPTED',
+  EXPIRED: 'EXPIRED',
+  REVOKED: 'REVOKED',
+} as const;
+
 export function rolesForOrgType(type: OrganizationType): readonly string[] {
   return type === 'BRAND' ? BRAND_ORG_ROLES : CREATOR_ORG_ROLES;
 }

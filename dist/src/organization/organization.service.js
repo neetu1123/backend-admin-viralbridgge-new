@@ -14,13 +14,17 @@ const common_1 = require("@nestjs/common");
 const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const email_service_1 = require("../email/email.service");
+const team_emitter_1 = require("../common/team-emitter");
 const organization_constants_1 = require("./organization.constants");
 let OrganizationService = class OrganizationService {
     prisma;
     notifications;
-    constructor(prisma, notifications) {
+    email;
+    constructor(prisma, notifications, email) {
         this.prisma = prisma;
         this.notifications = notifications;
+        this.email = email;
     }
     async getTeam(userId) {
         const { organization, membership } = await this.resolveOrganizationContext(userId);
@@ -89,31 +93,77 @@ let OrganizationService = class OrganizationService {
                 invited_by_id: userId,
                 expires_at: expiresAt,
             },
-            include: { invited_by: { select: { name: true } } },
+            include: { invited_by: { select: { name: true, email: true } } },
         });
+        let emailSent = false;
+        try {
+            await this.email.sendTeamInvitation({
+                to: email,
+                organizationName: organization.name,
+                inviterName: invitation.invited_by.name,
+                roleLabel: organization_constants_1.ORG_ROLE_LABELS[dto.role] ?? dto.role,
+                expiresAt,
+                acceptUrl: this.email.buildInvitationAcceptUrl(invitation.token),
+            });
+            emailSent = true;
+        }
+        catch (error) {
+            await this.prisma.organizationInvitation.delete({ where: { id: invitation.id } }).catch(() => undefined);
+            const message = error instanceof Error ? error.message : 'Failed to send invitation email';
+            throw new common_1.BadRequestException(message);
+        }
         await this.createAuditLog(userId, 'ORG_MEMBER_INVITED', 'OrganizationInvitation', invitation.id, {
             email,
             role: dto.role,
             organizationId: organization.id,
+            emailSent: true,
         });
-        const invitee = await this.prisma.user.findFirst({
-            where: { email: { equals: email, mode: 'insensitive' } },
+        await this.notifyMemberInvited({
+            organization,
+            invitation,
+            role: dto.role,
+            inviterId: userId,
         });
-        if (invitee) {
-            await this.notifications.create({
-                userId: invitee.id,
-                title: 'Team invitation',
-                message: `You have been invited to join ${organization.name} as ${organization_constants_1.ORG_ROLE_LABELS[dto.role] ?? dto.role}.`,
-                type: 'TEAM',
-                entityType: 'OrganizationInvitation',
-                entityId: invitation.id,
-                metadata: { token: invitation.token, organizationName: organization.name, role: dto.role },
-            });
-        }
         const formatted = this.formatInvitation(invitation);
         return {
             invitation: formatted,
             permissionPreview: { role: dto.role, permissions: (0, organization_constants_1.permissionsForRole)(orgType, dto.role) },
+            emailSent,
+        };
+    }
+    async getInvitationByToken(token) {
+        const invitation = await this.prisma.organizationInvitation.findUnique({
+            where: { token },
+            include: {
+                organization: { select: { id: true, name: true, type: true } },
+                invited_by: { select: { name: true } },
+            },
+        });
+        if (!invitation)
+            throw new common_1.NotFoundException('Invitation not found');
+        const now = new Date();
+        const isExpired = invitation.expires_at < now;
+        const normalizedStatus = this.normalizeInvitationStatus(invitation.status);
+        if (normalizedStatus === organization_constants_1.INVITATION_STATUSES.PENDING && isExpired) {
+            await this.prisma.organizationInvitation.update({
+                where: { id: invitation.id },
+                data: { status: organization_constants_1.INVITATION_STATUSES.EXPIRED },
+            });
+        }
+        const status = normalizedStatus === organization_constants_1.INVITATION_STATUSES.PENDING && isExpired
+            ? organization_constants_1.INVITATION_STATUSES.EXPIRED
+            : normalizedStatus;
+        return {
+            organizationName: invitation.organization.name,
+            organizationType: invitation.organization.type,
+            role: invitation.role,
+            roleLabel: organization_constants_1.ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+            invitedBy: invitation.invited_by.name,
+            email: invitation.email,
+            expiresAt: invitation.expires_at.toISOString(),
+            status,
+            isExpired: status === organization_constants_1.INVITATION_STATUSES.EXPIRED,
+            canAccept: status === organization_constants_1.INVITATION_STATUSES.PENDING && !isExpired,
         };
     }
     async acceptInvitation(userId, dto) {
@@ -129,13 +179,13 @@ let OrganizationService = class OrganizationService {
         });
         if (!invitation)
             throw new common_1.NotFoundException('Invitation not found');
-        if (invitation.status !== 'PENDING') {
-            throw new common_1.BadRequestException(`Invitation is ${invitation.status.toLowerCase()}`);
+        if (this.normalizeInvitationStatus(invitation.status) !== organization_constants_1.INVITATION_STATUSES.PENDING) {
+            throw new common_1.BadRequestException(`Invitation is ${this.normalizeInvitationStatus(invitation.status).toLowerCase()}`);
         }
         if (invitation.expires_at < new Date()) {
             await this.prisma.organizationInvitation.update({
                 where: { id: invitation.id },
-                data: { status: 'EXPIRED' },
+                data: { status: organization_constants_1.INVITATION_STATUSES.EXPIRED },
             });
             throw new common_1.BadRequestException('Invitation has expired');
         }
@@ -166,7 +216,7 @@ let OrganizationService = class OrganizationService {
         const member = await this.prisma.$transaction(async (tx) => {
             await tx.organizationInvitation.update({
                 where: { id: invitation.id },
-                data: { status: 'ACCEPTED', accepted_at: new Date() },
+                data: { status: organization_constants_1.INVITATION_STATUSES.ACCEPTED, accepted_at: new Date() },
             });
             if (existing) {
                 return tx.organizationMember.update({
@@ -206,6 +256,28 @@ let OrganizationService = class OrganizationService {
             entityType: 'OrganizationMember',
             entityId: member.id,
         });
+        const owner = await this.prisma.user.findUnique({
+            where: { id: invitation.organization.owner_user_id },
+            select: { email: true },
+        });
+        if (owner?.email) {
+            await this.email.sendInvitationAccepted({
+                to: owner.email,
+                memberName: user.name,
+                memberEmail: user.email,
+                organizationName: invitation.organization.name,
+                roleLabel: organization_constants_1.ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+            }).catch((err) => console.error('Accept notification email failed:', err));
+        }
+        const acceptPayload = {
+            organizationId: invitation.organization_id,
+            organizationName: invitation.organization.name,
+            memberId: member.id,
+            memberName: user.name,
+            role: invitation.role,
+        };
+        (0, team_emitter_1.emitTeamAccepted)(invitation.organization.owner_user_id, acceptPayload);
+        (0, team_emitter_1.emitTeamAccepted)(userId, acceptPayload);
         return this.formatMember(member);
     }
     async changeMemberRole(userId, memberId, dto) {
@@ -265,6 +337,7 @@ let OrganizationService = class OrganizationService {
             memberEmail: member.user.email,
             role: member.role,
         });
+        const remover = await this.prisma.user.findUnique({ where: { id: userId }, select: { name: true } });
         await this.notifications.create({
             userId: member.user_id,
             title: 'Removed from team',
@@ -273,6 +346,11 @@ let OrganizationService = class OrganizationService {
             entityType: 'OrganizationMember',
             entityId: member.id,
         });
+        await this.email.sendMemberRemoved({
+            to: member.user.email,
+            organizationName: organization.name,
+            removedByName: remover?.name ?? 'Organization owner',
+        }).catch((err) => console.error('Member removed email failed:', err));
         return { removed: true, member: this.formatMember({ ...updated, status: 'REMOVED' }) };
     }
     async reinviteMember(userId, targetId) {
@@ -291,8 +369,23 @@ let OrganizationService = class OrganizationService {
             data: { expires_at: expiresAt, token: (0, crypto_1.randomUUID)() },
             include: { invited_by: { select: { name: true } } },
         });
+        try {
+            await this.email.sendReInvitation({
+                to: invitation.email,
+                organizationName: organization.name,
+                inviterName: updated.invited_by.name,
+                roleLabel: organization_constants_1.ORG_ROLE_LABELS[invitation.role] ?? invitation.role,
+                expiresAt,
+                acceptUrl: this.email.buildInvitationAcceptUrl(updated.token),
+            });
+        }
+        catch (error) {
+            const message = error instanceof Error ? error.message : 'Failed to send invitation email';
+            throw new common_1.BadRequestException(message);
+        }
         await this.createAuditLog(userId, 'ORG_INVITATION_RESENT', 'OrganizationInvitation', invitation.id, {
             email: invitation.email,
+            emailSent: true,
         });
         const invitee = await this.prisma.user.findFirst({
             where: { email: { equals: invitation.email, mode: 'insensitive' } },
@@ -307,6 +400,12 @@ let OrganizationService = class OrganizationService {
                 entityId: updated.id,
                 metadata: { token: updated.token },
             });
+            (0, team_emitter_1.emitTeamInvited)(invitee.id, {
+                invitationId: updated.id,
+                organizationName: organization.name,
+                role: invitation.role,
+                token: updated.token,
+            });
         }
         return this.formatInvitation(updated);
     }
@@ -320,10 +419,10 @@ let OrganizationService = class OrganizationService {
             throw new common_1.NotFoundException('Pending invitation not found');
         const updated = await this.prisma.organizationInvitation.update({
             where: { id: invitation.id },
-            data: { status: 'CANCELLED' },
+            data: { status: organization_constants_1.INVITATION_STATUSES.REVOKED },
             include: { invited_by: { select: { name: true } } },
         });
-        await this.createAuditLog(userId, 'ORG_INVITATION_CANCELLED', 'OrganizationInvitation', invitation.id, {
+        await this.createAuditLog(userId, 'ORG_INVITATION_REVOKED', 'OrganizationInvitation', invitation.id, {
             email: invitation.email,
         });
         const invitee = await this.prisma.user.findFirst({
@@ -514,11 +613,55 @@ let OrganizationService = class OrganizationService {
             email: inv.email,
             role: inv.role,
             roleLabel: organization_constants_1.ORG_ROLE_LABELS[inv.role] ?? inv.role,
-            status: inv.status,
+            status: this.normalizeInvitationStatus(inv.status),
             invitedBy: inv.invited_by?.name ?? 'Unknown',
             expiresAt: inv.expires_at.toISOString(),
             createdAt: inv.created_at.toISOString(),
         };
+    }
+    normalizeInvitationStatus(status) {
+        if (status === 'CANCELLED')
+            return organization_constants_1.INVITATION_STATUSES.REVOKED;
+        return status;
+    }
+    async notifyMemberInvited(params) {
+        const { organization, invitation, role } = params;
+        const roleLabel = organization_constants_1.ORG_ROLE_LABELS[role] ?? role;
+        const payload = {
+            invitationId: invitation.id,
+            organizationId: organization.id,
+            organizationName: organization.name,
+            role,
+            roleLabel,
+            token: invitation.token,
+            acceptUrl: this.email.buildInvitationAcceptUrl(invitation.token),
+        };
+        const invitee = await this.prisma.user.findFirst({
+            where: { email: { equals: invitation.email, mode: 'insensitive' } },
+        });
+        if (invitee) {
+            await this.notifications.create({
+                userId: invitee.id,
+                title: 'Team invitation',
+                message: `You have been invited to join ${organization.name} as ${roleLabel}.`,
+                type: 'TEAM',
+                entityType: 'OrganizationInvitation',
+                entityId: invitation.id,
+                metadata: payload,
+            });
+            (0, team_emitter_1.emitTeamInvited)(invitee.id, payload);
+        }
+        if (organization.owner_user_id !== params.inviterId) {
+            await this.notifications.create({
+                userId: organization.owner_user_id,
+                title: 'Member invited',
+                message: `${invitation.invited_by.name} invited ${invitation.email} to join ${organization.name} as ${roleLabel}.`,
+                type: 'TEAM',
+                entityType: 'OrganizationInvitation',
+                entityId: invitation.id,
+                metadata: payload,
+            });
+        }
     }
     async createAuditLog(actorId, action, entity, entityId, metadata) {
         try {
@@ -541,6 +684,7 @@ exports.OrganizationService = OrganizationService;
 exports.OrganizationService = OrganizationService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        email_service_1.EmailService])
 ], OrganizationService);
 //# sourceMappingURL=organization.service.js.map

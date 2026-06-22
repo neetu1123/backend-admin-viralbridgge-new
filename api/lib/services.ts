@@ -18,6 +18,16 @@ let securityService: SecurityServiceType | undefined;
 let creatorAnalyticsService: CreatorAnalyticsServiceType | undefined;
 let adminAnalyticsService: AdminAnalyticsServiceType | undefined;
 let notificationsService: import('../../dist/src/notifications/notifications.service').NotificationsService | undefined;
+let emailService: import('../../dist/src/email/email.service').EmailService | undefined;
+
+function getEmailService() {
+  if (!emailService) {
+    const { EmailService } = require('../../dist/src/email/email.service') as typeof import('../../dist/src/email/email.service');
+    const { ConfigService } = require('@nestjs/config') as typeof import('@nestjs/config');
+    emailService = new EmailService(new ConfigService());
+  }
+  return emailService;
+}
 
 function getNotificationsService() {
   if (!notificationsService) {
@@ -62,7 +72,7 @@ export function getAdminService(): AdminServiceType {
 export function getOrganizationService(): OrganizationServiceType {
   if (!organizationService) {
     const { OrganizationService } = require('../../dist/src/organization/organization.service') as typeof import('../../dist/src/organization/organization.service');
-    organizationService = new OrganizationService(getPrisma() as never, getNotificationsService());
+    organizationService = new OrganizationService(getPrisma() as never, getNotificationsService(), getEmailService());
   }
   return organizationService;
 }

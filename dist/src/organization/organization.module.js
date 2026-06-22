@@ -11,6 +11,7 @@ const common_1 = require("@nestjs/common");
 const prisma_module_1 = require("../prisma/prisma.module");
 const notifications_module_1 = require("../notifications/notifications.module");
 const organization_controller_1 = require("./organization.controller");
+const organization_public_controller_1 = require("./organization-public.controller");
 const organization_service_1 = require("./organization.service");
 let OrganizationModule = class OrganizationModule {
 };
@@ -18,7 +19,7 @@ exports.OrganizationModule = OrganizationModule;
 exports.OrganizationModule = OrganizationModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule, notifications_module_1.NotificationsModule],
-        controllers: [organization_controller_1.OrganizationController],
+        controllers: [organization_controller_1.OrganizationController, organization_public_controller_1.OrganizationPublicController],
         providers: [organization_service_1.OrganizationService],
         exports: [organization_service_1.OrganizationService],
     })

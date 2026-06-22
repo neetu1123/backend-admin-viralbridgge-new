@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.InviteMemberResponseDto = exports.RolePermissionsDto = exports.TeamResponseDto = exports.PendingInvitationResponseDto = exports.TeamMemberResponseDto = exports.ChangeMemberRoleDto = exports.AcceptInvitationDto = exports.InviteMemberDto = void 0;
+exports.InvitationPreviewDto = exports.InviteMemberResponseDto = exports.RolePermissionsDto = exports.TeamResponseDto = exports.PendingInvitationResponseDto = exports.TeamMemberResponseDto = exports.ChangeMemberRoleDto = exports.AcceptInvitationDto = exports.InviteMemberDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_validator_1 = require("class-validator");
 const organization_constants_1 = require("./organization.constants");
@@ -212,6 +212,7 @@ __decorate([
 class InviteMemberResponseDto {
     invitation;
     permissionPreview;
+    emailSent;
 }
 exports.InviteMemberResponseDto = InviteMemberResponseDto;
 __decorate([
@@ -222,4 +223,61 @@ __decorate([
     (0, swagger_1.ApiProperty)({ type: RolePermissionsDto }),
     __metadata("design:type", RolePermissionsDto)
 ], InviteMemberResponseDto.prototype, "permissionPreview", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ description: 'Whether the invitation email was sent successfully' }),
+    __metadata("design:type", Boolean)
+], InviteMemberResponseDto.prototype, "emailSent", void 0);
+class InvitationPreviewDto {
+    organizationName;
+    organizationType;
+    role;
+    roleLabel;
+    invitedBy;
+    email;
+    expiresAt;
+    status;
+    isExpired;
+    canAccept;
+}
+exports.InvitationPreviewDto = InvitationPreviewDto;
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "organizationName", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ enum: organization_constants_1.ORGANIZATION_TYPES }),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "organizationType", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "role", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "roleLabel", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "invitedBy", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "email", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "expiresAt", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", String)
+], InvitationPreviewDto.prototype, "status", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Boolean)
+], InvitationPreviewDto.prototype, "isExpired", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)(),
+    __metadata("design:type", Boolean)
+], InvitationPreviewDto.prototype, "canAccept", void 0);
 //# sourceMappingURL=organization.dto.js.map

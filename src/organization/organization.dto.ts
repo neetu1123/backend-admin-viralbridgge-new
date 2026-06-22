@@ -137,4 +137,39 @@ export class InviteMemberResponseDto {
 
   @ApiProperty({ type: RolePermissionsDto })
   permissionPreview: RolePermissionsDto;
+
+  @ApiProperty({ description: 'Whether the invitation email was sent successfully' })
+  emailSent: boolean;
+}
+
+export class InvitationPreviewDto {
+  @ApiProperty()
+  organizationName: string;
+
+  @ApiProperty({ enum: ORGANIZATION_TYPES })
+  organizationType: OrganizationType;
+
+  @ApiProperty()
+  role: string;
+
+  @ApiProperty()
+  roleLabel: string;
+
+  @ApiProperty()
+  invitedBy: string;
+
+  @ApiProperty()
+  email: string;
+
+  @ApiProperty()
+  expiresAt: string;
+
+  @ApiProperty()
+  status: string;
+
+  @ApiProperty()
+  isExpired: boolean;
+
+  @ApiProperty()
+  canAccept: boolean;
 }

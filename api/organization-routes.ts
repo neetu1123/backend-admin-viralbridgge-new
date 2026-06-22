@@ -6,6 +6,17 @@ import { getOrganizationService } from './lib/services';
 const router = Router();
 const org = () => getOrganizationService();
 
+router.get('/team/invitation/:token', async (req, res) => {
+  try {
+    const token = String(req.params.token ?? '');
+    return ok(res, await org().getInvitationByToken(token));
+  } catch (error) {
+    const message = error instanceof Error ? error.message : 'Invitation not found';
+    const status = message.toLowerCase().includes('not found') ? 404 : 400;
+    return fail(res, message, status);
+  }
+});
+
 router.post('/team/accept', requireAuth, (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => org().acceptInvitation(id, req.body), {
     action: 'ORG_INVITATION_ACCEPTED',
@@ -58,7 +69,7 @@ router.post('/team/member/:id/reinvite', (req: AuthedRequest, res) =>
 
 router.post('/team/invitation/:id/cancel', (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => org().cancelInvitation(id, paramId(req)), {
-    action: 'ORG_INVITATION_CANCELLED',
+    action: 'ORG_INVITATION_REVOKED',
     entity: 'OrganizationInvitation',
     entityId: () => paramId(req),
   }),

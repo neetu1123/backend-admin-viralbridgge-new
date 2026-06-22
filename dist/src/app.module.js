@@ -27,6 +27,7 @@ const organization_module_1 = require("./organization/organization.module");
 const security_module_1 = require("./security/security.module");
 const analytics_module_1 = require("./analytics/analytics.module");
 const payments_module_1 = require("./payments/payments.module");
+const email_module_1 = require("./email/email.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +43,7 @@ exports.AppModule = AppModule = __decorate([
                 }]),
             prisma_module_1.PrismaModule,
             notifications_module_1.NotificationsModule,
+            email_module_1.EmailModule,
             matching_module_1.MatchingModule,
             kyc_module_1.KycModule,
             payments_module_1.PaymentsModule,

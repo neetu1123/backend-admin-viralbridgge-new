@@ -49,4 +49,17 @@ export declare class RolePermissionsDto {
 export declare class InviteMemberResponseDto {
     invitation: PendingInvitationResponseDto;
     permissionPreview: RolePermissionsDto;
+    emailSent: boolean;
+}
+export declare class InvitationPreviewDto {
+    organizationName: string;
+    organizationType: OrganizationType;
+    role: string;
+    roleLabel: string;
+    invitedBy: string;
+    email: string;
+    expiresAt: string;
+    status: string;
+    isExpired: boolean;
+    canAccept: boolean;
 }

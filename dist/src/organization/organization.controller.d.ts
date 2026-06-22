@@ -57,6 +57,7 @@ export declare class OrganizationController {
             role: string;
             permissions: string[];
         };
+        emailSent: boolean;
     }>;
     getMyInvitations(req: {
         user: {
