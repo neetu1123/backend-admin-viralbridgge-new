@@ -1,4 +1,4 @@
-export declare const DEFAULT_FROM_EMAIL = "ViralBridge <invites@viralbridge.com>";
+export declare const DEFAULT_FROM_EMAIL = "James <James@getstrsites.com>";
 export declare const DEFAULT_APP_URL = "https://admin-viralbridgge-new.vercel.app";
 export interface TeamInvitationEmailParams {
     to: string;

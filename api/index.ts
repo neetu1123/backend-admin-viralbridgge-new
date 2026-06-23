@@ -11,6 +11,13 @@ import { securityRouter } from './security-routes';
 import { analyticsRouter } from './analytics-routes';
 import { handleAuthLogin } from './auth-login';
 
+try {
+  const { initializeFirebaseAdmin } = require('../dist/src/firebase/firebase-admin.config') as typeof import('../dist/src/firebase/firebase-admin.config');
+  initializeFirebaseAdmin();
+} catch {
+  // dist may not exist during type-check only runs
+}
+
 const server = express();
 const BOOTSTRAP_TIMEOUT_MS = 9000;
 

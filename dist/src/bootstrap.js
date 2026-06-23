@@ -3,31 +3,15 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
     return (mod && mod.__esModule) ? mod : { "default": mod };
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.initializeFirebaseAdmin = initializeFirebaseAdmin;
 exports.configureApp = configureApp;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const helmet_1 = __importDefault(require("helmet"));
 const http_exception_filter_1 = require("./common/filters/http-exception.filter");
 const api_response_interceptor_1 = require("./common/interceptors/api-response.interceptor");
-async function initializeFirebaseAdmin() {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
-    if (!serviceAccountJson) {
-        return;
-    }
-    try {
-        const admin = await import('firebase-admin');
-        if (admin.apps.length)
-            return;
-        const serviceAccount = JSON.parse(serviceAccountJson);
-        admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    }
-    catch (error) {
-        console.error('FIREBASE_SERVICE_ACCOUNT is invalid JSON; Firebase auth disabled.', error);
-    }
-}
+const firebase_admin_config_1 = require("./firebase/firebase-admin.config");
 async function configureApp(app) {
-    await initializeFirebaseAdmin();
+    (0, firebase_admin_config_1.initializeFirebaseAdmin)();
     if (!process.env.VERCEL) {
         app.use((0, helmet_1.default)());
     }

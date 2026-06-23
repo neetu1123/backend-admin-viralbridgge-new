@@ -79,6 +79,9 @@ export function getOrganizationService(): OrganizationServiceType {
 
 export function getSecurityService(): SecurityServiceType {
   if (!securityService) {
+    const { initializeFirebaseAdmin } = require('../../dist/src/firebase/firebase-admin.config') as typeof import('../../dist/src/firebase/firebase-admin.config');
+    initializeFirebaseAdmin();
+
     const { SecurityService } = require('../../dist/src/security/security.service') as typeof import('../../dist/src/security/security.service');
     const { FirebaseSecurityService } = require('../../dist/src/security/firebase-security.service') as typeof import('../../dist/src/security/firebase-security.service');
     securityService = new SecurityService(

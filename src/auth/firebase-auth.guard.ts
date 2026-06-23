@@ -1,5 +1,5 @@
 import { Injectable, CanActivate, ExecutionContext, UnauthorizedException } from '@nestjs/common';
-import * as admin from 'firebase-admin';
+import { getFirebaseAuth, isFirebaseConfigured, initializeFirebaseAdmin } from '../firebase/firebase-admin.config';
 
 @Injectable()
 export class FirebaseAuthGuard implements CanActivate {
@@ -11,8 +11,13 @@ export class FirebaseAuthGuard implements CanActivate {
       throw new UnauthorizedException('No token provided');
     }
 
+    if (!isFirebaseConfigured()) {
+      throw new UnauthorizedException('Firebase is not configured on this server');
+    }
+
     try {
-      const decodedToken = await admin.auth().verifyIdToken(token);
+      initializeFirebaseAdmin();
+      const decodedToken = await getFirebaseAuth().verifyIdToken(token);
       request['user'] = decodedToken; // basic decoded token
       return true;
     } catch (error) {

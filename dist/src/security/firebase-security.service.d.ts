@@ -1,6 +1,6 @@
 export declare class FirebaseSecurityService {
     private readonly logger;
-    private getAdmin;
+    private getAuth;
     sendPasswordResetEmail(email: string): Promise<void>;
     revokeAllRefreshTokens(firebaseUid: string): Promise<void>;
     isMfaEnrolled(firebaseUid: string): Promise<boolean>;

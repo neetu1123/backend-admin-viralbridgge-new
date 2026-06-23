@@ -15,6 +15,7 @@ const core_1 = require("@nestjs/core");
 const jwt_1 = require("@nestjs/jwt");
 const prisma_service_1 = require("../prisma/prisma.service");
 const roles_decorator_1 = require("./roles.decorator");
+const firebase_admin_config_1 = require("../firebase/firebase-admin.config");
 let AuthGuard = class AuthGuard {
     reflector;
     prisma;
@@ -82,14 +83,11 @@ let AuthGuard = class AuthGuard {
     }
     async tryResolveFirebaseUser(token) {
         try {
-            if (!process.env.FIREBASE_SERVICE_ACCOUNT?.trim()) {
+            if (!(0, firebase_admin_config_1.isFirebaseConfigured)()) {
                 return null;
             }
-            const admin = await import('firebase-admin');
-            if (!admin.apps.length) {
-                return null;
-            }
-            const decoded = await admin.auth().verifyIdToken(token);
+            (0, firebase_admin_config_1.initializeFirebaseAdmin)();
+            const decoded = await (0, firebase_admin_config_1.getFirebaseAuth)().verifyIdToken(token);
             const roleName = String(decoded.role || decoded.user_role || 'CREATOR').toUpperCase();
             const role = await this.prisma.role.upsert({
                 where: { name: roleName },

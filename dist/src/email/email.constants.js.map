@@ -1,1 +1,1 @@
-{"version":3,"file":"email.constants.js","sourceRoot":"","sources":["../../../src/email/email.constants.ts"],"names":[],"mappings":";;;AAAa,QAAA,kBAAkB,GAAG,uCAAuC,CAAC;AAE7D,QAAA,eAAe,GAAG,2CAA2C,CAAC"}
+{"version":3,"file":"email.constants.js","sourceRoot":"","sources":["../../../src/email/email.constants.ts"],"names":[],"mappings":";;;AAAa,QAAA,kBAAkB,GAAG,+BAA+B,CAAC;AAErD,QAAA,eAAe,GAAG,2CAA2C,CAAC"}

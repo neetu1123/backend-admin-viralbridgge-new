@@ -9,6 +9,7 @@ import { Reflector } from '@nestjs/core';
 import { JwtService } from '@nestjs/jwt';
 import { PrismaService } from '../prisma/prisma.service';
 import { ROLES_KEY } from './roles.decorator';
+import { getFirebaseAuth, isFirebaseConfigured, initializeFirebaseAdmin } from '../firebase/firebase-admin.config';
 
 @Injectable()
 export class AuthGuard implements CanActivate {
@@ -90,16 +91,12 @@ export class AuthGuard implements CanActivate {
 
   private async tryResolveFirebaseUser(token: string) {
     try {
-      if (!process.env.FIREBASE_SERVICE_ACCOUNT?.trim()) {
+      if (!isFirebaseConfigured()) {
         return null;
       }
 
-      const admin = await import('firebase-admin');
-      if (!admin.apps.length) {
-        return null;
-      }
-
-      const decoded = await admin.auth().verifyIdToken(token);
+      initializeFirebaseAdmin();
+      const decoded = await getFirebaseAuth().verifyIdToken(token);
       const roleName = String(decoded.role || decoded.user_role || 'CREATOR').toUpperCase();
       const role = await this.prisma.role.upsert({
         where: { name: roleName },

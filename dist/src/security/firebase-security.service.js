@@ -9,19 +9,15 @@ var FirebaseSecurityService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.FirebaseSecurityService = void 0;
 const common_1 = require("@nestjs/common");
+const firebase_admin_config_1 = require("../firebase/firebase-admin.config");
 let FirebaseSecurityService = FirebaseSecurityService_1 = class FirebaseSecurityService {
     logger = new common_1.Logger(FirebaseSecurityService_1.name);
-    async getAdmin() {
-        const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
-        if (!serviceAccountJson) {
+    getAuth() {
+        if (!(0, firebase_admin_config_1.isFirebaseConfigured)()) {
             throw new common_1.BadRequestException('Firebase is not configured on this server');
         }
-        const admin = await import('firebase-admin');
-        if (!admin.apps.length) {
-            const serviceAccount = JSON.parse(serviceAccountJson);
-            admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-        }
-        return admin;
+        (0, firebase_admin_config_1.initializeFirebaseAdmin)();
+        return (0, firebase_admin_config_1.getFirebaseAuth)();
     }
     async sendPasswordResetEmail(email) {
         const apiKey = process.env.FIREBASE_WEB_API_KEY?.trim();
@@ -38,41 +34,38 @@ let FirebaseSecurityService = FirebaseSecurityService_1 = class FirebaseSecurity
             }
             return;
         }
-        const admin = await this.getAdmin();
+        const auth = this.getAuth();
         try {
-            await admin.auth().getUserByEmail(email);
+            await auth.getUserByEmail(email);
         }
         catch {
             throw new common_1.BadRequestException('No Firebase account found for this email');
         }
-        await admin.auth().generatePasswordResetLink(email);
+        await auth.generatePasswordResetLink(email);
         this.logger.warn('FIREBASE_WEB_API_KEY is not set; password reset link generated but email was not sent automatically.');
     }
     async revokeAllRefreshTokens(firebaseUid) {
-        const admin = await this.getAdmin();
-        await admin.auth().revokeRefreshTokens(firebaseUid);
+        await this.getAuth().revokeRefreshTokens(firebaseUid);
     }
     async isMfaEnrolled(firebaseUid) {
-        const admin = await this.getAdmin();
-        const record = await admin.auth().getUser(firebaseUid);
+        const record = await this.getAuth().getUser(firebaseUid);
         return (record.multiFactor?.enrolledFactors?.length ?? 0) > 0;
     }
     async getMfaEnrollmentId(firebaseUid) {
-        const admin = await this.getAdmin();
-        const record = await admin.auth().getUser(firebaseUid);
+        const record = await this.getAuth().getUser(firebaseUid);
         const factor = record.multiFactor?.enrolledFactors?.[0];
         return factor?.uid ?? null;
     }
     async ensureFirebaseUser(params) {
         if (params.firebaseUid)
             return params.firebaseUid;
-        const admin = await this.getAdmin();
+        const auth = this.getAuth();
         try {
-            const existing = await admin.auth().getUserByEmail(params.email);
+            const existing = await auth.getUserByEmail(params.email);
             return existing.uid;
         }
         catch {
-            const created = await admin.auth().createUser({
+            const created = await auth.createUser({
                 email: params.email,
                 displayName: params.name,
                 emailVerified: false,

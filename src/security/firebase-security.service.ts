@@ -1,20 +1,16 @@
 import { BadRequestException, Injectable, Logger } from '@nestjs/common';
+import { getFirebaseAuth, isFirebaseConfigured, initializeFirebaseAdmin } from '../firebase/firebase-admin.config';
 
 @Injectable()
 export class FirebaseSecurityService {
   private readonly logger = new Logger(FirebaseSecurityService.name);
 
-  private async getAdmin() {
-    const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
-    if (!serviceAccountJson) {
+  private getAuth() {
+    if (!isFirebaseConfigured()) {
       throw new BadRequestException('Firebase is not configured on this server');
     }
-    const admin = await import('firebase-admin');
-    if (!admin.apps.length) {
-      const serviceAccount = JSON.parse(serviceAccountJson) as import('firebase-admin').ServiceAccount;
-      admin.initializeApp({ credential: admin.credential.cert(serviceAccount) });
-    }
-    return admin;
+    initializeFirebaseAdmin();
+    return getFirebaseAuth();
   }
 
   async sendPasswordResetEmail(email: string): Promise<void> {
@@ -36,32 +32,29 @@ export class FirebaseSecurityService {
       return;
     }
 
-    const admin = await this.getAdmin();
+    const auth = this.getAuth();
     try {
-      await admin.auth().getUserByEmail(email);
+      await auth.getUserByEmail(email);
     } catch {
       throw new BadRequestException('No Firebase account found for this email');
     }
-    await admin.auth().generatePasswordResetLink(email);
+    await auth.generatePasswordResetLink(email);
     this.logger.warn(
       'FIREBASE_WEB_API_KEY is not set; password reset link generated but email was not sent automatically.',
     );
   }
 
   async revokeAllRefreshTokens(firebaseUid: string): Promise<void> {
-    const admin = await this.getAdmin();
-    await admin.auth().revokeRefreshTokens(firebaseUid);
+    await this.getAuth().revokeRefreshTokens(firebaseUid);
   }
 
   async isMfaEnrolled(firebaseUid: string): Promise<boolean> {
-    const admin = await this.getAdmin();
-    const record = await admin.auth().getUser(firebaseUid);
+    const record = await this.getAuth().getUser(firebaseUid);
     return (record.multiFactor?.enrolledFactors?.length ?? 0) > 0;
   }
 
   async getMfaEnrollmentId(firebaseUid: string): Promise<string | null> {
-    const admin = await this.getAdmin();
-    const record = await admin.auth().getUser(firebaseUid);
+    const record = await this.getAuth().getUser(firebaseUid);
     const factor = record.multiFactor?.enrolledFactors?.[0];
     return factor?.uid ?? null;
   }
@@ -73,12 +66,12 @@ export class FirebaseSecurityService {
   }): Promise<string> {
     if (params.firebaseUid) return params.firebaseUid;
 
-    const admin = await this.getAdmin();
+    const auth = this.getAuth();
     try {
-      const existing = await admin.auth().getUserByEmail(params.email);
+      const existing = await auth.getUserByEmail(params.email);
       return existing.uid;
     } catch {
-      const created = await admin.auth().createUser({
+      const created = await auth.createUser({
         email: params.email,
         displayName: params.name,
         emailVerified: false,
