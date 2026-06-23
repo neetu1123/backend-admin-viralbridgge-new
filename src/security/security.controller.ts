@@ -15,6 +15,7 @@ import { Roles } from '../auth/roles.decorator';
 import { extractClientIp } from './security-session.helper';
 import {
   Confirm2FaDto,
+  ChangePasswordDto,
   Enable2FaDto,
   SecurityActivityQueryDto,
   SecurityActivityResponseDto,
@@ -56,9 +57,9 @@ export class SecurityController {
   }
 
   @Post('change-password')
-  @ApiOperation({ summary: 'Send Firebase password reset email' })
-  changePassword(@Request() req: SecurityRequest) {
-    return this.securityService.changePassword(req.user.id, sessionMeta(req));
+  @ApiOperation({ summary: 'Change password (requires current password)' })
+  changePassword(@Request() req: SecurityRequest, @Body() body: ChangePasswordDto) {
+    return this.securityService.changePassword(req.user.id, body, sessionMeta(req));
   }
 
   @Get('2fa/status')

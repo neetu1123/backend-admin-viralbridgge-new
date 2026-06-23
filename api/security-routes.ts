@@ -12,8 +12,8 @@ router.use(requireBrandOrCreator);
 router.get('/settings', (req: AuthedRequest, res) => run(req, res, (id) => security().getSettings(id)));
 
 router.post('/change-password', (req: AuthedRequest, res) =>
-  runWithAudit(req, res, (id) => security().changePassword(id, sessionMetaFromRequest(req)), {
-    action: 'PASSWORD_RESET_REQUESTED',
+  runWithAudit(req, res, (id) => security().changePassword(id, req.body, sessionMetaFromRequest(req)), {
+    action: 'PASSWORD_CHANGED',
     entity: 'Security',
     entityId: () => req.user!.id,
   }),

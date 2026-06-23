@@ -1,4 +1,4 @@
-import { Confirm2FaDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
+import { Confirm2FaDto, ChangePasswordDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
 import { SecurityService } from './security.service';
 type SecurityRequest = {
     user: {
@@ -19,7 +19,7 @@ export declare class SecurityController {
         lastPasswordChange: string | null;
         activeSessionCount: number;
     }>;
-    changePassword(req: SecurityRequest): Promise<{
+    changePassword(req: SecurityRequest, body: ChangePasswordDto): Promise<{
         message: string;
     }>;
     get2FaStatus(req: SecurityRequest): Promise<{

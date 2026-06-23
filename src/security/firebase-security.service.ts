@@ -59,6 +59,10 @@ export class FirebaseSecurityService {
     return factor?.uid ?? null;
   }
 
+  async updateUserPassword(firebaseUid: string, newPassword: string): Promise<void> {
+    await this.getAuth().updateUser(firebaseUid, { password: newPassword });
+  }
+
   async ensureFirebaseUser(params: {
     email: string;
     name: string;

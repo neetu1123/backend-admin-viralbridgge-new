@@ -1,6 +1,18 @@
 import { ApiProperty, ApiPropertyOptional } from '@nestjs/swagger';
 import { Type } from 'class-transformer';
-import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Min } from 'class-validator';
+import { IsBoolean, IsInt, IsNotEmpty, IsOptional, IsString, Matches, Min, MinLength } from 'class-validator';
+
+export class ChangePasswordDto {
+  @ApiProperty({ example: 'brand@1234' })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @ApiProperty({ example: 'NewSecurePass1!' })
+  @IsString()
+  @MinLength(8, { message: 'New password must be at least 8 characters' })
+  newPassword: string;
+}
 
 export class Enable2FaDto {
   @ApiProperty({ example: '+919876543210' })

@@ -3,6 +3,7 @@ import {
   Injectable,
   NotFoundException,
 } from '@nestjs/common';
+import * as bcrypt from 'bcrypt';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { emitSecurityActivityEvent } from '../common/security-emitter';
@@ -13,7 +14,7 @@ import {
   SecurityActivityType,
 } from './security.constants';
 import { parseUserAgent, SessionMeta } from './security-session.helper';
-import { Confirm2FaDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
+import { Confirm2FaDto, ChangePasswordDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
 
 @Injectable()
 export class SecurityService {
@@ -60,34 +61,50 @@ export class SecurityService {
     };
   }
 
-  async changePassword(userId: string, meta: SessionMeta) {
+  async changePassword(userId: string, dto: ChangePasswordDto, meta: SessionMeta) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     if (!user) throw new NotFoundException('User not found');
 
-    let firebaseUid = user.firebase_uid;
-    if (!firebaseUid) {
+    if (!user.password) {
+      throw new BadRequestException(
+        'This account has no password set. Use forgot password on the login page.',
+      );
+    }
+
+    const isCurrentValid = await bcrypt.compare(dto.currentPassword, user.password);
+    if (!isCurrentValid) {
+      throw new BadRequestException('Current password is incorrect');
+    }
+
+    if (dto.currentPassword === dto.newPassword) {
+      throw new BadRequestException('New password must be different from your current password');
+    }
+
+    const hashedPassword = await bcrypt.hash(dto.newPassword, 10);
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: { password: hashedPassword },
+    });
+
+    if (user.firebase_uid) {
       try {
-        firebaseUid = await this.firebaseSecurity.ensureFirebaseUser({
-          email: user.email,
-          name: user.name,
-          firebaseUid: user.firebase_uid,
-        });
-        await this.prisma.user.update({
-          where: { id: userId },
-          data: { firebase_uid: firebaseUid },
-        });
+        await this.firebaseSecurity.updateUserPassword(user.firebase_uid, dto.newPassword);
       } catch {
-        // Continue with email-only reset attempt
+        // JWT login still works if Firebase sync fails
       }
     }
 
-    await this.firebaseSecurity.sendPasswordResetEmail(user.email);
+    await this.prisma.securitySetting.upsert({
+      where: { user_id: userId },
+      update: { last_password_change: new Date() },
+      create: { user_id: userId, last_password_change: new Date() },
+    });
 
-    await this.createAuditLog(userId, SECURITY_AUDIT_ACTIONS.PASSWORD_RESET_REQUESTED, meta);
+    await this.createAuditLog(userId, SECURITY_AUDIT_ACTIONS.PASSWORD_CHANGED, meta);
     await this.recordActivity(userId, 'PASSWORD_CHANGED', meta);
-    await this.notify(userId, 'Password reset requested', 'A password reset email has been sent to your inbox.', 'SECURITY');
+    await this.notify(userId, 'Password updated', 'Your password was changed successfully.', 'SECURITY');
 
-    return { message: 'Password reset email sent.' };
+    return { message: 'Password changed successfully.' };
   }
 
   async enable2Fa(userId: string, dto: Enable2FaDto, meta: SessionMeta) {

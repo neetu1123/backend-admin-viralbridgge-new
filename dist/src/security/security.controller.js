@@ -36,8 +36,8 @@ let SecurityController = class SecurityController {
     getSettings(req) {
         return this.securityService.getSettings(req.user.id);
     }
-    changePassword(req) {
-        return this.securityService.changePassword(req.user.id, sessionMeta(req));
+    changePassword(req, body) {
+        return this.securityService.changePassword(req.user.id, body, sessionMeta(req));
     }
     get2FaStatus(req) {
         return this.securityService.get2FaStatus(req.user.id);
@@ -76,10 +76,11 @@ __decorate([
 ], SecurityController.prototype, "getSettings", null);
 __decorate([
     (0, common_1.Post)('change-password'),
-    (0, swagger_1.ApiOperation)({ summary: 'Send Firebase password reset email' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Change password (requires current password)' }),
     __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object]),
+    __metadata("design:paramtypes", [Object, security_dto_1.ChangePasswordDto]),
     __metadata("design:returntype", void 0)
 ], SecurityController.prototype, "changePassword", null);
 __decorate([

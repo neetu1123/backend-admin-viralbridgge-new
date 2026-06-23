@@ -56,6 +56,9 @@ let FirebaseSecurityService = FirebaseSecurityService_1 = class FirebaseSecurity
         const factor = record.multiFactor?.enrolledFactors?.[0];
         return factor?.uid ?? null;
     }
+    async updateUserPassword(firebaseUid, newPassword) {
+        await this.getAuth().updateUser(firebaseUid, { password: newPassword });
+    }
     async ensureFirebaseUser(params) {
         if (params.firebaseUid)
             return params.firebaseUid;
