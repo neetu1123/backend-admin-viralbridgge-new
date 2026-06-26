@@ -8,6 +8,11 @@ type OrganizationServiceType = import('../../dist/src/organization/organization.
 type SecurityServiceType = import('../../dist/src/security/security.service').SecurityService;
 type CreatorAnalyticsServiceType = import('../../dist/src/analytics/creator-analytics.service').CreatorAnalyticsService;
 type AdminAnalyticsServiceType = import('../../dist/src/analytics/admin-analytics.service').AdminAnalyticsService;
+type WalletServiceType = import('../../dist/src/payments/wallet.service').WalletService;
+type EscrowServiceType = import('../../dist/src/payments/escrow.service').EscrowService;
+type DeliverablesServiceType = import('../../dist/src/payments/deliverables.service').DeliverablesService;
+type WithdrawalServiceType = import('../../dist/src/payments/withdrawal.service').WithdrawalService;
+type RazorpayServiceType = import('../../dist/src/payments/razorpay.service').RazorpayService;
 
 let brandService: BrandServiceType | undefined;
 let creatorService: CreatorServiceType | undefined;
@@ -19,12 +24,25 @@ let creatorAnalyticsService: CreatorAnalyticsServiceType | undefined;
 let adminAnalyticsService: AdminAnalyticsServiceType | undefined;
 let notificationsService: import('../../dist/src/notifications/notifications.service').NotificationsService | undefined;
 let emailService: import('../../dist/src/email/email.service').EmailService | undefined;
+let walletService: WalletServiceType | undefined;
+let escrowService: EscrowServiceType | undefined;
+let deliverablesService: DeliverablesServiceType | undefined;
+let withdrawalService: WithdrawalServiceType | undefined;
+let razorpayService: RazorpayServiceType | undefined;
+let configService: import('@nestjs/config').ConfigService | undefined;
+
+function getConfigService() {
+  if (!configService) {
+    const { ConfigService } = require('@nestjs/config') as typeof import('@nestjs/config');
+    configService = new ConfigService();
+  }
+  return configService;
+}
 
 function getEmailService() {
   if (!emailService) {
     const { EmailService } = require('../../dist/src/email/email.service') as typeof import('../../dist/src/email/email.service');
-    const { ConfigService } = require('@nestjs/config') as typeof import('@nestjs/config');
-    emailService = new EmailService(new ConfigService());
+    emailService = new EmailService(getConfigService());
   }
   return emailService;
 }
@@ -35,6 +53,50 @@ function getNotificationsService() {
     notificationsService = new NotificationsService(getPrisma() as never);
   }
   return notificationsService;
+}
+
+function getRazorpayService(): RazorpayServiceType {
+  if (!razorpayService) {
+    const { RazorpayService } = require('../../dist/src/payments/razorpay.service') as typeof import('../../dist/src/payments/razorpay.service');
+    razorpayService = new RazorpayService(getConfigService(), getPrisma() as never);
+  }
+  return razorpayService;
+}
+
+function getWalletService(): WalletServiceType {
+  if (!walletService) {
+    const { WalletService } = require('../../dist/src/payments/wallet.service') as typeof import('../../dist/src/payments/wallet.service');
+    walletService = new WalletService(getPrisma() as never, getNotificationsService(), getRazorpayService());
+  }
+  return walletService;
+}
+
+function getEscrowService(): EscrowServiceType {
+  if (!escrowService) {
+    const { EscrowService } = require('../../dist/src/payments/escrow.service') as typeof import('../../dist/src/payments/escrow.service');
+    escrowService = new EscrowService(getPrisma() as never, getWalletService(), getNotificationsService());
+  }
+  return escrowService;
+}
+
+function getDeliverablesService(): DeliverablesServiceType {
+  if (!deliverablesService) {
+    const { DeliverablesService } = require('../../dist/src/payments/deliverables.service') as typeof import('../../dist/src/payments/deliverables.service');
+    deliverablesService = new DeliverablesService(
+      getPrisma() as never,
+      getNotificationsService(),
+      getEscrowService(),
+    );
+  }
+  return deliverablesService;
+}
+
+function getWithdrawalService(): WithdrawalServiceType {
+  if (!withdrawalService) {
+    const { WithdrawalService } = require('../../dist/src/payments/withdrawal.service') as typeof import('../../dist/src/payments/withdrawal.service');
+    withdrawalService = new WithdrawalService(getPrisma() as never, getWalletService(), getNotificationsService());
+  }
+  return withdrawalService;
 }
 
 export function getMatchingService(): MatchingServiceType {
@@ -48,7 +110,15 @@ export function getMatchingService(): MatchingServiceType {
 export function getBrandService(): BrandServiceType {
   if (!brandService) {
     const { BrandService } = require('../../dist/src/brand/brand.service') as typeof import('../../dist/src/brand/brand.service');
-    brandService = new BrandService(getPrisma() as never, getMatchingService());
+    brandService = new BrandService(
+      getPrisma() as never,
+      getMatchingService(),
+      getNotificationsService(),
+      getWalletService(),
+      getEscrowService(),
+      getDeliverablesService(),
+      getRazorpayService(),
+    );
   }
   return brandService;
 }
@@ -56,7 +126,15 @@ export function getBrandService(): BrandServiceType {
 export function getCreatorService(): CreatorServiceType {
   if (!creatorService) {
     const { CreatorService } = require('../../dist/src/creator/creator.service') as typeof import('../../dist/src/creator/creator.service');
-    creatorService = new CreatorService(getPrisma() as never, getMatchingService());
+    creatorService = new CreatorService(
+      getPrisma() as never,
+      getMatchingService(),
+      getNotificationsService(),
+      getWalletService(),
+      getWithdrawalService(),
+      getDeliverablesService(),
+      getEscrowService(),
+    );
   }
   return creatorService;
 }
@@ -113,3 +191,12 @@ export function getAdminAnalyticsService(): AdminAnalyticsServiceType {
   }
   return adminAnalyticsService;
 }
+
+// Exported for payment routes that may need direct access on Vercel
+export {
+  getWalletService,
+  getEscrowService,
+  getDeliverablesService,
+  getWithdrawalService,
+  getRazorpayService,
+};
