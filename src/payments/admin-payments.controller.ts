@@ -5,6 +5,7 @@ import { Roles } from '../auth/roles.decorator';
 import { ResolveDisputeDto } from './dto/escrow.dto';
 import { DisputeQueryDto, RejectWithdrawalDto } from './dto/withdrawal.dto';
 import { DisputeService } from './dispute.service';
+import { EscrowService } from './escrow.service';
 import { WithdrawalService } from './withdrawal.service';
 
 @ApiTags('Admin Payments')
@@ -16,6 +17,7 @@ export class AdminPaymentsController {
   constructor(
     private readonly withdrawalService: WithdrawalService,
     private readonly disputeService: DisputeService,
+    private readonly escrowService: EscrowService,
   ) {}
 
   @Get('withdrawals')
@@ -58,6 +60,12 @@ export class AdminPaymentsController {
   @ApiOperation({ summary: 'Dispute dashboard stats' })
   getDisputeStats() {
     return this.disputeService.getAdminDisputeStats();
+  }
+
+  @Get('escrows')
+  @ApiOperation({ summary: 'Monitor all escrows (admin)' })
+  getEscrows(@Query('status') status?: string) {
+    return this.escrowService.listAdminEscrows(status);
   }
 
   @Get('disputes')

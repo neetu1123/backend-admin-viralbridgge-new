@@ -8,24 +8,15 @@ export declare class WithdrawalController {
             id: string;
         };
     }, body: RequestWithdrawalDto): Promise<{
-        wallet: {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-        transaction: {
-            id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            type: string;
-            wallet_id: string;
-            amount: number;
-            reference_id: string | null;
-        };
+        id: string;
+        creatorId: string;
+        amount: number;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     list(req: {
         user: {
@@ -34,13 +25,14 @@ export declare class WithdrawalController {
     }, query: WithdrawalQueryDto): Promise<{
         data: {
             id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            type: string;
-            wallet_id: string;
+            creatorId: string;
             amount: number;
-            reference_id: string | null;
+            status: string;
+            transactionId: string | null | undefined;
+            requestedAt: string;
+            approvedAt: string | null;
+            rejectedAt: string | null;
+            rejectionReason: string | null;
         }[];
         meta: {
             page: number;

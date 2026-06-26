@@ -16,6 +16,7 @@ const matching_service_1 = require("../matching/matching.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const wallet_service_1 = require("../payments/wallet.service");
 const escrow_service_1 = require("../payments/escrow.service");
+const deliverables_service_1 = require("../payments/deliverables.service");
 const razorpay_service_1 = require("../payments/razorpay.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let BrandService = class BrandService {
@@ -24,13 +25,15 @@ let BrandService = class BrandService {
     notifications;
     walletService;
     escrowService;
+    deliverablesService;
     razorpayService;
-    constructor(prisma, matchingService, notifications, walletService, escrowService, razorpayService) {
+    constructor(prisma, matchingService, notifications, walletService, escrowService, deliverablesService, razorpayService) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
         this.walletService = walletService;
         this.escrowService = escrowService;
+        this.deliverablesService = deliverablesService;
         this.razorpayService = razorpayService;
     }
     async getProfile(userId) {
@@ -277,26 +280,22 @@ let BrandService = class BrandService {
         });
     }
     async reviewDeliverable(userId, deliverableId, status, notes) {
-        const deliverable = await this.prisma.deliverable.findUnique({
-            where: { id: deliverableId },
-            include: { campaign: true, creator: { include: { user: true } } },
-        });
-        if (!deliverable)
-            throw new common_1.NotFoundException('Deliverable not found');
-        await this.getOwnedCampaign(userId, deliverable.campaign_id);
-        const updated = await this.prisma.deliverable.update({
-            where: { id: deliverableId },
-            data: {
-                status,
-                revision_notes: notes,
-                reviewed_at: new Date(),
-            },
-        });
-        await this.createNotification(deliverable.creator.user_id, 'Deliverable reviewed', `Your deliverable for ${deliverable.campaign.title} was marked ${status.toLowerCase()}.`, { deliverableId, campaignId: deliverable.campaign_id, status });
-        return updated;
+        if (status === 'APPROVED') {
+            return this.deliverablesService.approve(userId, deliverableId);
+        }
+        if (status === 'REVISION_REQUESTED') {
+            return this.deliverablesService.requestRevision(userId, deliverableId, { notes });
+        }
+        if (status === 'REJECTED') {
+            return this.deliverablesService.reject(userId, deliverableId, { notes });
+        }
+        return this.deliverablesService.requestRevision(userId, deliverableId, { notes });
     }
     async releaseEscrow(userId, escrowId) {
         return this.escrowService.releaseEscrow(userId, escrowId);
+    }
+    async listEscrows(userId) {
+        return this.escrowService.listEscrows(userId, 'brand');
     }
     async getDashboard(userId) {
         const profile = await this.ensureBrandProfile(userId);
@@ -493,7 +492,7 @@ let BrandService = class BrandService {
         }
         const amount = application.proposed_price ?? application.campaign.budget;
         if (amount > 0) {
-            await this.escrowService.lockFundsOnApplicationAccept(application);
+            await this.escrowService.createPendingEscrowOnApplicationAccept(application);
         }
         const existingDeliverables = await this.prisma.deliverable.count({
             where: { application_id: application.id },
@@ -528,6 +527,7 @@ exports.BrandService = BrandService = __decorate([
         notifications_service_1.NotificationsService,
         wallet_service_1.WalletService,
         escrow_service_1.EscrowService,
+        deliverables_service_1.DeliverablesService,
         razorpay_service_1.RazorpayService])
 ], BrandService);
 //# sourceMappingURL=brand.service.js.map

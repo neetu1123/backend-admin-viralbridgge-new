@@ -97,6 +97,7 @@ model CreatorProfile {
   disputes         Dispute[]
   escrows          Escrow[]
   deliverables     Deliverable[]
+  withdrawals      Withdrawal[]
   ai_matches       AiMatch[]
   organization     Organization?
 
@@ -182,16 +183,21 @@ model Deliverable {
   title            String
   type             String?
   media_url        String?
+  file_url         String?
   thumbnail_url    String?
   notes            String?
   revision_notes   String?
-  status           String         @default("PENDING")
+  version          Int            @default(1)
+  status           String         @default("PENDING") // PENDING, SUBMITTED, REVISION_REQUESTED, APPROVED, REJECTED
   due_date         DateTime?
   submitted_at     DateTime?
   reviewed_at      DateTime?
+  auto_release_at  DateTime?
   created_at       DateTime       @default(now())
   updated_at       DateTime       @updatedAt
 
+  @@index([campaign_id, status])
+  @@index([status, auto_release_at])
   @@map("deliverables")
 }
 
@@ -218,14 +224,34 @@ model Escrow {
   creator_id       String
   creator          CreatorProfile @relation(fields: [creator_id], references: [id])
   amount           Float
-  status           String         @default("HELD") // HELD, RELEASED, REFUNDED, DISPUTED
-
+  platform_fee     Float          @default(0.0)
+  status           String         @default("PENDING") // PENDING, HELD, RELEASED, REFUNDED, DISPUTED
+  locked_at        DateTime?
   created_at       DateTime       @default(now())
   released_at      DateTime?
   updated_at       DateTime       @updatedAt
 
   @@index([campaign_id, creator_id, brand_id])
+  @@index([status])
   @@map("escrows")
+}
+
+model Withdrawal {
+  id               String         @id @default(uuid())
+  creator_id       String
+  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
+  amount           Float
+  status           String         @default("PENDING") // PENDING, APPROVED, REJECTED
+  transaction_id   String?        @unique
+  requested_at     DateTime       @default(now())
+  approved_at      DateTime?
+  rejected_at      DateTime?
+  rejection_reason String?
+  created_at       DateTime       @default(now())
+  updated_at       DateTime       @updatedAt
+
+  @@index([creator_id, status])
+  @@map("withdrawals")
 }
 
 model Transaction {

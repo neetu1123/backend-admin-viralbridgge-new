@@ -16,6 +16,8 @@ const matching_service_1 = require("../matching/matching.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const withdrawal_service_1 = require("../payments/withdrawal.service");
 const wallet_service_1 = require("../payments/wallet.service");
+const escrow_service_1 = require("../payments/escrow.service");
+const deliverables_service_1 = require("../payments/deliverables.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let CreatorService = class CreatorService {
     prisma;
@@ -23,12 +25,16 @@ let CreatorService = class CreatorService {
     notifications;
     walletService;
     withdrawalService;
-    constructor(prisma, matchingService, notifications, walletService, withdrawalService) {
+    deliverablesService;
+    escrowService;
+    constructor(prisma, matchingService, notifications, walletService, withdrawalService, deliverablesService, escrowService) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
         this.walletService = walletService;
         this.withdrawalService = withdrawalService;
+        this.deliverablesService = deliverablesService;
+        this.escrowService = escrowService;
     }
     async getProfile(userId) {
         return this.ensureCreatorProfile(userId);
@@ -234,34 +240,24 @@ let CreatorService = class CreatorService {
     }
     async getDeliverables(userId) {
         const profile = await this.ensureCreatorProfile(userId);
-        return this.prisma.deliverable.findMany({
+        const rows = await this.prisma.deliverable.findMany({
             where: { creator_id: profile.id },
             include: { campaign: { include: { brand: true } }, application: true },
             orderBy: { created_at: 'desc' },
         });
+        return rows.map((d) => this.deliverablesService.formatDeliverable(d));
+    }
+    async listEscrows(userId) {
+        return this.escrowService.listEscrows(userId, 'creator');
     }
     async submitDeliverable(userId, deliverableId, dto) {
-        const profile = await this.ensureCreatorProfile(userId);
-        const deliverable = await this.prisma.deliverable.findUnique({
-            where: { id: deliverableId },
-            include: { campaign: { include: { brand: true } } },
+        return this.deliverablesService.submit(userId, {
+            deliverable_id: deliverableId,
+            file_url: dto.mediaUrl ?? dto.file_url ?? '',
+            mediaUrl: dto.mediaUrl,
+            thumbnailUrl: dto.thumbnailUrl,
+            notes: dto.notes,
         });
-        if (!deliverable)
-            throw new common_1.NotFoundException('Deliverable not found');
-        if (deliverable.creator_id !== profile.id)
-            throw new common_1.ForbiddenException('Forbidden');
-        const updated = await this.prisma.deliverable.update({
-            where: { id: deliverableId },
-            data: {
-                media_url: dto.mediaUrl,
-                thumbnail_url: dto.thumbnailUrl,
-                notes: dto.notes,
-                status: 'IN_REVIEW',
-                submitted_at: new Date(),
-            },
-        });
-        await this.createNotification(deliverable.campaign.brand.user_id, 'Deliverable submitted', `${profile.full_name ?? profile.user.name} submitted a deliverable for ${deliverable.campaign.title}.`, { deliverableId, campaignId: deliverable.campaign_id });
-        return updated;
     }
     async getWallet(userId) {
         return this.walletService.getWallet(userId);
@@ -378,6 +374,8 @@ exports.CreatorService = CreatorService = __decorate([
         matching_service_1.MatchingService,
         notifications_service_1.NotificationsService,
         wallet_service_1.WalletService,
-        withdrawal_service_1.WithdrawalService])
+        withdrawal_service_1.WithdrawalService,
+        deliverables_service_1.DeliverablesService,
+        escrow_service_1.EscrowService])
 ], CreatorService);
 //# sourceMappingURL=creator.service.js.map

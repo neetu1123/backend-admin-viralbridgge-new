@@ -81,6 +81,12 @@ let BrandController = class BrandController {
     reviseDeliverable(req, id, body) {
         return this.brandService.reviewDeliverable(req.user.id, id, 'REVISION_REQUESTED', body.notes);
     }
+    rejectDeliverable(req, id, body) {
+        return this.brandService.reviewDeliverable(req.user.id, id, 'REJECTED', body.notes);
+    }
+    listEscrows(req) {
+        return this.brandService.listEscrows(req.user.id);
+    }
     releaseEscrow(req, id) {
         return this.brandService.releaseEscrow(req.user.id, id);
     }
@@ -296,6 +302,22 @@ __decorate([
     __metadata("design:paramtypes", [Object, String, brand_dto_1.RevisionDto]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "reviseDeliverable", null);
+__decorate([
+    (0, common_1.Post)('deliverables/:id/reject'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, brand_dto_1.RevisionDto]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "rejectDeliverable", null);
+__decorate([
+    (0, common_1.Get)('escrows'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "listEscrows", null);
 __decorate([
     (0, common_1.Post)('escrows/:id/release'),
     __param(0, (0, common_1.Request)()),

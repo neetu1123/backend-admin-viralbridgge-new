@@ -11,6 +11,7 @@ import {
   DISPUTE_STATUSES,
   ESCROW_STATUSES,
   OPEN_DISPUTE_STATUSES,
+  PLATFORM_FEE_PERCENT,
   TRANSACTION_TYPES,
 } from './constants';
 import { CreateEscrowDto, OpenDisputeDto } from './dto/escrow.dto';
@@ -24,6 +25,10 @@ export class EscrowService {
     private readonly notifications: NotificationsService,
   ) {}
 
+  calculatePlatformFee(amount: number): number {
+    return Math.round((amount * PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
+  }
+
   async getEscrow(userId: string, escrowId: string) {
     const escrow = await this.prisma.escrow.findUnique({
       where: { id: escrowId },
@@ -36,6 +41,17 @@ export class EscrowService {
     if (!escrow) throw new NotFoundException('Escrow not found');
     this.assertEscrowAccess(userId, escrow);
     return this.formatEscrow(escrow);
+  }
+
+  async getEscrowForCampaignCreator(campaignId: string, creatorId: string) {
+    return this.prisma.escrow.findFirst({
+      where: { campaign_id: campaignId, creator_id: creatorId },
+      include: {
+        campaign: { select: { title: true } },
+        brand: { include: { user: true } },
+        creator: { include: { user: true } },
+      },
+    });
   }
 
   async listEscrows(userId: string, role: 'brand' | 'creator') {
@@ -82,6 +98,20 @@ export class EscrowService {
     );
   }
 
+  async listAdminEscrows(status?: string) {
+    const where = status ? { status: status.toUpperCase() } : {};
+    const escrows = await this.prisma.escrow.findMany({
+      where,
+      include: {
+        campaign: { select: { id: true, title: true } },
+        brand: { include: { user: { select: { id: true, name: true, email: true } } } },
+        creator: { include: { user: { select: { id: true, name: true, email: true } } } },
+      },
+      orderBy: { created_at: 'desc' },
+    });
+    return escrows.map((e) => this.formatEscrow(e));
+  }
+
   async createEscrow(userId: string, dto: CreateEscrowDto) {
     const brand = await this.prisma.brandProfile.findUnique({ where: { user_id: userId } });
     if (!brand) throw new ForbiddenException('Brand profile required');
@@ -100,7 +130,22 @@ export class EscrowService {
     const existing = await this.prisma.escrow.findFirst({
       where: { campaign_id: dto.campaign_id, creator_id: dto.creator_id },
     });
-    if (existing) throw new BadRequestException('Escrow already exists for this campaign and creator');
+
+    if (existing?.status === ESCROW_STATUSES.HELD) {
+      throw new BadRequestException('Escrow is already funded and held');
+    }
+    if (existing?.status === ESCROW_STATUSES.RELEASED) {
+      throw new BadRequestException('Escrow has already been released');
+    }
+
+    if (existing?.status === ESCROW_STATUSES.PENDING) {
+      return this.fundPendingEscrow(existing.id, {
+        brandUserId: userId,
+        creatorUserId: creator.user_id,
+        amount,
+        campaignTitle: campaign.title,
+      });
+    }
 
     return this.lockFundsForEscrow({
       campaignId: dto.campaign_id,
@@ -113,7 +158,8 @@ export class EscrowService {
     });
   }
 
-  async lockFundsOnApplicationAccept(application: {
+  /** Creates a PENDING escrow when brand accepts a creator — funds are not locked yet. */
+  async createPendingEscrowOnApplicationAccept(application: {
     campaign_id: string;
     creator_id: string;
     proposed_price?: number | null;
@@ -128,15 +174,78 @@ export class EscrowService {
     });
     if (existing) return existing;
 
-    return this.lockFundsForEscrow({
-      campaignId: application.campaign_id,
-      brandId: application.campaign.brand_id,
-      brandUserId: application.campaign.brand.user_id,
-      creatorId: application.creator_id,
-      creatorUserId: application.creator.user_id,
-      amount,
-      campaignTitle: application.campaign.title,
+    const platformFee = this.calculatePlatformFee(amount);
+    return this.prisma.escrow.create({
+      data: {
+        campaign_id: application.campaign_id,
+        brand_id: application.campaign.brand_id,
+        creator_id: application.creator_id,
+        amount,
+        platform_fee: platformFee,
+        status: ESCROW_STATUSES.PENDING,
+      },
     });
+  }
+
+  /** @deprecated Use createPendingEscrowOnApplicationAccept — kept for backward compatibility */
+  async lockFundsOnApplicationAccept(application: {
+    campaign_id: string;
+    creator_id: string;
+    proposed_price?: number | null;
+    campaign: { brand_id: string; budget: number; title: string; brand: { user_id: string } };
+    creator: { user_id: string };
+  }) {
+    return this.createPendingEscrowOnApplicationAccept(application);
+  }
+
+  private async fundPendingEscrow(
+    escrowId: string,
+    params: {
+      brandUserId: string;
+      creatorUserId: string;
+      amount: number;
+      campaignTitle: string;
+    },
+  ) {
+    const escrow = await this.getEscrowWithRelations(escrowId);
+    if (escrow.status !== ESCROW_STATUSES.PENDING) {
+      throw new BadRequestException(`Cannot fund escrow in ${escrow.status} status`);
+    }
+    if (escrow.brand.user_id !== params.brandUserId) {
+      throw new ForbiddenException('Only the brand can fund escrow');
+    }
+
+    const amount = params.amount;
+    const platformFee = this.calculatePlatformFee(amount);
+
+    const result = await this.prisma.$transaction(async (tx) => {
+      await this.wallet.moveToPending(tx, params.brandUserId, amount, escrowId);
+
+      const updated = await tx.escrow.update({
+        where: { id: escrowId },
+        data: {
+          amount,
+          platform_fee: platformFee,
+          status: ESCROW_STATUSES.HELD,
+          locked_at: new Date(),
+        },
+        include: {
+          campaign: { select: { title: true } },
+          brand: { include: { user: { select: { id: true, name: true } } } },
+          creator: { include: { user: { select: { id: true, name: true } } } },
+        },
+      });
+
+      const brandWallet = await this.wallet.ensureWallet(params.brandUserId, tx);
+      return { escrow: updated, brandWallet };
+    });
+
+    await this.notifyEscrowHeld(result.escrow, params.brandUserId, params.creatorUserId, params.campaignTitle);
+    emitWalletEvent(params.brandUserId, 'wallet:updated', result.brandWallet);
+    emitWalletEvent(params.brandUserId, 'escrow:created', result.escrow);
+    emitWalletEvent(params.creatorUserId, 'escrow:created', result.escrow);
+
+    return result.escrow;
   }
 
   private async lockFundsForEscrow(params: {
@@ -148,6 +257,8 @@ export class EscrowService {
     amount: number;
     campaignTitle: string;
   }) {
+    const platformFee = this.calculatePlatformFee(params.amount);
+
     const result = await this.prisma.$transaction(async (tx) => {
       await this.wallet.moveToPending(tx, params.brandUserId, params.amount);
 
@@ -157,7 +268,9 @@ export class EscrowService {
           brand_id: params.brandId,
           creator_id: params.creatorId,
           amount: params.amount,
+          platform_fee: platformFee,
           status: ESCROW_STATUSES.HELD,
+          locked_at: new Date(),
         },
         include: {
           campaign: { select: { title: true } },
@@ -170,25 +283,7 @@ export class EscrowService {
       return { escrow, brandWallet };
     });
 
-    await Promise.all([
-      this.notifications.create({
-        userId: params.brandUserId,
-        title: 'Escrow Locked',
-        message: `₹${params.amount.toLocaleString()} locked in escrow for ${params.campaignTitle}.`,
-        type: 'PAYMENT',
-        entityType: 'Escrow',
-        entityId: result.escrow.id,
-      }),
-      this.notifications.create({
-        userId: params.creatorUserId,
-        title: 'Escrow Locked',
-        message: `₹${params.amount.toLocaleString()} is held in escrow for ${params.campaignTitle}.`,
-        type: 'PAYMENT',
-        entityType: 'Escrow',
-        entityId: result.escrow.id,
-      }),
-    ]);
-
+    await this.notifyEscrowHeld(result.escrow, params.brandUserId, params.creatorUserId, params.campaignTitle);
     emitWalletEvent(params.brandUserId, 'wallet:updated', result.brandWallet);
     emitWalletEvent(params.brandUserId, 'escrow:created', result.escrow);
     emitWalletEvent(params.creatorUserId, 'escrow:created', result.escrow);
@@ -196,13 +291,63 @@ export class EscrowService {
     return result.escrow;
   }
 
-  async releaseEscrow(userId: string, escrowId: string) {
+  private async notifyEscrowHeld(
+    escrow: { id: string; amount: number },
+    brandUserId: string,
+    creatorUserId: string,
+    campaignTitle: string,
+  ) {
+    await Promise.all([
+      this.notifications.create({
+        userId: brandUserId,
+        title: 'Escrow Secured',
+        message: `₹${escrow.amount.toLocaleString()} locked in escrow for ${campaignTitle}.`,
+        type: 'PAYMENT',
+        entityType: 'Escrow',
+        entityId: escrow.id,
+      }),
+      this.notifications.create({
+        userId: creatorUserId,
+        title: 'Escrow Secured',
+        message: `₹${escrow.amount.toLocaleString()} is held in escrow for ${campaignTitle}. You can start work.`,
+        type: 'PAYMENT',
+        entityType: 'Escrow',
+        entityId: escrow.id,
+      }),
+    ]);
+  }
+
+  async releaseEscrow(userId: string, escrowId: string, options?: { systemRelease?: boolean; reason?: string }) {
     const escrow = await this.getEscrowWithRelations(escrowId);
-    if (escrow.brand.user_id !== userId) throw new ForbiddenException('Only the brand can release escrow');
+    if (!options?.systemRelease && escrow.brand.user_id !== userId) {
+      throw new ForbiddenException('Only the brand can release escrow');
+    }
+    return this.releaseEscrowInternal(escrow, options?.reason);
+  }
+
+  async releaseEscrowByCampaignCreator(campaignId: string, creatorId: string, reason?: string) {
+    const escrow = await this.prisma.escrow.findFirst({
+      where: { campaign_id: campaignId, creator_id: creatorId },
+      include: {
+        campaign: true,
+        brand: { include: { user: true } },
+        creator: { include: { user: true } },
+      },
+    });
+    if (!escrow) throw new NotFoundException('Escrow not found for this campaign');
+    return this.releaseEscrowInternal(escrow, reason);
+  }
+
+  private async releaseEscrowInternal(
+    escrow: Awaited<ReturnType<EscrowService['getEscrowWithRelations']>>,
+    reason?: string,
+  ) {
     if (escrow.status === ESCROW_STATUSES.RELEASED) return escrow;
     if (escrow.status !== ESCROW_STATUSES.HELD && escrow.status !== ESCROW_STATUSES.DISPUTED) {
       throw new BadRequestException(`Cannot release escrow in ${escrow.status} status`);
     }
+
+    const creatorPayout = Math.max(0, escrow.amount - (escrow.platform_fee ?? 0));
 
     const result = await this.prisma.$transaction(async (tx) => {
       await this.wallet.releasePending(tx, escrow.brand.user_id, escrow.amount);
@@ -210,13 +355,13 @@ export class EscrowService {
       const creatorWallet = await this.wallet.ensureWallet(escrow.creator.user_id, tx);
       await tx.wallet.update({
         where: { id: creatorWallet.id },
-        data: { available_balance: { increment: escrow.amount } },
+        data: { available_balance: { increment: creatorPayout } },
       });
       await tx.transaction.create({
         data: {
           wallet_id: creatorWallet.id,
           type: TRANSACTION_TYPES.ESCROW_RELEASE,
-          amount: escrow.amount,
+          amount: creatorPayout,
           status: 'COMPLETED',
           reference_id: escrow.id,
         },
@@ -233,14 +378,18 @@ export class EscrowService {
       });
 
       const refreshedCreatorWallet = await tx.wallet.findUnique({ where: { id: creatorWallet.id } });
-      return { escrow: updated, creatorWallet: refreshedCreatorWallet };
+      return { escrow: updated, creatorWallet: refreshedCreatorWallet, creatorPayout };
     });
+
+    const releaseMessage = reason
+      ? reason
+      : `₹${result.creatorPayout.toLocaleString()} has been released to your wallet.`;
 
     await Promise.all([
       this.notifications.create({
         userId: escrow.creator.user_id,
-        title: 'Escrow Released',
-        message: `₹${escrow.amount.toLocaleString()} has been released to your wallet.`,
+        title: 'Payment Released',
+        message: releaseMessage,
         type: 'PAYMENT',
         entityType: 'Escrow',
         entityId: escrow.id,
@@ -271,7 +420,9 @@ export class EscrowService {
     }
 
     const result = await this.prisma.$transaction(async (tx) => {
-      await this.wallet.refundPendingToAvailable(tx, escrow.brand.user_id, escrow.amount, escrow.id);
+      if (escrow.status === ESCROW_STATUSES.HELD || escrow.status === ESCROW_STATUSES.DISPUTED) {
+        await this.wallet.refundPendingToAvailable(tx, escrow.brand.user_id, escrow.amount, escrow.id);
+      }
       const updated = await tx.escrow.update({
         where: { id: escrow.id },
         data: { status: ESCROW_STATUSES.REFUNDED, released_at: new Date() },
@@ -388,7 +539,7 @@ export class EscrowService {
     });
 
     await this.notifications.notifyAdmins({
-      title: 'Dispute Created',
+      title: 'Dispute Raised',
       message: `A dispute was opened on ${params.campaignTitle}.`,
       type: 'DISPUTE',
       entityType: 'Dispute',
@@ -431,7 +582,7 @@ export class EscrowService {
     }
   }
 
-  private formatEscrow(escrow: Record<string, unknown>) {
+  formatEscrow(escrow: Record<string, unknown>) {
     return {
       id: escrow.id,
       campaignId: escrow.campaign_id,
@@ -439,7 +590,10 @@ export class EscrowService {
       brandId: escrow.brand_id,
       creatorId: escrow.creator_id,
       amount: escrow.amount,
+      platformFee: escrow.platform_fee ?? 0,
+      creatorPayout: Math.max(0, Number(escrow.amount) - Number(escrow.platform_fee ?? 0)),
       status: escrow.status,
+      lockedAt: (escrow.locked_at as Date | null)?.toISOString?.() ?? escrow.locked_at ?? null,
       createdAt: (escrow.created_at as Date)?.toISOString?.() ?? escrow.created_at,
       releasedAt: (escrow.released_at as Date | null)?.toISOString?.() ?? escrow.released_at ?? null,
     };

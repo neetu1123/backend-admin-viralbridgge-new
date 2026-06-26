@@ -54,6 +54,9 @@ let CreatorController = class CreatorController {
     getDashboard(req) {
         return this.creatorService.getDashboard(req.user.id);
     }
+    listEscrows(req) {
+        return this.creatorService.listEscrows(req.user.id);
+    }
     getDeliverables(req) {
         return this.creatorService.getDeliverables(req.user.id);
     }
@@ -176,6 +179,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getDashboard", null);
+__decorate([
+    (0, common_1.Get)('escrows'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "listEscrows", null);
 __decorate([
     (0, common_1.Get)('deliverables'),
     __param(0, (0, common_1.Request)()),

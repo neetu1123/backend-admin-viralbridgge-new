@@ -9,6 +9,7 @@ import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
+import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
@@ -30,6 +31,7 @@ export class BrandService {
     private notifications: NotificationsService,
     private walletService: WalletService,
     private escrowService: EscrowService,
+    private deliverablesService: DeliverablesService,
     private razorpayService: RazorpayService,
   ) {}
 
@@ -309,34 +311,24 @@ export class BrandService {
   }
 
   async reviewDeliverable(userId: string, deliverableId: string, status: string, notes?: string) {
-    const deliverable = await this.prisma.deliverable.findUnique({
-      where: { id: deliverableId },
-      include: { campaign: true, creator: { include: { user: true } } },
-    });
-    if (!deliverable) throw new NotFoundException('Deliverable not found');
-    await this.getOwnedCampaign(userId, deliverable.campaign_id);
-
-    const updated = await this.prisma.deliverable.update({
-      where: { id: deliverableId },
-      data: {
-        status,
-        revision_notes: notes,
-        reviewed_at: new Date(),
-      },
-    });
-
-    await this.createNotification(
-      deliverable.creator.user_id,
-      'Deliverable reviewed',
-      `Your deliverable for ${deliverable.campaign.title} was marked ${status.toLowerCase()}.`,
-      { deliverableId, campaignId: deliverable.campaign_id, status },
-    );
-
-    return updated;
+    if (status === 'APPROVED') {
+      return this.deliverablesService.approve(userId, deliverableId);
+    }
+    if (status === 'REVISION_REQUESTED') {
+      return this.deliverablesService.requestRevision(userId, deliverableId, { notes });
+    }
+    if (status === 'REJECTED') {
+      return this.deliverablesService.reject(userId, deliverableId, { notes });
+    }
+    return this.deliverablesService.requestRevision(userId, deliverableId, { notes });
   }
 
   async releaseEscrow(userId: string, escrowId: string) {
     return this.escrowService.releaseEscrow(userId, escrowId);
+  }
+
+  async listEscrows(userId: string) {
+    return this.escrowService.listEscrows(userId, 'brand');
   }
 
   async getDashboard(userId: string) {
@@ -555,7 +547,7 @@ export class BrandService {
 
     const amount = application.proposed_price ?? application.campaign.budget;
     if (amount > 0) {
-      await this.escrowService.lockFundsOnApplicationAccept(application);
+      await this.escrowService.createPendingEscrowOnApplicationAccept(application);
     }
 
     const existingDeliverables = await this.prisma.deliverable.count({

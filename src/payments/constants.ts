@@ -19,11 +19,25 @@ export const TRANSACTION_STATUSES = {
 } as const;
 
 export const ESCROW_STATUSES = {
+  PENDING: 'PENDING',
   HELD: 'HELD',
   RELEASED: 'RELEASED',
   REFUNDED: 'REFUNDED',
   DISPUTED: 'DISPUTED',
 } as const;
+
+export const DELIVERABLE_STATUSES = {
+  PENDING: 'PENDING',
+  SUBMITTED: 'SUBMITTED',
+  IN_REVIEW: 'IN_REVIEW', // legacy alias for SUBMITTED
+  REVISION_REQUESTED: 'REVISION_REQUESTED',
+  APPROVED: 'APPROVED',
+  REJECTED: 'REJECTED',
+} as const;
+
+export const AUTO_RELEASE_DAYS = 7;
+
+export const PLATFORM_FEE_PERCENT = Number(process.env.PLATFORM_FEE_PERCENT ?? 10);
 
 export const DISPUTE_STATUSES = {
   OPEN: 'OPEN',

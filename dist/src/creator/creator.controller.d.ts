@@ -403,85 +403,42 @@ export declare class CreatorController {
         walletBalance: number;
         earnings: number;
     }>;
-    getDeliverables(req: any): Promise<({
-        campaign: {
-            brand: {
-                id: string;
-                updated_at: Date;
-                description: string | null;
-                created_at: Date;
-                user_id: string;
-                contact_email: string | null;
-                phone: string | null;
-                company_name: string;
-                industry: string | null;
-                website: string | null;
-                logo: string | null;
-                location: string | null;
-            };
-        } & {
-            id: string;
-            status: string;
-            updated_at: Date;
-            brand_id: string;
-            title: string;
-            description: string;
-            platform: string;
-            budget: number;
-            remaining_budget: number;
-            deadline: Date;
-            deliverables: string[];
-            locality: string | null;
-            languages: string[];
-            created_by_admin_id: string | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            created_at: Date;
-        };
-        application: {
-            message: string | null;
-            id: string;
-            campaign_id: string;
-            creator_id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            proposed_price: number | null;
-        } | null;
-    } & {
+    listEscrows(req: any): Promise<any[]>;
+    getDeliverables(req: any): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
-    })[]>;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }[]>;
     submitDeliverable(req: any, id: string, body: SubmitDeliverableDto): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
     }>;
     getWallet(req: any): Promise<{
         id: string;
@@ -492,24 +449,15 @@ export declare class CreatorController {
         pending_balance: number;
     }>;
     withdraw(req: any, body: WithdrawDto): Promise<{
-        wallet: {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-        transaction: {
-            id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            type: string;
-            wallet_id: string;
-            amount: number;
-            reference_id: string | null;
-        };
+        id: string;
+        creatorId: string;
+        amount: number;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     getWalletTransactions(req: any, query: TransactionQueryDto): Promise<{
         data: {

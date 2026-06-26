@@ -85,6 +85,11 @@ export class CreatorController {
     return this.creatorService.getDashboard(req.user.id);
   }
 
+  @Get('escrows')
+  listEscrows(@Request() req: any) {
+    return this.creatorService.listEscrows(req.user.id);
+  }
+
   @Get('deliverables')
   getDeliverables(@Request() req: any) {
     return this.creatorService.getDeliverables(req.user.id);

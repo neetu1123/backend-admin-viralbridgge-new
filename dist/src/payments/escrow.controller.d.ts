@@ -62,7 +62,9 @@ export declare class EscrowController {
         updated_at: Date;
         brand_id: string;
         created_at: Date;
+        platform_fee: number;
         amount: number;
+        locked_at: Date | null;
         released_at: Date | null;
     }>;
     get(req: {
@@ -76,7 +78,10 @@ export declare class EscrowController {
         brandId: unknown;
         creatorId: unknown;
         amount: unknown;
+        platformFee: {};
+        creatorPayout: number;
         status: unknown;
+        lockedAt: {} | null;
         createdAt: string;
         releasedAt: {} | null;
     }>;
@@ -137,7 +142,9 @@ export declare class EscrowController {
         updated_at: Date;
         brand_id: string;
         created_at: Date;
+        platform_fee: number;
         amount: number;
+        locked_at: Date | null;
         released_at: Date | null;
     }>;
     refund(req: {
@@ -152,7 +159,9 @@ export declare class EscrowController {
         updated_at: Date;
         brand_id: string;
         created_at: Date;
+        platform_fee: number;
         amount: number;
+        locked_at: Date | null;
         released_at: Date | null;
     }>;
     dispute(req: {

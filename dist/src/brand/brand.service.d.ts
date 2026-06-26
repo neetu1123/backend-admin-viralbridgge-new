@@ -3,6 +3,7 @@ import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
+import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
 import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
 export declare class BrandService {
@@ -11,8 +12,9 @@ export declare class BrandService {
     private notifications;
     private walletService;
     private escrowService;
+    private deliverablesService;
     private razorpayService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, razorpayService: RazorpayService);
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, deliverablesService: DeliverablesService, razorpayService: RazorpayService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -309,6 +311,7 @@ export declare class BrandService {
                     title: string;
                     created_at: Date;
                     type: string | null;
+                    file_url: string | null;
                     submitted_at: Date | null;
                     reviewed_at: Date | null;
                     notes: string | null;
@@ -316,7 +319,9 @@ export declare class BrandService {
                     media_url: string | null;
                     thumbnail_url: string | null;
                     revision_notes: string | null;
+                    version: number;
                     due_date: Date | null;
+                    auto_release_at: Date | null;
                 }[];
             } & {
                 message: string | null;
@@ -373,7 +378,9 @@ export declare class BrandService {
                 updated_at: Date;
                 brand_id: string;
                 created_at: Date;
+                platform_fee: number;
                 amount: number;
+                locked_at: Date | null;
                 released_at: Date | null;
             })[];
             campaignDeliverables: ({
@@ -432,6 +439,7 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -439,7 +447,9 @@ export declare class BrandService {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             })[];
         } & {
             id: string;
@@ -505,6 +515,7 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -512,7 +523,9 @@ export declare class BrandService {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -570,6 +583,7 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -577,7 +591,9 @@ export declare class BrandService {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -645,6 +661,7 @@ export declare class BrandService {
             title: string;
             created_at: Date;
             type: string | null;
+            file_url: string | null;
             submitted_at: Date | null;
             reviewed_at: Date | null;
             notes: string | null;
@@ -652,7 +669,9 @@ export declare class BrandService {
             media_url: string | null;
             thumbnail_url: string | null;
             revision_notes: string | null;
+            version: number;
             due_date: Date | null;
+            auto_release_at: Date | null;
         })[];
         payments: ({
             creator: {
@@ -699,7 +718,9 @@ export declare class BrandService {
             updated_at: Date;
             brand_id: string;
             created_at: Date;
+            platform_fee: number;
             amount: number;
+            locked_at: Date | null;
             released_at: Date | null;
         })[];
     }>;
@@ -1039,6 +1060,7 @@ export declare class BrandService {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -1046,7 +1068,9 @@ export declare class BrandService {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -1121,6 +1145,7 @@ export declare class BrandService {
         title: string;
         created_at: Date;
         type: string | null;
+        file_url: string | null;
         submitted_at: Date | null;
         reviewed_at: Date | null;
         notes: string | null;
@@ -1128,25 +1153,27 @@ export declare class BrandService {
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
+        version: number;
         due_date: Date | null;
+        auto_release_at: Date | null;
     })[]>;
     reviewDeliverable(userId: string, deliverableId: string, status: string, notes?: string): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
     }>;
     releaseEscrow(userId: string, escrowId: string): Promise<{
         campaign: {
@@ -1201,9 +1228,12 @@ export declare class BrandService {
         updated_at: Date;
         brand_id: string;
         created_at: Date;
+        platform_fee: number;
         amount: number;
+        locked_at: Date | null;
         released_at: Date | null;
     }>;
+    listEscrows(userId: string): Promise<any[]>;
     getDashboard(userId: string): Promise<{
         totalCampaigns: number;
         activeCampaigns: number;

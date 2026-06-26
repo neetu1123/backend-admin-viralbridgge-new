@@ -20,13 +20,16 @@ const roles_decorator_1 = require("../auth/roles.decorator");
 const escrow_dto_1 = require("./dto/escrow.dto");
 const withdrawal_dto_1 = require("./dto/withdrawal.dto");
 const dispute_service_1 = require("./dispute.service");
+const escrow_service_1 = require("./escrow.service");
 const withdrawal_service_1 = require("./withdrawal.service");
 let AdminPaymentsController = class AdminPaymentsController {
     withdrawalService;
     disputeService;
-    constructor(withdrawalService, disputeService) {
+    escrowService;
+    constructor(withdrawalService, disputeService, escrowService) {
         this.withdrawalService = withdrawalService;
         this.disputeService = disputeService;
+        this.escrowService = escrowService;
     }
     getWithdrawals(status) {
         return this.withdrawalService.listAdminWithdrawals(status ?? 'PENDING');
@@ -45,6 +48,9 @@ let AdminPaymentsController = class AdminPaymentsController {
     }
     getDisputeStats() {
         return this.disputeService.getAdminDisputeStats();
+    }
+    getEscrows(status) {
+        return this.escrowService.listAdminEscrows(status);
     }
     getDisputes(query) {
         return this.disputeService.listAdminDisputes(query);
@@ -124,6 +130,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminPaymentsController.prototype, "getDisputeStats", null);
 __decorate([
+    (0, common_1.Get)('escrows'),
+    (0, swagger_1.ApiOperation)({ summary: 'Monitor all escrows (admin)' }),
+    __param(0, (0, common_1.Query)('status')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminPaymentsController.prototype, "getEscrows", null);
+__decorate([
     (0, common_1.Get)('disputes'),
     (0, swagger_1.ApiOperation)({ summary: 'List all disputes' }),
     __param(0, (0, common_1.Query)()),
@@ -201,6 +215,7 @@ exports.AdminPaymentsController = AdminPaymentsController = __decorate([
     (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
     (0, common_1.Controller)('admin'),
     __metadata("design:paramtypes", [withdrawal_service_1.WithdrawalService,
-        dispute_service_1.DisputeService])
+        dispute_service_1.DisputeService,
+        escrow_service_1.EscrowService])
 ], AdminPaymentsController);
 //# sourceMappingURL=admin-payments.controller.js.map

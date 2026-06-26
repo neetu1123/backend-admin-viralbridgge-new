@@ -9,6 +9,8 @@ import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
+import { EscrowService } from '../payments/escrow.service';
+import { DeliverablesService } from '../payments/deliverables.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -31,6 +33,8 @@ export class CreatorService {
     private notifications: NotificationsService,
     private walletService: WalletService,
     private withdrawalService: WithdrawalService,
+    private deliverablesService: DeliverablesService,
+    private escrowService: EscrowService,
   ) {}
 
   async getProfile(userId: string) {
@@ -259,41 +263,26 @@ export class CreatorService {
 
   async getDeliverables(userId: string) {
     const profile = await this.ensureCreatorProfile(userId);
-    return this.prisma.deliverable.findMany({
+    const rows = await this.prisma.deliverable.findMany({
       where: { creator_id: profile.id },
       include: { campaign: { include: { brand: true } }, application: true },
       orderBy: { created_at: 'desc' },
     });
+    return rows.map((d) => this.deliverablesService.formatDeliverable(d));
+  }
+
+  async listEscrows(userId: string) {
+    return this.escrowService.listEscrows(userId, 'creator');
   }
 
   async submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto) {
-    const profile = await this.ensureCreatorProfile(userId);
-    const deliverable = await this.prisma.deliverable.findUnique({
-      where: { id: deliverableId },
-      include: { campaign: { include: { brand: true } } },
+    return this.deliverablesService.submit(userId, {
+      deliverable_id: deliverableId,
+      file_url: dto.mediaUrl ?? (dto as { file_url?: string }).file_url ?? '',
+      mediaUrl: dto.mediaUrl,
+      thumbnailUrl: dto.thumbnailUrl,
+      notes: dto.notes,
     });
-    if (!deliverable) throw new NotFoundException('Deliverable not found');
-    if (deliverable.creator_id !== profile.id) throw new ForbiddenException('Forbidden');
-
-    const updated = await this.prisma.deliverable.update({
-      where: { id: deliverableId },
-      data: {
-        media_url: dto.mediaUrl,
-        thumbnail_url: dto.thumbnailUrl,
-        notes: dto.notes,
-        status: 'IN_REVIEW',
-        submitted_at: new Date(),
-      },
-    });
-
-    await this.createNotification(
-      deliverable.campaign.brand.user_id,
-      'Deliverable submitted',
-      `${profile.full_name ?? profile.user.name} submitted a deliverable for ${deliverable.campaign.title}.`,
-      { deliverableId, campaignId: deliverable.campaign_id },
-    );
-
-    return updated;
   }
 
   async getWallet(userId: string) {

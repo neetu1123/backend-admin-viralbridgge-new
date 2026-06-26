@@ -299,6 +299,7 @@ export declare class BrandController {
                     title: string;
                     created_at: Date;
                     type: string | null;
+                    file_url: string | null;
                     submitted_at: Date | null;
                     reviewed_at: Date | null;
                     notes: string | null;
@@ -306,7 +307,9 @@ export declare class BrandController {
                     media_url: string | null;
                     thumbnail_url: string | null;
                     revision_notes: string | null;
+                    version: number;
                     due_date: Date | null;
+                    auto_release_at: Date | null;
                 }[];
             } & {
                 message: string | null;
@@ -363,7 +366,9 @@ export declare class BrandController {
                 updated_at: Date;
                 brand_id: string;
                 created_at: Date;
+                platform_fee: number;
                 amount: number;
+                locked_at: Date | null;
                 released_at: Date | null;
             })[];
             campaignDeliverables: ({
@@ -422,6 +427,7 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -429,7 +435,9 @@ export declare class BrandController {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             })[];
         } & {
             id: string;
@@ -495,6 +503,7 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -502,7 +511,9 @@ export declare class BrandController {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -560,6 +571,7 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -567,7 +579,9 @@ export declare class BrandController {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -635,6 +649,7 @@ export declare class BrandController {
             title: string;
             created_at: Date;
             type: string | null;
+            file_url: string | null;
             submitted_at: Date | null;
             reviewed_at: Date | null;
             notes: string | null;
@@ -642,7 +657,9 @@ export declare class BrandController {
             media_url: string | null;
             thumbnail_url: string | null;
             revision_notes: string | null;
+            version: number;
             due_date: Date | null;
+            auto_release_at: Date | null;
         })[];
         payments: ({
             creator: {
@@ -689,7 +706,9 @@ export declare class BrandController {
             updated_at: Date;
             brand_id: string;
             created_at: Date;
+            platform_fee: number;
             amount: number;
+            locked_at: Date | null;
             released_at: Date | null;
         })[];
     }>;
@@ -1159,6 +1178,7 @@ export declare class BrandController {
                 title: string;
                 created_at: Date;
                 type: string | null;
+                file_url: string | null;
                 submitted_at: Date | null;
                 reviewed_at: Date | null;
                 notes: string | null;
@@ -1166,7 +1186,9 @@ export declare class BrandController {
                 media_url: string | null;
                 thumbnail_url: string | null;
                 revision_notes: string | null;
+                version: number;
                 due_date: Date | null;
+                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -1241,6 +1263,7 @@ export declare class BrandController {
         title: string;
         created_at: Date;
         type: string | null;
+        file_url: string | null;
         submitted_at: Date | null;
         reviewed_at: Date | null;
         notes: string | null;
@@ -1248,44 +1271,65 @@ export declare class BrandController {
         media_url: string | null;
         thumbnail_url: string | null;
         revision_notes: string | null;
+        version: number;
         due_date: Date | null;
+        auto_release_at: Date | null;
     })[]>;
     approveDeliverable(req: any, id: string): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
     }>;
     reviseDeliverable(req: any, id: string, body: RevisionDto): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
     }>;
+    rejectDeliverable(req: any, id: string, body: RevisionDto): Promise<{
+        id: string;
+        campaignId: string;
+        creatorId: string;
+        title: string;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }>;
+    listEscrows(req: any): Promise<any[]>;
     releaseEscrow(req: any, id: string): Promise<{
         campaign: {
             title: string;
@@ -1339,7 +1383,9 @@ export declare class BrandController {
         updated_at: Date;
         brand_id: string;
         created_at: Date;
+        platform_fee: number;
         amount: number;
+        locked_at: Date | null;
         released_at: Date | null;
     }>;
     getDashboard(req: any): Promise<{

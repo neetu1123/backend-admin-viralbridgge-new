@@ -136,6 +136,16 @@ export class BrandController {
     return this.brandService.reviewDeliverable(req.user.id, id, 'REVISION_REQUESTED', body.notes);
   }
 
+  @Post('deliverables/:id/reject')
+  rejectDeliverable(@Request() req: any, @Param('id') id: string, @Body() body: RevisionDto) {
+    return this.brandService.reviewDeliverable(req.user.id, id, 'REJECTED', body.notes);
+  }
+
+  @Get('escrows')
+  listEscrows(@Request() req: any) {
+    return this.brandService.listEscrows(req.user.id);
+  }
+
   @Post('escrows/:id/release')
   releaseEscrow(@Request() req: any, @Param('id') id: string) {
     return this.brandService.releaseEscrow(req.user.id, id);

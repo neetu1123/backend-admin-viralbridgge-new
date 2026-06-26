@@ -16,11 +16,22 @@ export declare const TRANSACTION_STATUSES: {
     readonly REJECTED: "REJECTED";
 };
 export declare const ESCROW_STATUSES: {
+    readonly PENDING: "PENDING";
     readonly HELD: "HELD";
     readonly RELEASED: "RELEASED";
     readonly REFUNDED: "REFUNDED";
     readonly DISPUTED: "DISPUTED";
 };
+export declare const DELIVERABLE_STATUSES: {
+    readonly PENDING: "PENDING";
+    readonly SUBMITTED: "SUBMITTED";
+    readonly IN_REVIEW: "IN_REVIEW";
+    readonly REVISION_REQUESTED: "REVISION_REQUESTED";
+    readonly APPROVED: "APPROVED";
+    readonly REJECTED: "REJECTED";
+};
+export declare const AUTO_RELEASE_DAYS = 7;
+export declare const PLATFORM_FEE_PERCENT: number;
 export declare const DISPUTE_STATUSES: {
     readonly OPEN: "OPEN";
     readonly IN_REVIEW: "IN_REVIEW";
@@ -34,7 +45,7 @@ export declare const WITHDRAWAL_STATUSES: {
     readonly REJECTED: "REJECTED";
     readonly COMPLETED: "COMPLETED";
 };
-export declare const OPEN_DISPUTE_STATUSES: ("OPEN" | "IN_REVIEW" | "ESCALATED")[];
+export declare const OPEN_DISPUTE_STATUSES: ("IN_REVIEW" | "OPEN" | "ESCALATED")[];
 export declare const PAYMENT_ORDER_STATUSES: {
     readonly CREATED: "CREATED";
     readonly PAID: "PAID";

@@ -1,218 +1,105 @@
 import { ResolveDisputeDto } from './dto/escrow.dto';
 import { DisputeQueryDto, RejectWithdrawalDto } from './dto/withdrawal.dto';
 import { DisputeService } from './dispute.service';
+import { EscrowService } from './escrow.service';
 import { WithdrawalService } from './withdrawal.service';
 export declare class AdminPaymentsController {
     private readonly withdrawalService;
     private readonly disputeService;
-    constructor(withdrawalService: WithdrawalService, disputeService: DisputeService);
-    getWithdrawals(status?: string): Promise<({
-        wallet: {
-            user: {
-                role: {
-                    name: string;
-                    id: string;
-                    description: string | null;
-                } | null;
-            } & {
-                name: string;
-                id: string;
-                status: string;
-                updated_at: Date;
-                created_at: Date;
-                firebase_uid: string | null;
-                password: string | null;
-                email: string;
-                avatar: string | null;
-                role_id: string | null;
-                is_verified: boolean;
-                is_banned: boolean;
-                is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
-            };
-        } & {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-    } & {
+    private readonly escrowService;
+    constructor(withdrawalService: WithdrawalService, disputeService: DisputeService, escrowService: EscrowService);
+    getWithdrawals(status?: string): Promise<{
+        creator: string;
+        creatorEmail: string;
         id: string;
-        status: string;
-        updated_at: Date;
-        created_at: Date;
-        type: string;
-        wallet_id: string;
+        creatorId: string;
         amount: number;
-        reference_id: string | null;
-    })[]>;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
+    }[]>;
     approveWithdrawal(id: string, req: {
         user: {
             id: string;
         };
     }): Promise<{
-        wallet: {
-            user: {
-                name: string;
-                id: string;
-                status: string;
-                updated_at: Date;
-                created_at: Date;
-                firebase_uid: string | null;
-                password: string | null;
-                email: string;
-                avatar: string | null;
-                role_id: string | null;
-                is_verified: boolean;
-                is_banned: boolean;
-                is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
-            };
-        } & {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-    } & {
         id: string;
-        status: string;
-        updated_at: Date;
-        created_at: Date;
-        type: string;
-        wallet_id: string;
+        creatorId: string;
         amount: number;
-        reference_id: string | null;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     approveWithdrawalPatch(id: string, req: {
         user: {
             id: string;
         };
     }): Promise<{
-        wallet: {
-            user: {
-                name: string;
-                id: string;
-                status: string;
-                updated_at: Date;
-                created_at: Date;
-                firebase_uid: string | null;
-                password: string | null;
-                email: string;
-                avatar: string | null;
-                role_id: string | null;
-                is_verified: boolean;
-                is_banned: boolean;
-                is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
-            };
-        } & {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-    } & {
         id: string;
-        status: string;
-        updated_at: Date;
-        created_at: Date;
-        type: string;
-        wallet_id: string;
+        creatorId: string;
         amount: number;
-        reference_id: string | null;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     rejectWithdrawal(id: string, body: RejectWithdrawalDto, req: {
         user: {
             id: string;
         };
     }): Promise<{
-        wallet: {
-            user: {
-                name: string;
-                id: string;
-                status: string;
-                updated_at: Date;
-                created_at: Date;
-                firebase_uid: string | null;
-                password: string | null;
-                email: string;
-                avatar: string | null;
-                role_id: string | null;
-                is_verified: boolean;
-                is_banned: boolean;
-                is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
-            };
-        } & {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-    } & {
         id: string;
-        status: string;
-        updated_at: Date;
-        created_at: Date;
-        type: string;
-        wallet_id: string;
+        creatorId: string;
         amount: number;
-        reference_id: string | null;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     rejectWithdrawalPatch(id: string, body: RejectWithdrawalDto, req: {
         user: {
             id: string;
         };
     }): Promise<{
-        wallet: {
-            user: {
-                name: string;
-                id: string;
-                status: string;
-                updated_at: Date;
-                created_at: Date;
-                firebase_uid: string | null;
-                password: string | null;
-                email: string;
-                avatar: string | null;
-                role_id: string | null;
-                is_verified: boolean;
-                is_banned: boolean;
-                is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
-            };
-        } & {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-    } & {
         id: string;
-        status: string;
-        updated_at: Date;
-        created_at: Date;
-        type: string;
-        wallet_id: string;
+        creatorId: string;
         amount: number;
-        reference_id: string | null;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     getDisputeStats(): Promise<{
         openCount: number;
         totalAtStake: number;
         resolvedCount: number;
     }>;
+    getEscrows(status?: string): Promise<{
+        id: unknown;
+        campaignId: unknown;
+        campaignTitle: string | undefined;
+        brandId: unknown;
+        creatorId: unknown;
+        amount: unknown;
+        platformFee: {};
+        creatorPayout: number;
+        status: unknown;
+        lockedAt: {} | null;
+        createdAt: string;
+        releasedAt: {} | null;
+    }[]>;
     getDisputes(query: DisputeQueryDto): Promise<{
         data: {
             amount: number;

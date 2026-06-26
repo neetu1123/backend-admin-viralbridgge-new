@@ -3,6 +3,8 @@ import { MatchingService } from '../matching/matching.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
+import { EscrowService } from '../payments/escrow.service';
+import { DeliverablesService } from '../payments/deliverables.service';
 import { ApplyCampaignDto, ApplicationQueryDto, CreatorCampaignQueryDto, NotificationQueryDto, SendMessageDto, SubmitDeliverableDto, TransactionQueryDto, UpdateCreatorProfileDto, UploadDto, WithdrawDto } from './creator.dto';
 export declare class CreatorService {
     private prisma;
@@ -10,7 +12,9 @@ export declare class CreatorService {
     private notifications;
     private walletService;
     private withdrawalService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService);
+    private deliverablesService;
+    private escrowService;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService, deliverablesService: DeliverablesService, escrowService: EscrowService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -411,85 +415,42 @@ export declare class CreatorService {
         walletBalance: number;
         earnings: number;
     }>;
-    getDeliverables(userId: string): Promise<({
-        campaign: {
-            brand: {
-                id: string;
-                updated_at: Date;
-                description: string | null;
-                created_at: Date;
-                user_id: string;
-                contact_email: string | null;
-                phone: string | null;
-                company_name: string;
-                industry: string | null;
-                website: string | null;
-                logo: string | null;
-                location: string | null;
-            };
-        } & {
-            id: string;
-            status: string;
-            updated_at: Date;
-            brand_id: string;
-            title: string;
-            description: string;
-            platform: string;
-            budget: number;
-            remaining_budget: number;
-            deadline: Date;
-            deliverables: string[];
-            locality: string | null;
-            languages: string[];
-            created_by_admin_id: string | null;
-            metadata: import("@prisma/client/runtime/library").JsonValue | null;
-            created_at: Date;
-        };
-        application: {
-            message: string | null;
-            id: string;
-            campaign_id: string;
-            creator_id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            proposed_price: number | null;
-        } | null;
-    } & {
+    getDeliverables(userId: string): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
-    })[]>;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }[]>;
+    listEscrows(userId: string): Promise<any[]>;
     submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto): Promise<{
         id: string;
-        campaign_id: string;
-        creator_id: string;
-        status: string;
-        updated_at: Date;
+        campaignId: string;
+        creatorId: string;
         title: string;
-        created_at: Date;
-        type: string | null;
-        submitted_at: Date | null;
-        reviewed_at: Date | null;
-        notes: string | null;
-        application_id: string | null;
-        media_url: string | null;
-        thumbnail_url: string | null;
-        revision_notes: string | null;
-        due_date: Date | null;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
     }>;
     getWallet(userId: string): Promise<{
         id: string;
@@ -500,24 +461,15 @@ export declare class CreatorService {
         pending_balance: number;
     }>;
     withdraw(userId: string, dto: WithdrawDto): Promise<{
-        wallet: {
-            id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
-            available_balance: number;
-            pending_balance: number;
-        };
-        transaction: {
-            id: string;
-            status: string;
-            updated_at: Date;
-            created_at: Date;
-            type: string;
-            wallet_id: string;
-            amount: number;
-            reference_id: string | null;
-        };
+        id: string;
+        creatorId: string;
+        amount: number;
+        status: string;
+        transactionId: string | null | undefined;
+        requestedAt: string;
+        approvedAt: string | null;
+        rejectedAt: string | null;
+        rejectionReason: string | null;
     }>;
     getWalletTransactions(userId: string, query: TransactionQueryDto): Promise<{
         data: {
