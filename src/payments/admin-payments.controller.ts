@@ -131,4 +131,16 @@ export class AdminPaymentsController {
   ) {
     return this.disputeService.resolveDispute(id, req.user.id, body);
   }
+
+  @Post('escrows/:id/release')
+  @ApiOperation({ summary: 'Admin release escrow to creator' })
+  adminReleaseEscrow(@Param('id') id: string) {
+    return this.escrowService.adminReleaseEscrow(id);
+  }
+
+  @Post('escrows/:id/refund')
+  @ApiOperation({ summary: 'Admin refund escrow to brand' })
+  adminRefundEscrow(@Param('id') id: string) {
+    return this.escrowService.adminRefundEscrow(id);
+  }
 }

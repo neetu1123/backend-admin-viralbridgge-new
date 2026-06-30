@@ -392,7 +392,7 @@ export class BrandService {
     const [campaigns, applications, spend] = await Promise.all([
       this.prisma.campaign.count({ where: { brand_id: profile.id } }),
       this.prisma.application.count({ where: { campaign: { brand_id: profile.id } } }),
-      this.prisma.transaction.aggregate({
+      this.prisma.walletTransaction.aggregate({
         where: { wallet: { user_id: userId }, type: { in: ['ESCROW_HOLD', 'DEPOSIT'] } },
         _sum: { amount: true },
       }),

@@ -64,8 +64,15 @@ export declare class EscrowController {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     get(req: {
         user: {
@@ -144,8 +151,15 @@ export declare class EscrowController {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     refund(req: {
         user: {
@@ -161,8 +175,15 @@ export declare class EscrowController {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     dispute(req: {
         user: {

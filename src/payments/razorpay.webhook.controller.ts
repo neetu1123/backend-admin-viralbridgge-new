@@ -1,8 +1,10 @@
 import { Body, Controller, Headers, Post, Req } from '@nestjs/common';
 import { ApiExcludeController, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { WalletService } from './wallet.service';
+import { EscrowPaymentService } from './escrow-payment.service';
 import { RazorpayService } from './razorpay.service';
 import { PrismaService } from '../prisma/prisma.service';
+import { PAYMENT_ORDER_PURPOSES } from './constants';
 
 @ApiTags('Webhooks')
 @ApiExcludeController()
@@ -11,6 +13,7 @@ export class RazorpayWebhookController {
   constructor(
     private readonly razorpay: RazorpayService,
     private readonly wallet: WalletService,
+    private readonly escrowPayment: EscrowPaymentService,
     private readonly prisma: PrismaService,
   ) {}
 
@@ -38,12 +41,27 @@ export class RazorpayWebhookController {
           where: { razorpay_order_id: orderId },
         });
         if (order && order.status !== 'PAID') {
-          await this.wallet.verifyAndCredit(order.user_id, {
-            razorpay_order_id: orderId,
-            razorpay_payment_id: paymentId,
-            razorpay_signature: signature,
-          });
+          if (order.purpose === PAYMENT_ORDER_PURPOSES.ESCROW_FUND) {
+            await this.escrowPayment.fundEscrowFromWebhook(orderId, paymentId);
+          } else {
+            await this.wallet.verifyAndCredit(order.user_id, {
+              razorpay_order_id: orderId,
+              razorpay_payment_id: paymentId,
+              razorpay_signature: signature,
+            });
+          }
         }
+      }
+    }
+
+    if (event === 'payment.failed') {
+      const payment = payload?.payment?.entity;
+      const orderId = payment?.order_id;
+      if (orderId) {
+        await this.prisma.paymentOrder.updateMany({
+          where: { razorpay_order_id: orderId, status: 'CREATED' },
+          data: { status: 'FAILED' },
+        });
       }
     }
 

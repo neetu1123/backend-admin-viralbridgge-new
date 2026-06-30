@@ -73,10 +73,20 @@ function getWalletService(): WalletServiceType {
   return walletService;
 }
 
+function getPlatformWalletService() {
+  const { PlatformWalletService } = require('../../dist/src/payments/platform-wallet.service') as typeof import('../../dist/src/payments/platform-wallet.service');
+  return new PlatformWalletService(getPrisma() as never);
+}
+
 function getEscrowService(): EscrowServiceType {
   if (!escrowService) {
     const { EscrowService } = require('../../dist/src/payments/escrow.service') as typeof import('../../dist/src/payments/escrow.service');
-    escrowService = new EscrowService(getPrisma() as never, getWalletService(), getNotificationsService());
+    escrowService = new EscrowService(
+      getPrisma() as never,
+      getWalletService(),
+      getPlatformWalletService(),
+      getNotificationsService(),
+    );
   }
   return escrowService;
 }

@@ -414,16 +414,22 @@ export declare class AdminController {
             created_at: Date;
             user_id: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_platform: boolean;
+            is_frozen: boolean;
         };
     } & {
         id: string;
         status: string;
-        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
+        balance_after: number | null;
+        reference_type: string | null;
         reference_id: string | null;
     })[]>;
     getDashboardStats(): Promise<{
@@ -537,7 +543,6 @@ export declare class AdminController {
                 user_id: string;
                 engagement_rate: number;
                 kyc_request_id: string | null;
-                verification_status: string;
                 mobile_number: string | null;
                 mobile_verified: boolean;
                 email_verified: boolean;
@@ -547,6 +552,7 @@ export declare class AdminController {
                 instagram_profile_url: string | null;
                 selfie_url: string | null;
                 followers_count: number;
+                verification_status: string;
             } | null;
             brand_kyc: {
                 id: string;
@@ -556,13 +562,13 @@ export declare class AdminController {
                 company_name: string | null;
                 website: string | null;
                 kyc_request_id: string | null;
+                verification_status: string;
                 gst_number: string | null;
                 business_email: string | null;
                 business_email_verified: boolean;
                 linkedin_url: string | null;
                 logo_url: string | null;
                 business_address: string | null;
-                verification_status: string;
             } | null;
         } & {
             id: string;
@@ -589,7 +595,6 @@ export declare class AdminController {
             user_id: string;
             engagement_rate: number;
             kyc_request_id: string | null;
-            verification_status: string;
             mobile_number: string | null;
             mobile_verified: boolean;
             email_verified: boolean;
@@ -599,6 +604,7 @@ export declare class AdminController {
             instagram_profile_url: string | null;
             selfie_url: string | null;
             followers_count: number;
+            verification_status: string;
         } | null;
         brand_kyc: {
             id: string;
@@ -608,13 +614,13 @@ export declare class AdminController {
             company_name: string | null;
             website: string | null;
             kyc_request_id: string | null;
+            verification_status: string;
             gst_number: string | null;
             business_email: string | null;
             business_email_verified: boolean;
             linkedin_url: string | null;
             logo_url: string | null;
             business_address: string | null;
-            verification_status: string;
         } | null;
     } & {
         id: string;
@@ -636,7 +642,6 @@ export declare class AdminController {
             user_id: string;
             engagement_rate: number;
             kyc_request_id: string | null;
-            verification_status: string;
             mobile_number: string | null;
             mobile_verified: boolean;
             email_verified: boolean;
@@ -646,6 +651,7 @@ export declare class AdminController {
             instagram_profile_url: string | null;
             selfie_url: string | null;
             followers_count: number;
+            verification_status: string;
         } | null;
         brand_kyc: {
             id: string;
@@ -655,13 +661,13 @@ export declare class AdminController {
             company_name: string | null;
             website: string | null;
             kyc_request_id: string | null;
+            verification_status: string;
             gst_number: string | null;
             business_email: string | null;
             business_email_verified: boolean;
             linkedin_url: string | null;
             logo_url: string | null;
             business_address: string | null;
-            verification_status: string;
         } | null;
     } & {
         id: string;

@@ -26,16 +26,43 @@ let WalletService = class WalletService {
         this.notifications = notifications;
         this.razorpay = razorpay;
     }
+    formatWallet(wallet) {
+        return {
+            id: wallet.id,
+            userId: wallet.user_id,
+            available_balance: wallet.available_balance,
+            locked_balance: wallet.locked_balance,
+            pending_balance: wallet.pending_balance,
+            lifetime_earnings: wallet.lifetime_earnings,
+            currency: wallet.currency,
+            is_frozen: wallet.is_frozen,
+            createdAt: wallet.created_at.toISOString(),
+            updatedAt: wallet.updated_at.toISOString(),
+        };
+    }
     async ensureWallet(userId, tx) {
         const client = tx ?? this.prisma;
         return client.wallet.upsert({
             where: { user_id: userId },
             update: {},
-            create: { user_id: userId },
+            create: {
+                user_id: userId,
+                available_balance: 0,
+                locked_balance: 0,
+                pending_balance: 0,
+                lifetime_earnings: 0,
+                currency: 'INR',
+            },
         });
     }
     async getWallet(userId) {
-        return this.ensureWallet(userId);
+        const wallet = await this.ensureWallet(userId);
+        return this.formatWallet(wallet);
+    }
+    assertWalletActive(wallet) {
+        if (wallet.is_frozen) {
+            throw new common_1.BadRequestException('Wallet is frozen. Contact support.');
+        }
     }
     async getTransactions(userId, query) {
         const wallet = await this.ensureWallet(userId);
@@ -47,19 +74,18 @@ let WalletService = class WalletService {
         if (query.status)
             where.status = query.status;
         const [data, total] = await Promise.all([
-            this.prisma.transaction.findMany({
+            this.prisma.walletTransaction.findMany({
                 where,
                 orderBy: { created_at: 'desc' },
                 skip: (page - 1) * limit,
                 take: limit,
             }),
-            this.prisma.transaction.count({ where }),
+            this.prisma.walletTransaction.count({ where }),
         ]);
         return { data, meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total) };
     }
     async createPaymentOrder(userId, amount) {
-        const order = await this.razorpay.createOrder(userId, amount);
-        return order;
+        return this.razorpay.createOrder(userId, amount, { purpose: constants_1.PAYMENT_ORDER_PURPOSES.WALLET_TOPUP });
     }
     async addFunds(userId, dto) {
         if (dto.razorpay_order_id && dto.razorpay_payment_id && dto.razorpay_signature) {
@@ -72,7 +98,7 @@ let WalletService = class WalletService {
         if (this.razorpay.isConfigured()) {
             throw new common_1.BadRequestException('Razorpay payment verification required. Create an order first, then submit payment details.');
         }
-        return this.creditWallet(userId, dto.amount, constants_1.TRANSACTION_TYPES.ADD_FUNDS);
+        return this.creditWallet(userId, dto.amount, constants_1.TRANSACTION_TYPES.TOPUP);
     }
     async verifyAndCredit(userId, dto) {
         const paymentOrder = await this.prisma.paymentOrder.findUnique({
@@ -83,9 +109,12 @@ let WalletService = class WalletService {
         if (paymentOrder.user_id !== userId) {
             throw new common_1.BadRequestException('Payment order does not belong to this user');
         }
+        if (paymentOrder.purpose === constants_1.PAYMENT_ORDER_PURPOSES.ESCROW_FUND) {
+            throw new common_1.BadRequestException('Use escrow payment verification for this order');
+        }
         if (paymentOrder.status === 'PAID') {
             const wallet = await this.ensureWallet(userId);
-            return { wallet, alreadyProcessed: true };
+            return { wallet: this.formatWallet(wallet), alreadyProcessed: true };
         }
         const valid = this.razorpay.verifyPaymentSignature(dto);
         if (!valid)
@@ -98,51 +127,78 @@ let WalletService = class WalletService {
                     razorpay_payment_id: dto.razorpay_payment_id,
                 },
             });
-            const result = await this.creditWalletInternal(tx, userId, paymentOrder.amount, constants_1.TRANSACTION_TYPES.ADD_FUNDS, paymentOrder.id);
+            const result = await this.creditWalletInternal(tx, userId, paymentOrder.amount, constants_1.TRANSACTION_TYPES.TOPUP, 'PaymentOrder', paymentOrder.id);
             await this.notifications.create({
                 userId,
                 title: 'Funds Added',
                 message: `₹${paymentOrder.amount.toLocaleString()} has been added to your wallet.`,
                 type: 'PAYMENT',
-                entityType: 'Transaction',
+                entityType: 'WalletTransaction',
                 entityId: result.transaction.id,
             });
             (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', result.wallet);
-            return result;
+            return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
         });
     }
     async creditWallet(userId, amount, type, referenceId) {
-        const result = await this.prisma.$transaction((tx) => this.creditWalletInternal(tx, userId, amount, type, referenceId));
+        const result = await this.prisma.$transaction((tx) => this.creditWalletInternal(tx, userId, amount, type, 'Manual', referenceId));
         await this.notifications.create({
             userId,
             title: 'Funds Added',
             message: `₹${amount.toLocaleString()} has been added to your wallet.`,
             type: 'PAYMENT',
-            entityType: 'Transaction',
+            entityType: 'WalletTransaction',
             entityId: result.transaction.id,
         });
-        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', result.wallet);
-        return result;
+        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', this.formatWallet(result.wallet));
+        return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
     }
-    async creditWalletInternal(tx, userId, amount, type, referenceId) {
+    async creditWalletInternal(tx, userId, amount, type, referenceType, referenceId) {
         const wallet = await this.ensureWallet(userId, tx);
+        this.assertWalletActive(wallet);
         const updatedWallet = await tx.wallet.update({
             where: { id: wallet.id },
             data: { available_balance: { increment: amount } },
         });
-        const transaction = await tx.transaction.create({
+        const transaction = await tx.walletTransaction.create({
             data: {
                 wallet_id: wallet.id,
                 type,
                 amount,
-                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
+                balance_after: updatedWallet.available_balance,
+                reference_type: referenceType,
                 reference_id: referenceId,
+                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
             },
         });
         return { wallet: updatedWallet, transaction };
     }
-    async debitAvailable(tx, userId, amount, type, referenceId, status = constants_1.TRANSACTION_STATUSES.COMPLETED) {
+    async creditCreatorPayout(tx, userId, amount, referenceId) {
         const wallet = await this.ensureWallet(userId, tx);
+        this.assertWalletActive(wallet);
+        const updatedWallet = await tx.wallet.update({
+            where: { id: wallet.id },
+            data: {
+                available_balance: { increment: amount },
+                lifetime_earnings: { increment: amount },
+            },
+        });
+        const transaction = await tx.walletTransaction.create({
+            data: {
+                wallet_id: wallet.id,
+                type: constants_1.TRANSACTION_TYPES.ESCROW_RELEASE,
+                amount,
+                balance_after: updatedWallet.available_balance,
+                reference_type: 'Escrow',
+                reference_id: referenceId,
+                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
+            },
+        });
+        return { wallet: updatedWallet, transaction };
+    }
+    async debitAvailable(tx, userId, amount, type, referenceType, referenceId, status = constants_1.TRANSACTION_STATUSES.COMPLETED) {
+        const wallet = await this.ensureWallet(userId, tx);
+        this.assertWalletActive(wallet);
         if (wallet.available_balance < amount) {
             throw new common_1.BadRequestException('Insufficient available balance');
         }
@@ -150,19 +206,22 @@ let WalletService = class WalletService {
             where: { id: wallet.id },
             data: { available_balance: { decrement: amount } },
         });
-        const transaction = await tx.transaction.create({
+        const transaction = await tx.walletTransaction.create({
             data: {
                 wallet_id: wallet.id,
                 type,
                 amount,
-                status,
+                balance_after: updatedWallet.available_balance,
+                reference_type: referenceType,
                 reference_id: referenceId,
+                status,
             },
         });
         return { wallet: updatedWallet, transaction };
     }
     async moveToPending(tx, userId, amount, referenceId) {
         const wallet = await this.ensureWallet(userId, tx);
+        this.assertWalletActive(wallet);
         if (wallet.available_balance < amount) {
             throw new common_1.BadRequestException('Insufficient wallet balance to lock escrow funds');
         }
@@ -170,52 +229,91 @@ let WalletService = class WalletService {
             where: { id: wallet.id },
             data: {
                 available_balance: { decrement: amount },
+                locked_balance: { increment: amount },
                 pending_balance: { increment: amount },
             },
         });
-        const transaction = await tx.transaction.create({
+        const transaction = await tx.walletTransaction.create({
             data: {
                 wallet_id: wallet.id,
                 type: constants_1.TRANSACTION_TYPES.ESCROW_LOCK,
                 amount,
-                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
+                balance_after: updatedWallet.available_balance,
+                reference_type: 'Escrow',
                 reference_id: referenceId,
+                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
             },
         });
         return { wallet: updatedWallet, transaction };
     }
-    async releasePending(tx, userId, amount) {
+    async lockEscrowFromGateway(tx, userId, amount, referenceId, paymentId) {
         const wallet = await this.ensureWallet(userId, tx);
-        if (wallet.pending_balance < amount) {
-            throw new common_1.BadRequestException('Insufficient pending balance');
-        }
-        return tx.wallet.update({
+        this.assertWalletActive(wallet);
+        const updatedWallet = await tx.wallet.update({
             where: { id: wallet.id },
-            data: { pending_balance: { decrement: amount } },
+            data: {
+                locked_balance: { increment: amount },
+                pending_balance: { increment: amount },
+            },
         });
+        const transaction = await tx.walletTransaction.create({
+            data: {
+                wallet_id: wallet.id,
+                type: constants_1.TRANSACTION_TYPES.ESCROW_LOCK,
+                amount,
+                balance_after: updatedWallet.available_balance,
+                reference_type: 'Escrow',
+                reference_id: referenceId,
+                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
+            },
+        });
+        return { wallet: updatedWallet, transaction, paymentId };
     }
-    async refundPendingToAvailable(tx, userId, amount, referenceId) {
+    async releaseLocked(tx, userId, amount, referenceId) {
         const wallet = await this.ensureWallet(userId, tx);
-        if (wallet.pending_balance < amount) {
-            throw new common_1.BadRequestException('Insufficient pending balance to refund');
+        if (wallet.locked_balance < amount) {
+            throw new common_1.BadRequestException('Insufficient locked balance');
         }
         const updatedWallet = await tx.wallet.update({
             where: { id: wallet.id },
             data: {
+                locked_balance: { decrement: amount },
+                pending_balance: { decrement: amount },
+            },
+        });
+        return updatedWallet;
+    }
+    async refundLockedToAvailable(tx, userId, amount, referenceId) {
+        const wallet = await this.ensureWallet(userId, tx);
+        if (wallet.locked_balance < amount) {
+            throw new common_1.BadRequestException('Insufficient locked balance to refund');
+        }
+        const updatedWallet = await tx.wallet.update({
+            where: { id: wallet.id },
+            data: {
+                locked_balance: { decrement: amount },
                 pending_balance: { decrement: amount },
                 available_balance: { increment: amount },
             },
         });
-        const transaction = await tx.transaction.create({
+        await tx.walletTransaction.create({
             data: {
                 wallet_id: wallet.id,
                 type: constants_1.TRANSACTION_TYPES.REFUND,
                 amount,
-                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
+                balance_after: updatedWallet.available_balance,
+                reference_type: 'Escrow',
                 reference_id: referenceId,
+                status: constants_1.TRANSACTION_STATUSES.COMPLETED,
             },
         });
-        return { wallet: updatedWallet, transaction };
+        return { wallet: updatedWallet };
+    }
+    async releasePending(tx, userId, amount) {
+        return this.releaseLocked(tx, userId, amount);
+    }
+    async refundPendingToAvailable(tx, userId, amount, referenceId) {
+        return this.refundLockedToAvailable(tx, userId, amount, referenceId);
     }
 };
 exports.WalletService = WalletService;

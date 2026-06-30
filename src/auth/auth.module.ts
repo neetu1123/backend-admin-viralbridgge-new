@@ -4,10 +4,12 @@ import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SecurityModule } from '../security/security.module';
+import { UsersModule } from '../users/users.module';
 
 @Module({
   imports: [
     PrismaModule,
+    UsersModule,
     forwardRef(() => SecurityModule),
     JwtModule.register({
       global: true,

@@ -16,15 +16,19 @@ exports.RazorpayWebhookController = void 0;
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const wallet_service_1 = require("./wallet.service");
+const escrow_payment_service_1 = require("./escrow-payment.service");
 const razorpay_service_1 = require("./razorpay.service");
 const prisma_service_1 = require("../prisma/prisma.service");
+const constants_1 = require("./constants");
 let RazorpayWebhookController = class RazorpayWebhookController {
     razorpay;
     wallet;
+    escrowPayment;
     prisma;
-    constructor(razorpay, wallet, prisma) {
+    constructor(razorpay, wallet, escrowPayment, prisma) {
         this.razorpay = razorpay;
         this.wallet = wallet;
+        this.escrowPayment = escrowPayment;
         this.prisma = prisma;
     }
     async handleWebhook(req, signature, body) {
@@ -43,12 +47,27 @@ let RazorpayWebhookController = class RazorpayWebhookController {
                     where: { razorpay_order_id: orderId },
                 });
                 if (order && order.status !== 'PAID') {
-                    await this.wallet.verifyAndCredit(order.user_id, {
-                        razorpay_order_id: orderId,
-                        razorpay_payment_id: paymentId,
-                        razorpay_signature: signature,
-                    });
+                    if (order.purpose === constants_1.PAYMENT_ORDER_PURPOSES.ESCROW_FUND) {
+                        await this.escrowPayment.fundEscrowFromWebhook(orderId, paymentId);
+                    }
+                    else {
+                        await this.wallet.verifyAndCredit(order.user_id, {
+                            razorpay_order_id: orderId,
+                            razorpay_payment_id: paymentId,
+                            razorpay_signature: signature,
+                        });
+                    }
                 }
+            }
+        }
+        if (event === 'payment.failed') {
+            const payment = payload?.payment?.entity;
+            const orderId = payment?.order_id;
+            if (orderId) {
+                await this.prisma.paymentOrder.updateMany({
+                    where: { razorpay_order_id: orderId, status: 'CREATED' },
+                    data: { status: 'FAILED' },
+                });
             }
         }
         return { success: true };
@@ -71,6 +90,7 @@ exports.RazorpayWebhookController = RazorpayWebhookController = __decorate([
     (0, common_1.Controller)('webhooks'),
     __metadata("design:paramtypes", [razorpay_service_1.RazorpayService,
         wallet_service_1.WalletService,
+        escrow_payment_service_1.EscrowPaymentService,
         prisma_service_1.PrismaService])
 ], RazorpayWebhookController);
 //# sourceMappingURL=razorpay.webhook.controller.js.map

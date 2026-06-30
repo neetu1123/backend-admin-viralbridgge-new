@@ -493,16 +493,22 @@ export declare class AdminService {
             created_at: Date;
             user_id: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_platform: boolean;
+            is_frozen: boolean;
         };
     } & {
         id: string;
         status: string;
-        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
+        balance_after: number | null;
+        reference_type: string | null;
         reference_id: string | null;
     })[]>;
     getDashboardStats(): Promise<{
@@ -535,16 +541,22 @@ export declare class AdminService {
             created_at: Date;
             user_id: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_platform: boolean;
+            is_frozen: boolean;
         };
     } & {
         id: string;
         status: string;
-        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
+        balance_after: number | null;
+        reference_type: string | null;
         reference_id: string | null;
     })[]>;
     approveWithdrawal(id: string, adminId?: string): Promise<{
@@ -571,16 +583,22 @@ export declare class AdminService {
             created_at: Date;
             user_id: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_platform: boolean;
+            is_frozen: boolean;
         };
     } & {
         id: string;
         status: string;
-        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
+        balance_after: number | null;
+        reference_type: string | null;
         reference_id: string | null;
     }>;
     rejectWithdrawal(id: string, adminId?: string, reason?: string): Promise<{
@@ -607,16 +625,22 @@ export declare class AdminService {
             created_at: Date;
             user_id: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_platform: boolean;
+            is_frozen: boolean;
         };
     } & {
         id: string;
         status: string;
-        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;
         amount: number;
+        balance_after: number | null;
+        reference_type: string | null;
         reference_id: string | null;
     }>;
     private adminCampaignsModule;

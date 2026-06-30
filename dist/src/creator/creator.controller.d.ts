@@ -471,11 +471,15 @@ export declare class CreatorController {
     }>;
     getWallet(req: any): Promise<{
         id: string;
-        updated_at: Date;
-        created_at: Date;
-        user_id: string;
+        userId: string;
         available_balance: number;
+        locked_balance: number;
         pending_balance: number;
+        lifetime_earnings: number;
+        currency: string;
+        is_frozen: boolean;
+        createdAt: string;
+        updatedAt: string;
     }>;
     withdraw(req: any, body: WithdrawDto): Promise<{
         id: string;
@@ -492,11 +496,12 @@ export declare class CreatorController {
         data: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         }[];
         meta: {

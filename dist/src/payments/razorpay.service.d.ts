@@ -10,12 +10,18 @@ export declare class RazorpayService {
     constructor(config: ConfigService, prisma: PrismaService);
     isConfigured(): boolean;
     getPublicKey(): string | null;
-    createOrder(userId: string, amount: number): Promise<{
+    createOrder(userId: string, amount: number, options?: {
+        purpose?: string;
+        escrowId?: string;
+        notes?: Record<string, string>;
+    }): Promise<{
         orderId: string;
         amount: number;
         currency: string;
         keyId: null;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     } | {
         orderId: string;
@@ -23,6 +29,8 @@ export declare class RazorpayService {
         currency: string;
         keyId: string | undefined;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     }>;
     verifyPaymentSignature(dto: {

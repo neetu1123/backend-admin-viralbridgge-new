@@ -23,7 +23,7 @@ export class CreatorAnalyticsService {
         totalApplications,
         acceptedApplications,
       ] = await Promise.all([
-        this.prisma.transaction.aggregate({
+        this.prisma.walletTransaction.aggregate({
           where: {
             wallet: { user_id: userId },
             type: 'ESCROW_RELEASE',
@@ -74,7 +74,7 @@ export class CreatorAnalyticsService {
 
   async getEarnings(userId: string, query: AnalyticsQueryDto) {
     return this.cached(`creator:earnings:${userId}`, query, userId, async (range, profileId) => {
-      const releases = await this.prisma.transaction.findMany({
+      const releases = await this.prisma.walletTransaction.findMany({
         where: {
           wallet: { user_id: userId },
           type: 'ESCROW_RELEASE',

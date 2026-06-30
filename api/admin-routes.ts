@@ -211,7 +211,7 @@ router.post('/campaigns/create-with-brand', async (req: AuthedRequest, res) => {
 });
 
 router.get('/transactions', async (_req, res) =>
-  ok(res, await prisma().transaction.findMany({ include: { wallet: { include: { user: true } } } })),
+  ok(res, await prisma().walletTransaction.findMany({ include: { wallet: { include: { user: true } } } })),
 );
 
 router.get('/roles', async (_req, res) =>
@@ -542,7 +542,7 @@ router.get('/withdrawals', async (req, res) => {
   const status = String(req.query.status ?? 'PENDING').toUpperCase();
   const statuses =
     status === 'APPROVED' ? ['APPROVED', 'COMPLETED'] : [status];
-  const rows = await prisma().transaction.findMany({
+  const rows = await prisma().walletTransaction.findMany({
     where: {
       type: 'WITHDRAWAL',
       status: statuses.length === 1 ? statuses[0] : { in: statuses },
@@ -554,7 +554,7 @@ router.get('/withdrawals', async (req, res) => {
 });
 
 router.patch('/withdrawals/:id/approve', async (req: AuthedRequest, res) => {
-  const txn = await prisma().transaction.update({
+  const txn = await prisma().walletTransaction.update({
     where: { id: paramId(req) },
     data: { status: 'APPROVED' },
     include: { wallet: { include: { user: true } } },
@@ -575,13 +575,13 @@ router.patch('/withdrawals/:id/approve', async (req: AuthedRequest, res) => {
 });
 
 router.patch('/withdrawals/:id/reject', async (req: AuthedRequest, res) => {
-  const txn = await prisma().transaction.findUnique({
+  const txn = await prisma().walletTransaction.findUnique({
     where: { id: paramId(req) },
     include: { wallet: true },
   });
   if (!txn) return fail(res, 'Withdrawal not found', 404);
   const updated = await prisma().$transaction(async (tx) => {
-    const result = await tx.transaction.update({
+    const result = await tx.walletTransaction.update({
       where: { id: txn.id },
       data: { status: 'REJECTED' },
       include: { wallet: { include: { user: true } } },

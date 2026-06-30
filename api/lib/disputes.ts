@@ -151,7 +151,7 @@ async function getDisputeOrThrow(prisma: PrismaClient, id: string) {
 async function creditWallet(
   tx: {
     wallet: PrismaClient['wallet'];
-    transaction: PrismaClient['transaction'];
+    walletTransaction: PrismaClient['walletTransaction'];
   },
   userId: string,
   amount: number,
@@ -167,12 +167,13 @@ async function creditWallet(
     where: { id: wallet.id },
     data: { available_balance: { increment: amount } },
   });
-  await tx.transaction.create({
+  await tx.walletTransaction.create({
     data: {
       wallet_id: wallet.id,
       type,
       amount,
       status: 'COMPLETED',
+      reference_type: 'Dispute',
       reference_id: referenceId,
     },
   });

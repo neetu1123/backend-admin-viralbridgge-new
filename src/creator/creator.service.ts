@@ -247,7 +247,7 @@ export class CreatorService {
         this.prisma.application.count({ where: { creator_id: profile.id, status: 'ACCEPTED' } }),
         this.prisma.application.count({ where: { creator_id: profile.id, status: 'PENDING' } }),
         this.ensureWallet(userId),
-        this.prisma.transaction.aggregate({
+        this.prisma.walletTransaction.aggregate({
           where: { wallet: { user_id: userId }, type: 'ESCROW_RELEASE', status: 'COMPLETED' },
           _sum: { amount: true },
         }),

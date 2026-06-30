@@ -10,7 +10,6 @@ export declare class KycController {
             user_id: string;
             engagement_rate: number;
             kyc_request_id: string | null;
-            verification_status: string;
             mobile_number: string | null;
             mobile_verified: boolean;
             email_verified: boolean;
@@ -20,6 +19,7 @@ export declare class KycController {
             instagram_profile_url: string | null;
             selfie_url: string | null;
             followers_count: number;
+            verification_status: string;
         } | null;
         brandKyc: {
             id: string;
@@ -29,13 +29,13 @@ export declare class KycController {
             company_name: string | null;
             website: string | null;
             kyc_request_id: string | null;
+            verification_status: string;
             gst_number: string | null;
             business_email: string | null;
             business_email_verified: boolean;
             linkedin_url: string | null;
             logo_url: string | null;
             business_address: string | null;
-            verification_status: string;
         } | null;
         latestRequest: ({
             creator_kyc: {
@@ -45,7 +45,6 @@ export declare class KycController {
                 user_id: string;
                 engagement_rate: number;
                 kyc_request_id: string | null;
-                verification_status: string;
                 mobile_number: string | null;
                 mobile_verified: boolean;
                 email_verified: boolean;
@@ -55,6 +54,7 @@ export declare class KycController {
                 instagram_profile_url: string | null;
                 selfie_url: string | null;
                 followers_count: number;
+                verification_status: string;
             } | null;
             brand_kyc: {
                 id: string;
@@ -64,13 +64,13 @@ export declare class KycController {
                 company_name: string | null;
                 website: string | null;
                 kyc_request_id: string | null;
+                verification_status: string;
                 gst_number: string | null;
                 business_email: string | null;
                 business_email_verified: boolean;
                 linkedin_url: string | null;
                 logo_url: string | null;
                 business_address: string | null;
-                verification_status: string;
             } | null;
         } & {
             id: string;
@@ -102,7 +102,6 @@ export declare class KycController {
             user_id: string;
             engagement_rate: number;
             kyc_request_id: string | null;
-            verification_status: string;
             mobile_number: string | null;
             mobile_verified: boolean;
             email_verified: boolean;
@@ -112,6 +111,7 @@ export declare class KycController {
             instagram_profile_url: string | null;
             selfie_url: string | null;
             followers_count: number;
+            verification_status: string;
         };
     }>;
     submitBrand(req: any, body: Record<string, unknown>): Promise<{
@@ -133,13 +133,13 @@ export declare class KycController {
             company_name: string | null;
             website: string | null;
             kyc_request_id: string | null;
+            verification_status: string;
             gst_number: string | null;
             business_email: string | null;
             business_email_verified: boolean;
             linkedin_url: string | null;
             logo_url: string | null;
             business_address: string | null;
-            verification_status: string;
         };
     }>;
 }

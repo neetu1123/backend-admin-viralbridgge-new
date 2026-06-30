@@ -4,6 +4,7 @@ import * as bcrypt from 'bcrypt';
 import { randomUUID } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 import { SecurityService } from '../security/security.service';
+import { UserProvisioningService } from '../users/user-provisioning.service';
 import type { SessionMeta } from '../security/security-session.helper';
 
 @Injectable()
@@ -11,6 +12,7 @@ export class AuthService {
   constructor(
     private prisma: PrismaService,
     private jwtService: JwtService,
+    private userProvisioning: UserProvisioningService,
     @Inject(forwardRef(() => SecurityService))
     private securityService: SecurityService,
   ) {}
@@ -58,10 +60,11 @@ export class AuthService {
         name: data.name,
         password: hashedPassword,
         role_id: role.id,
-        wallets: { create: {} },
       },
       include: { role: true },
     });
+
+    await this.userProvisioning.provisionUserResources(user.id, roleName, data.name);
 
     if (roleName === 'BRAND') {
       await this.prisma.brandProfile.create({

@@ -76,6 +76,12 @@ let AdminPaymentsController = class AdminPaymentsController {
     partialPayout(id, body, req) {
         return this.disputeService.resolveDispute(id, req.user.id, body);
     }
+    adminReleaseEscrow(id) {
+        return this.escrowService.adminReleaseEscrow(id);
+    }
+    adminRefundEscrow(id) {
+        return this.escrowService.adminRefundEscrow(id);
+    }
 };
 exports.AdminPaymentsController = AdminPaymentsController;
 __decorate([
@@ -208,6 +214,22 @@ __decorate([
     __metadata("design:paramtypes", [String, escrow_dto_1.ResolveDisputeDto, Object]),
     __metadata("design:returntype", void 0)
 ], AdminPaymentsController.prototype, "partialPayout", null);
+__decorate([
+    (0, common_1.Post)('escrows/:id/release'),
+    (0, swagger_1.ApiOperation)({ summary: 'Admin release escrow to creator' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminPaymentsController.prototype, "adminReleaseEscrow", null);
+__decorate([
+    (0, common_1.Post)('escrows/:id/refund'),
+    (0, swagger_1.ApiOperation)({ summary: 'Admin refund escrow to brand' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminPaymentsController.prototype, "adminRefundEscrow", null);
 exports.AdminPaymentsController = AdminPaymentsController = __decorate([
     (0, swagger_1.ApiTags)('Admin Payments'),
     (0, swagger_1.ApiBearerAuth)(),

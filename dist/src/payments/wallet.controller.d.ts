@@ -11,11 +11,15 @@ export declare class WalletController {
         };
     }): Promise<{
         id: string;
-        updated_at: Date;
-        created_at: Date;
-        user_id: string;
+        userId: string;
         available_balance: number;
+        locked_balance: number;
         pending_balance: number;
+        lifetime_earnings: number;
+        currency: string;
+        is_frozen: boolean;
+        createdAt: string;
+        updatedAt: string;
     }>;
     getTransactions(req: {
         user: {
@@ -25,11 +29,12 @@ export declare class WalletController {
         data: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         }[];
         meta: {
@@ -46,30 +51,39 @@ export declare class WalletController {
     }, body: AddFundsDto): Promise<{
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         transaction: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         };
     } | {
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         alreadyProcessed: boolean;
     }>;
@@ -83,6 +97,8 @@ export declare class WalletController {
         currency: string;
         keyId: null;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     } | {
         orderId: string;
@@ -90,6 +106,8 @@ export declare class WalletController {
         currency: string;
         keyId: string | undefined;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     }>;
     verifyPayment(req: {
@@ -99,30 +117,39 @@ export declare class WalletController {
     }, body: VerifyPaymentDto): Promise<{
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         transaction: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         };
     } | {
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         alreadyProcessed: boolean;
     }>;

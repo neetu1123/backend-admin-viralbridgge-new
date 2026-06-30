@@ -1,7 +1,7 @@
 import { Injectable, Logger, OnModuleDestroy, OnModuleInit } from '@nestjs/common';
 import { DeliverablesService } from './deliverables.service';
 
-const AUTO_RELEASE_INTERVAL_MS = 60 * 60 * 1000; // 1 hour
+const AUTO_RELEASE_INTERVAL_MS = 60 * 60 * 1000;
 
 @Injectable()
 export class EscrowAutoReleaseService implements OnModuleInit, OnModuleDestroy {
@@ -20,6 +20,7 @@ export class EscrowAutoReleaseService implements OnModuleInit, OnModuleDestroy {
     }, AUTO_RELEASE_INTERVAL_MS);
 
     void this.runAutoRelease();
+    this.logger.log('Escrow auto-release job started (hourly). Set REDIS_URL for BullMQ in dedicated workers.');
   }
 
   onModuleDestroy() {

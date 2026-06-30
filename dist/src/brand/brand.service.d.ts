@@ -380,8 +380,15 @@ export declare class BrandService {
                 created_at: Date;
                 platform_fee: number;
                 amount: number;
+                platform_fee_percent: number;
+                platform_fee_amount: number;
+                creator_amount: number;
+                payment_gateway: string | null;
+                payment_id: string | null;
                 locked_at: Date | null;
+                funded_at: Date | null;
                 released_at: Date | null;
+                refunded_at: Date | null;
             })[];
             campaignDeliverables: ({
                 application: {
@@ -720,8 +727,15 @@ export declare class BrandService {
             created_at: Date;
             platform_fee: number;
             amount: number;
+            platform_fee_percent: number;
+            platform_fee_amount: number;
+            creator_amount: number;
+            payment_gateway: string | null;
+            payment_id: string | null;
             locked_at: Date | null;
+            funded_at: Date | null;
             released_at: Date | null;
+            refunded_at: Date | null;
         })[];
     }>;
     updateCampaign(userId: string, id: string, dto: CampaignDto): Promise<{
@@ -1230,8 +1244,15 @@ export declare class BrandService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     listEscrows(userId: string): Promise<any[]>;
     getDashboard(userId: string): Promise<{
@@ -1265,39 +1286,52 @@ export declare class BrandService {
     }>;
     getWallet(userId: string): Promise<{
         id: string;
-        updated_at: Date;
-        created_at: Date;
-        user_id: string;
+        userId: string;
         available_balance: number;
+        locked_balance: number;
         pending_balance: number;
+        lifetime_earnings: number;
+        currency: string;
+        is_frozen: boolean;
+        createdAt: string;
+        updatedAt: string;
     }>;
     addFunds(userId: string, dto: FundsDto): Promise<{
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         transaction: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         };
     } | {
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         alreadyProcessed: boolean;
     }>;
@@ -1307,6 +1341,8 @@ export declare class BrandService {
         currency: string;
         keyId: null;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     } | {
         orderId: string;
@@ -1314,6 +1350,8 @@ export declare class BrandService {
         currency: string;
         keyId: string | undefined;
         paymentOrderId: string;
+        purpose: string;
+        escrowId: string | null;
         mock: boolean;
     }>;
     verifyPayment(userId: string, dto: {
@@ -1323,30 +1361,39 @@ export declare class BrandService {
     }): Promise<{
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         transaction: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         };
     } | {
         wallet: {
             id: string;
-            updated_at: Date;
-            created_at: Date;
-            user_id: string;
+            userId: string;
             available_balance: number;
+            locked_balance: number;
             pending_balance: number;
+            lifetime_earnings: number;
+            currency: string;
+            is_frozen: boolean;
+            createdAt: string;
+            updatedAt: string;
         };
         alreadyProcessed: boolean;
     }>;
@@ -1357,11 +1404,12 @@ export declare class BrandService {
         data: {
             id: string;
             status: string;
-            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
             amount: number;
+            balance_after: number | null;
+            reference_type: string | null;
             reference_id: string | null;
         }[];
         meta: {

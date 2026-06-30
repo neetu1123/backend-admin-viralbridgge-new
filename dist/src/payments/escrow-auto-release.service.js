@@ -29,6 +29,7 @@ let EscrowAutoReleaseService = EscrowAutoReleaseService_1 = class EscrowAutoRele
             void this.runAutoRelease();
         }, AUTO_RELEASE_INTERVAL_MS);
         void this.runAutoRelease();
+        this.logger.log('Escrow auto-release job started (hourly). Set REDIS_URL for BullMQ in dedicated workers.');
     }
     onModuleDestroy() {
         if (this.intervalRef)

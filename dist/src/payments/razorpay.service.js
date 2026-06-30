@@ -78,20 +78,23 @@ let RazorpayService = RazorpayService_1 = class RazorpayService {
     getPublicKey() {
         return this.keyId ?? null;
     }
-    async createOrder(userId, amount) {
+    async createOrder(userId, amount, options) {
         const amountPaise = Math.round(amount * 100);
         if (amountPaise < 100) {
             throw new Error('Minimum order amount is ₹1');
         }
+        const purpose = options?.purpose ?? 'WALLET_TOPUP';
         if (!this.client) {
             const mockOrderId = `order_mock_${Date.now()}`;
             const row = await this.prisma.paymentOrder.create({
                 data: {
                     user_id: userId,
+                    escrow_id: options?.escrowId,
+                    purpose,
                     razorpay_order_id: mockOrderId,
                     amount,
                     status: constants_1.PAYMENT_ORDER_STATUSES.CREATED,
-                    metadata: { mock: true },
+                    metadata: { mock: true, ...(options?.notes ?? {}) },
                 },
             });
             return {
@@ -100,18 +103,22 @@ let RazorpayService = RazorpayService_1 = class RazorpayService {
                 currency: 'INR',
                 keyId: null,
                 paymentOrderId: row.id,
+                purpose,
+                escrowId: options?.escrowId ?? null,
                 mock: true,
             };
         }
         const order = await this.client.orders.create({
             amount: amountPaise,
             currency: 'INR',
-            receipt: `wallet_${userId.slice(0, 8)}_${Date.now()}`,
-            notes: { user_id: userId },
+            receipt: `${purpose.toLowerCase()}_${userId.slice(0, 8)}_${Date.now()}`,
+            notes: { user_id: userId, purpose, ...(options?.notes ?? {}) },
         });
         const row = await this.prisma.paymentOrder.create({
             data: {
                 user_id: userId,
+                escrow_id: options?.escrowId,
+                purpose,
                 razorpay_order_id: order.id,
                 amount,
                 currency: 'INR',
@@ -125,6 +132,8 @@ let RazorpayService = RazorpayService_1 = class RazorpayService {
             currency: 'INR',
             keyId: this.keyId,
             paymentOrderId: row.id,
+            purpose,
+            escrowId: options?.escrowId ?? null,
             mock: false,
         };
     }

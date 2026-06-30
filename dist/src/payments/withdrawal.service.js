@@ -48,11 +48,13 @@ let WithdrawalService = class WithdrawalService {
                 where: { id: wallet.id },
                 data: { available_balance: { decrement: dto.amount } },
             });
-            const transaction = await tx.transaction.create({
+            const transaction = await tx.walletTransaction.create({
                 data: {
                     wallet_id: wallet.id,
-                    type: constants_1.TRANSACTION_TYPES.WITHDRAWAL,
+                    type: constants_1.TRANSACTION_TYPES.WITHDRAWAL_REQUEST,
                     amount: dto.amount,
+                    balance_after: updatedWallet.available_balance,
+                    reference_type: 'Withdrawal',
                     status: constants_1.WITHDRAWAL_STATUSES.PENDING,
                 },
             });
@@ -81,7 +83,7 @@ let WithdrawalService = class WithdrawalService {
             entityType: 'Withdrawal',
             entityId: result.withdrawal.id,
         });
-        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', result.wallet);
+        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', this.wallet.formatWallet(result.wallet));
         (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'withdrawal:requested', this.formatWithdrawal(result.withdrawal));
         return this.formatWithdrawal(result.withdrawal);
     }
@@ -138,9 +140,9 @@ let WithdrawalService = class WithdrawalService {
                 include: { creator: { include: { user: true } } },
             });
             if (result.transaction_id) {
-                await tx.transaction.update({
+                await tx.walletTransaction.update({
                     where: { id: result.transaction_id },
-                    data: { status: constants_1.WITHDRAWAL_STATUSES.APPROVED },
+                    data: { status: constants_1.WITHDRAWAL_STATUSES.APPROVED, type: constants_1.TRANSACTION_TYPES.WITHDRAWAL_APPROVED },
                 });
             }
             return result;
@@ -190,9 +192,9 @@ let WithdrawalService = class WithdrawalService {
                 data: { available_balance: { increment: withdrawal.amount } },
             });
             if (result.transaction_id) {
-                await tx.transaction.update({
+                await tx.walletTransaction.update({
                     where: { id: result.transaction_id },
-                    data: { status: constants_1.WITHDRAWAL_STATUSES.REJECTED },
+                    data: { status: constants_1.WITHDRAWAL_STATUSES.REJECTED, type: constants_1.TRANSACTION_TYPES.WITHDRAWAL_REJECTED },
                 });
             }
             return result;
@@ -218,13 +220,13 @@ let WithdrawalService = class WithdrawalService {
             entityType: 'Withdrawal',
             entityId: id,
         });
-        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', refreshedWallet);
+        (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', this.wallet.formatWallet(refreshedWallet));
         return this.formatWithdrawal(updated);
     }
     async getWithdrawalOrThrow(id) {
         const withdrawal = await this.prisma.withdrawal.findUnique({ where: { id } });
         if (!withdrawal) {
-            const legacyTxn = await this.prisma.transaction.findUnique({
+            const legacyTxn = await this.prisma.walletTransaction.findUnique({
                 where: { id },
                 include: { wallet: true },
             });
@@ -240,7 +242,6 @@ let WithdrawalService = class WithdrawalService {
                     rejected_at: null,
                     rejection_reason: null,
                     created_at: legacyTxn.created_at,
-                    updated_at: legacyTxn.updated_at,
                 };
             }
             throw new common_1.NotFoundException('Withdrawal not found');

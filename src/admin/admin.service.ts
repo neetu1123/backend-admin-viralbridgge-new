@@ -422,7 +422,7 @@ export class AdminService {
   // ─── Transactions & Analytics ────────────────────────────────────────────────
 
   async getTransactions() {
-    return this.prisma.transaction.findMany({
+    return this.prisma.walletTransaction.findMany({
       include: { wallet: { include: { user: true } } },
     });
   }
@@ -444,7 +444,7 @@ export class AdminService {
   }
 
   async getWithdrawals(status = 'PENDING') {
-    return this.prisma.transaction.findMany({
+    return this.prisma.walletTransaction.findMany({
       where: { type: 'WITHDRAWAL', status: status.toUpperCase() },
       include: { wallet: { include: { user: true } } },
       orderBy: { created_at: 'desc' },
@@ -452,7 +452,7 @@ export class AdminService {
   }
 
   async approveWithdrawal(id: string, adminId?: string) {
-    const txn = await this.prisma.transaction.update({
+    const txn = await this.prisma.walletTransaction.update({
       where: { id },
       data: { status: 'COMPLETED' },
       include: { wallet: { include: { user: true } } },
@@ -470,14 +470,14 @@ export class AdminService {
   }
 
   async rejectWithdrawal(id: string, adminId?: string, reason?: string) {
-    const txn = await this.prisma.transaction.findUnique({
+    const txn = await this.prisma.walletTransaction.findUnique({
       where: { id },
       include: { wallet: true },
     });
     if (!txn) throw new (require('@nestjs/common').NotFoundException)('Withdrawal not found');
 
     const updated = await this.prisma.$transaction(async (tx) => {
-      const result = await tx.transaction.update({
+      const result = await tx.walletTransaction.update({
         where: { id },
         data: { status: 'REJECTED' },
         include: { wallet: { include: { user: true } } },

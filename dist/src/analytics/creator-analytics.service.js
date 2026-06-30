@@ -26,7 +26,7 @@ let CreatorAnalyticsService = class CreatorAnalyticsService {
         return this.cached(`creator:dashboard:${userId}`, query, userId, async (range, profileId) => {
             const dateFilter = { gte: range.from, lte: range.to };
             const [totalEarningsAgg, pendingEarningsAgg, campaignsCompleted, totalApplications, acceptedApplications,] = await Promise.all([
-                this.prisma.transaction.aggregate({
+                this.prisma.walletTransaction.aggregate({
                     where: {
                         wallet: { user_id: userId },
                         type: 'ESCROW_RELEASE',
@@ -73,7 +73,7 @@ let CreatorAnalyticsService = class CreatorAnalyticsService {
     }
     async getEarnings(userId, query) {
         return this.cached(`creator:earnings:${userId}`, query, userId, async (range, profileId) => {
-            const releases = await this.prisma.transaction.findMany({
+            const releases = await this.prisma.walletTransaction.findMany({
                 where: {
                     wallet: { user_id: userId },
                     type: 'ESCROW_RELEASE',

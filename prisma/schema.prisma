@@ -39,6 +39,7 @@ model User {
   security_setting     SecuritySetting?
   user_sessions        UserSession[]
   security_activities  SecurityActivity[]
+  notification_prefs   NotificationPreference?
 
   @@map("users")
 }
@@ -202,34 +203,65 @@ model Deliverable {
 }
 
 model Wallet {
-  id               String       @id @default(uuid())
-  user_id          String       @unique
-  user             User         @relation(fields: [user_id], references: [id])
-  available_balance Float       @default(0.0)
-  pending_balance  Float        @default(0.0)
-  created_at       DateTime     @default(now())
-  updated_at       DateTime     @updatedAt
+  id                String       @id @default(uuid())
+  user_id           String       @unique
+  user              User         @relation(fields: [user_id], references: [id])
+  available_balance Float        @default(0.0)
+  locked_balance    Float        @default(0.0)
+  pending_balance   Float        @default(0.0)
+  lifetime_earnings Float        @default(0.0)
+  currency          String       @default("INR")
+  is_platform       Boolean      @default(false)
+  is_frozen         Boolean      @default(false)
+  created_at        DateTime     @default(now())
+  updated_at        DateTime     @updatedAt
 
-  transactions     Transaction[]
+  transactions      WalletTransaction[]
 
   @@map("wallets")
 }
 
+model WalletTransaction {
+  id             String   @id @default(uuid())
+  wallet_id      String
+  wallet         Wallet   @relation(fields: [wallet_id], references: [id])
+  type           String
+  amount         Float
+  balance_after  Float?
+  reference_type String?
+  reference_id   String?
+  status         String   @default("COMPLETED")
+  created_at     DateTime @default(now())
+
+  @@index([wallet_id, created_at])
+  @@index([reference_type, reference_id])
+  @@map("wallet_transactions")
+}
+
 model Escrow {
-  id               String       @id @default(uuid())
-  campaign_id      String
-  campaign         Campaign       @relation(fields: [campaign_id], references: [id])
-  brand_id         String
-  brand            BrandProfile   @relation(fields: [brand_id], references: [id])
-  creator_id       String
-  creator          CreatorProfile @relation(fields: [creator_id], references: [id])
-  amount           Float
-  platform_fee     Float          @default(0.0)
-  status           String         @default("PENDING") // PENDING, HELD, RELEASED, REFUNDED, DISPUTED
-  locked_at        DateTime?
-  created_at       DateTime       @default(now())
-  released_at      DateTime?
-  updated_at       DateTime       @updatedAt
+  id                   String         @id @default(uuid())
+  campaign_id          String
+  campaign             Campaign       @relation(fields: [campaign_id], references: [id])
+  brand_id             String
+  brand                BrandProfile   @relation(fields: [brand_id], references: [id])
+  creator_id           String
+  creator              CreatorProfile @relation(fields: [creator_id], references: [id])
+  amount               Float
+  platform_fee_percent Float          @default(10.0)
+  platform_fee_amount  Float          @default(0.0)
+  creator_amount       Float          @default(0.0)
+  platform_fee         Float          @default(0.0)
+  payment_gateway      String?
+  payment_id           String?
+  status               String         @default("PENDING")
+  locked_at            DateTime?
+  funded_at            DateTime?
+  created_at           DateTime       @default(now())
+  released_at          DateTime?
+  refunded_at          DateTime?
+  updated_at           DateTime       @updatedAt
+
+  payment_orders       PaymentOrder[]
 
   @@index([campaign_id, creator_id, brand_id])
   @@index([status])
@@ -254,18 +286,19 @@ model Withdrawal {
   @@map("withdrawals")
 }
 
-model Transaction {
-  id               String       @id @default(uuid())
-  wallet_id        String
-  wallet           Wallet         @relation(fields: [wallet_id], references: [id])
-  type             String         // DEPOSIT, WITHDRAWAL, ESCROW_HOLD, ESCROW_RELEASE
-  amount           Float
-  status           String         @default("PENDING")
-  reference_id     String?
-  created_at       DateTime       @default(now())
-  updated_at       DateTime       @updatedAt
+model NotificationPreference {
+  id               String   @id @default(uuid())
+  user_id          String   @unique
+  user             User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  email_enabled    Boolean  @default(true)
+  push_enabled     Boolean  @default(true)
+  payment_alerts   Boolean  @default(true)
+  campaign_alerts  Boolean  @default(true)
+  marketing_emails Boolean  @default(false)
+  created_at       DateTime @default(now())
+  updated_at       DateTime @updatedAt
 
-  @@map("transactions")
+  @@map("notification_preferences")
 }
 
 model Conversation {
@@ -339,16 +372,20 @@ model Dispute {
 model PaymentOrder {
   id                  String   @id @default(uuid())
   user_id             String
+  escrow_id           String?
+  escrow              Escrow?  @relation(fields: [escrow_id], references: [id])
+  purpose             String   @default("WALLET_TOPUP")
   razorpay_order_id   String   @unique
   razorpay_payment_id String?
   amount              Float
   currency            String   @default("INR")
-  status              String   @default("CREATED") // CREATED, PAID, FAILED
+  status              String   @default("CREATED")
   metadata            Json?
   created_at          DateTime @default(now())
   updated_at          DateTime @updatedAt
 
   @@index([user_id, status])
+  @@index([escrow_id])
   @@map("payment_orders")
 }
 

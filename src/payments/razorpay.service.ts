@@ -33,21 +33,33 @@ export class RazorpayService {
     return this.keyId ?? null;
   }
 
-  async createOrder(userId: string, amount: number) {
+  async createOrder(
+    userId: string,
+    amount: number,
+    options?: {
+      purpose?: string;
+      escrowId?: string;
+      notes?: Record<string, string>;
+    },
+  ) {
     const amountPaise = Math.round(amount * 100);
     if (amountPaise < 100) {
       throw new Error('Minimum order amount is ₹1');
     }
+
+    const purpose = options?.purpose ?? 'WALLET_TOPUP';
 
     if (!this.client) {
       const mockOrderId = `order_mock_${Date.now()}`;
       const row = await this.prisma.paymentOrder.create({
         data: {
           user_id: userId,
+          escrow_id: options?.escrowId,
+          purpose,
           razorpay_order_id: mockOrderId,
           amount,
           status: PAYMENT_ORDER_STATUSES.CREATED,
-          metadata: { mock: true },
+          metadata: { mock: true, ...(options?.notes ?? {}) },
         },
       });
       return {
@@ -56,6 +68,8 @@ export class RazorpayService {
         currency: 'INR',
         keyId: null,
         paymentOrderId: row.id,
+        purpose,
+        escrowId: options?.escrowId ?? null,
         mock: true,
       };
     }
@@ -63,13 +77,15 @@ export class RazorpayService {
     const order = await this.client.orders.create({
       amount: amountPaise,
       currency: 'INR',
-      receipt: `wallet_${userId.slice(0, 8)}_${Date.now()}`,
-      notes: { user_id: userId },
+      receipt: `${purpose.toLowerCase()}_${userId.slice(0, 8)}_${Date.now()}`,
+      notes: { user_id: userId, purpose, ...(options?.notes ?? {}) },
     });
 
     const row = await this.prisma.paymentOrder.create({
       data: {
         user_id: userId,
+        escrow_id: options?.escrowId,
+        purpose,
         razorpay_order_id: order.id,
         amount,
         currency: 'INR',
@@ -84,6 +100,8 @@ export class RazorpayService {
       currency: 'INR',
       keyId: this.keyId,
       paymentOrderId: row.id,
+      purpose,
+      escrowId: options?.escrowId ?? null,
       mock: false,
     };
   }

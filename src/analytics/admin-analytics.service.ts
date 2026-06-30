@@ -18,7 +18,7 @@ export class AdminAnalyticsService {
       const [totalCreators, totalBrands, revenueAgg, escrowVolumeAgg] = await Promise.all([
         this.prisma.creatorProfile.count(),
         this.prisma.brandProfile.count(),
-        this.prisma.transaction.aggregate({
+        this.prisma.walletTransaction.aggregate({
           where: {
             type: { in: ['DEPOSIT', 'ESCROW_RELEASE'] },
             status: 'COMPLETED',
@@ -114,7 +114,7 @@ export class AdminAnalyticsService {
 
   async getRevenue(userId: string, query: AnalyticsQueryDto) {
     return this.cached('admin:revenue', query, userId, async (range) => {
-      const transactions = await this.prisma.transaction.findMany({
+      const transactions = await this.prisma.walletTransaction.findMany({
         where: {
           type: { in: ['DEPOSIT', 'ESCROW_RELEASE'] },
           status: 'COMPLETED',
@@ -135,7 +135,7 @@ export class AdminAnalyticsService {
         .map(([key, revenue]) => ({ month: formatMonthLabel(key), revenue, key }));
 
       const current = transactions.reduce((sum, t) => sum + t.amount, 0);
-      const previousTxns = await this.prisma.transaction.aggregate({
+      const previousTxns = await this.prisma.walletTransaction.aggregate({
         where: {
           type: { in: ['DEPOSIT', 'ESCROW_RELEASE'] },
           status: 'COMPLETED',

@@ -52,13 +52,16 @@ const bcrypt = __importStar(require("bcrypt"));
 const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const security_service_1 = require("../security/security.service");
+const user_provisioning_service_1 = require("../users/user-provisioning.service");
 let AuthService = class AuthService {
     prisma;
     jwtService;
+    userProvisioning;
     securityService;
-    constructor(prisma, jwtService, securityService) {
+    constructor(prisma, jwtService, userProvisioning, securityService) {
         this.prisma = prisma;
         this.jwtService = jwtService;
+        this.userProvisioning = userProvisioning;
         this.securityService = securityService;
     }
     async signToken(user) {
@@ -100,10 +103,10 @@ let AuthService = class AuthService {
                 name: data.name,
                 password: hashedPassword,
                 role_id: role.id,
-                wallets: { create: {} },
             },
             include: { role: true },
         });
+        await this.userProvisioning.provisionUserResources(user.id, roleName, data.name);
         if (roleName === 'BRAND') {
             await this.prisma.brandProfile.create({
                 data: { user_id: user.id, company_name: data.name },
@@ -163,9 +166,10 @@ let AuthService = class AuthService {
 exports.AuthService = AuthService;
 exports.AuthService = AuthService = __decorate([
     (0, common_1.Injectable)(),
-    __param(2, (0, common_1.Inject)((0, common_1.forwardRef)(() => security_service_1.SecurityService))),
+    __param(3, (0, common_1.Inject)((0, common_1.forwardRef)(() => security_service_1.SecurityService))),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
+        user_provisioning_service_1.UserProvisioningService,
         security_service_1.SecurityService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

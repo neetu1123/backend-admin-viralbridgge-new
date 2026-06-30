@@ -2,11 +2,13 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateEscrowDto, OpenDisputeDto } from './dto/escrow.dto';
 import { WalletService } from './wallet.service';
+import { PlatformWalletService } from './platform-wallet.service';
 export declare class EscrowService {
     private readonly prisma;
     private readonly wallet;
+    private readonly platformWallet;
     private readonly notifications;
-    constructor(prisma: PrismaService, wallet: WalletService, notifications: NotificationsService);
+    constructor(prisma: PrismaService, wallet: WalletService, platformWallet: PlatformWalletService, notifications: NotificationsService);
     calculatePlatformFee(amount: number): number;
     getEscrow(userId: string, escrowId: string): Promise<{
         id: unknown;
@@ -103,8 +105,15 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }) | null>;
     listEscrows(userId: string, role: 'brand' | 'creator'): Promise<any[]>;
     listAdminEscrows(status?: string): Promise<{
@@ -178,8 +187,15 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     createPendingEscrowOnApplicationAccept(application: {
         campaign_id: string;
@@ -206,8 +222,15 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     } | null>;
     lockFundsOnApplicationAccept(application: {
         campaign_id: string;
@@ -234,8 +257,15 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     } | null>;
     private fundPendingEscrow;
     private lockFundsForEscrow;
@@ -298,8 +328,100 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
+    }>;
+    adminReleaseEscrow(escrowId: string, reason?: string): Promise<{
+        campaign: {
+            title: string;
+        };
+        creator: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
+            user_id: string;
+            full_name: string | null;
+            bio: string | null;
+            niche: string | null;
+            followers: number;
+            engagement_rate: number;
+            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            media_kit: string | null;
+            portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
+            photo: string | null;
+        };
+        brand: {
+            user: {
+                id: string;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            description: string | null;
+            created_at: Date;
+            user_id: string;
+            contact_email: string | null;
+            phone: string | null;
+            company_name: string;
+            industry: string | null;
+            website: string | null;
+            logo: string | null;
+            location: string | null;
+        };
+    } & {
+        id: string;
+        campaign_id: string;
+        creator_id: string;
+        status: string;
+        updated_at: Date;
+        brand_id: string;
+        created_at: Date;
+        platform_fee: number;
+        amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
+        locked_at: Date | null;
+        funded_at: Date | null;
+        released_at: Date | null;
+        refunded_at: Date | null;
+    }>;
+    adminRefundEscrow(escrowId: string): Promise<{
+        id: string;
+        campaign_id: string;
+        creator_id: string;
+        status: string;
+        updated_at: Date;
+        brand_id: string;
+        created_at: Date;
+        platform_fee: number;
+        amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
+        locked_at: Date | null;
+        funded_at: Date | null;
+        released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     releaseEscrowByCampaignCreator(campaignId: string, creatorId: string, reason?: string): Promise<{
         campaign: {
@@ -356,8 +478,15 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
     private releaseEscrowInternal;
     refundEscrow(userId: string, escrowId: string): Promise<{
@@ -370,9 +499,17 @@ export declare class EscrowService {
         created_at: Date;
         platform_fee: number;
         amount: number;
+        platform_fee_percent: number;
+        platform_fee_amount: number;
+        creator_amount: number;
+        payment_gateway: string | null;
+        payment_id: string | null;
         locked_at: Date | null;
+        funded_at: Date | null;
         released_at: Date | null;
+        refunded_at: Date | null;
     }>;
+    private refundEscrowInternal;
     openDispute(userId: string, role: 'brand' | 'creator', dto: OpenDisputeDto): Promise<{
         id: string;
         campaignId: string;

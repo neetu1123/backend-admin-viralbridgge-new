@@ -10,6 +10,7 @@ Object.defineProperty(exports, "__esModule", { value: true });
 exports.QueueModule = void 0;
 const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
+const escrow_auto_release_processor_1 = require("./escrow-auto-release.processor");
 function redisConnection() {
     const redisUrl = process.env.REDIS_URL?.trim();
     if (!redisUrl)
@@ -41,7 +42,10 @@ let QueueModule = QueueModule_1 = class QueueModule {
         }
         return {
             module: QueueModule_1,
-            imports: [bullmq_1.BullModule.forRoot({ connection })],
+            imports: [
+                bullmq_1.BullModule.forRoot({ connection }),
+                bullmq_1.BullModule.registerQueue({ name: escrow_auto_release_processor_1.ESCROW_AUTO_RELEASE_QUEUE }),
+            ],
             exports: [bullmq_1.BullModule],
         };
     }
