@@ -64,6 +64,7 @@ export declare class WalletService {
         data: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -114,6 +115,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -157,6 +159,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -196,6 +199,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -222,6 +226,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -248,6 +253,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -274,6 +280,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -300,6 +307,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -326,6 +334,7 @@ export declare class WalletService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;

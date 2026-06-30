@@ -496,6 +496,7 @@ export declare class CreatorController {
         data: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;

@@ -424,6 +424,7 @@ export declare class AdminController {
     } & {
         id: string;
         status: string;
+        updated_at: Date;
         created_at: Date;
         type: string;
         wallet_id: string;

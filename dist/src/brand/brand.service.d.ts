@@ -1312,6 +1312,7 @@ export declare class BrandService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -1374,6 +1375,7 @@ export declare class BrandService {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -1404,6 +1406,7 @@ export declare class BrandService {
         data: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;

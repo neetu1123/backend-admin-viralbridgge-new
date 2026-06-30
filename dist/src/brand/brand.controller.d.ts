@@ -1466,6 +1466,7 @@ export declare class BrandController {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -1524,6 +1525,7 @@ export declare class BrandController {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -1554,6 +1556,7 @@ export declare class BrandController {
         data: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;

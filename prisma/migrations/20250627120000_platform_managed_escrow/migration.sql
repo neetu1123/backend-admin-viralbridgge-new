@@ -42,7 +42,7 @@ CREATE TABLE IF NOT EXISTS "notification_preferences" (
     "campaign_alerts" BOOLEAN NOT NULL DEFAULT true,
     "marketing_emails" BOOLEAN NOT NULL DEFAULT false,
     "created_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
-    "updated_at" TIMESTAMP(3) NOT NULL,
+    "updated_at" TIMESTAMP(3) NOT NULL DEFAULT CURRENT_TIMESTAMP,
 
     CONSTRAINT "notification_preferences_pkey" PRIMARY KEY ("id")
 );

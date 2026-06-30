@@ -29,6 +29,7 @@ export declare class WalletController {
         data: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -64,6 +65,7 @@ export declare class WalletController {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;
@@ -130,6 +132,7 @@ export declare class WalletController {
         transaction: {
             id: string;
             status: string;
+            updated_at: Date;
             created_at: Date;
             type: string;
             wallet_id: string;

@@ -232,6 +232,7 @@ model WalletTransaction {
   reference_id   String?
   status         String   @default("COMPLETED")
   created_at     DateTime @default(now())
+  updated_at     DateTime @updatedAt
 
   @@index([wallet_id, created_at])
   @@index([reference_type, reference_id])
