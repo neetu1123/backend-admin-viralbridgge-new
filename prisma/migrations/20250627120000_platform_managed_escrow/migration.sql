@@ -25,6 +25,7 @@ ALTER TABLE "escrows" ADD COLUMN IF NOT EXISTS "creator_amount" DOUBLE PRECISION
 ALTER TABLE "escrows" ADD COLUMN IF NOT EXISTS "payment_gateway" TEXT;
 ALTER TABLE "escrows" ADD COLUMN IF NOT EXISTS "payment_id" TEXT;
 ALTER TABLE "escrows" ADD COLUMN IF NOT EXISTS "funded_at" TIMESTAMP(3);
+ALTER TABLE "escrows" ADD COLUMN IF NOT EXISTS "refunded_at" TIMESTAMP(3);
 
 UPDATE "escrows" SET "funded_at" = "locked_at" WHERE "funded_at" IS NULL AND "locked_at" IS NOT NULL;
 UPDATE "escrows" SET "platform_fee_amount" = COALESCE("platform_fee", 0) WHERE "platform_fee_amount" = 0;
