@@ -9,9 +9,6 @@ exports.getFirebaseBucket = getFirebaseBucket;
 const app_1 = require("firebase-admin/app");
 const auth_1 = require("firebase-admin/auth");
 const storage_1 = require("firebase-admin/storage");
-function isFirebaseConfigured() {
-    return Boolean(process.env.FIREBASE_SERVICE_ACCOUNT?.trim());
-}
 function parseServiceAccount() {
     const serviceAccountJson = process.env.FIREBASE_SERVICE_ACCOUNT?.trim();
     if (!serviceAccountJson)
@@ -23,15 +20,24 @@ function parseServiceAccount() {
         return null;
     }
 }
+function isFirebaseConfigured() {
+    return Boolean(parseServiceAccount());
+}
 function getFirebaseStorageBucketName() {
     const explicit = process.env.FIREBASE_STORAGE_BUCKET?.trim();
     if (explicit)
-        return explicit;
+        return explicit.replace(/^gs:\/\//, '');
     const serviceAccount = parseServiceAccount();
-    if (serviceAccount?.projectId) {
+    if (!serviceAccount?.projectId)
+        return undefined;
+    const override = process.env.FIREBASE_STORAGE_BUCKET_LEGACY?.trim();
+    if (override === 'appspot') {
         return `${serviceAccount.projectId}.appspot.com`;
     }
-    return undefined;
+    if (override === 'firebasestorage') {
+        return `${serviceAccount.projectId}.firebasestorage.app`;
+    }
+    return `${serviceAccount.projectId}.firebasestorage.app`;
 }
 function initializeFirebaseAdmin() {
     if ((0, app_1.getApps)().length > 0) {
@@ -70,7 +76,8 @@ function getFirebaseStorage() {
 function getFirebaseBucket() {
     const bucketName = getFirebaseStorageBucketName();
     if (!bucketName) {
-        throw new Error('Firebase Storage bucket is not configured');
+        throw new Error('Firebase Storage bucket is not configured. Set FIREBASE_STORAGE_BUCKET on Vercel ' +
+            '(Firebase Console → Storage → bucket name) and a valid FIREBASE_SERVICE_ACCOUNT JSON.');
     }
     return getFirebaseStorage().bucket(bucketName);
 }

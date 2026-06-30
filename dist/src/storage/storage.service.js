@@ -13,6 +13,7 @@ const promises_1 = require("fs/promises");
 const path_1 = require("path");
 const crypto_1 = require("crypto");
 const firebase_admin_config_1 = require("../firebase/firebase-admin.config");
+const cloudinary_config_1 = require("./cloudinary.config");
 const storage_constants_1 = require("./storage.constants");
 let StorageService = StorageService_1 = class StorageService {
     logger = new common_1.Logger(StorageService_1.name);
@@ -21,16 +22,49 @@ let StorageService = StorageService_1 = class StorageService {
         if (params.thumbnail) {
             this.assertAllowedFile(params.thumbnail, storage_constants_1.DELIVERABLE_THUMBNAIL_MIMES, 'thumbnail');
         }
-        const main = (0, firebase_admin_config_1.isFirebaseConfigured)()
-            ? await this.uploadToFirebase(params.userId, params.file, params.campaignId)
-            : await this.uploadToLocal(params.userId, params.file, params.campaignId);
+        const uploadFile = this.getUploadHandler();
+        const main = await uploadFile(params.userId, params.file, params.campaignId);
         if (params.thumbnail) {
-            const thumb = (0, firebase_admin_config_1.isFirebaseConfigured)()
-                ? await this.uploadToFirebase(params.userId, params.thumbnail, params.campaignId, 'thumbnails')
-                : await this.uploadToLocal(params.userId, params.thumbnail, params.campaignId, 'thumbnails');
+            const thumb = await uploadFile(params.userId, params.thumbnail, params.campaignId, 'thumbnails');
             main.thumbnailUrl = thumb.url;
         }
         return main;
+    }
+    getUploadHandler() {
+        if ((0, cloudinary_config_1.isCloudinaryConfigured)()) {
+            return this.uploadToCloudinary.bind(this);
+        }
+        if ((0, firebase_admin_config_1.isFirebaseConfigured)()) {
+            return this.uploadToFirebase.bind(this);
+        }
+        return this.uploadToLocal.bind(this);
+    }
+    uploadToCloudinary(userId, file, campaignId, folder = 'files') {
+        const folderPath = this.buildObjectPath(userId, file, campaignId, folder)
+            .replace(/\.[^.]+$/, '')
+            .replace(/\//g, '-');
+        const resourceType = file.mimetype.startsWith('video/') ? 'video' : 'image';
+        return new Promise((resolve, reject) => {
+            const stream = (0, cloudinary_config_1.getCloudinary)().uploader.upload_stream({
+                folder: `viralbridge/deliverables/${userId}/${folder}`,
+                public_id: folderPath,
+                resource_type: resourceType,
+                overwrite: false,
+            }, (error, result) => {
+                if (error || !result?.secure_url) {
+                    reject(new common_1.BadRequestException(error?.message ?? 'Cloudinary upload failed'));
+                    return;
+                }
+                resolve({
+                    url: result.secure_url,
+                    fileName: file.originalname,
+                    mimeType: file.mimetype,
+                    size: file.size,
+                    storage: 'cloudinary',
+                });
+            });
+            stream.end(file.buffer);
+        });
     }
     assertAllowedFile(file, allowed, label) {
         if (!file?.buffer?.length) {
@@ -96,7 +130,7 @@ let StorageService = StorageService_1 = class StorageService {
     }
     async uploadToLocal(userId, file, campaignId, folder = 'files') {
         if (process.env.VERCEL) {
-            throw new common_1.BadRequestException('File upload requires Firebase Storage on Vercel. Set FIREBASE_SERVICE_ACCOUNT and FIREBASE_STORAGE_BUCKET.');
+            throw new common_1.BadRequestException('File upload requires cloud storage on Vercel. Set CLOUDINARY_CLOUD_NAME, CLOUDINARY_API_KEY, and CLOUDINARY_API_SECRET (free tier), or configure Firebase Storage.');
         }
         const relativePath = this.buildObjectPath(userId, file, campaignId, folder);
         const absolutePath = (0, path_1.join)(process.cwd(), 'uploads', relativePath);

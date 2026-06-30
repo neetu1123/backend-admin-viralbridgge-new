@@ -9,7 +9,7 @@ export type UploadResult = {
     fileName: string;
     mimeType: string;
     size: number;
-    storage: 'firebase' | 'local';
+    storage: 'cloudinary' | 'firebase' | 'local';
     thumbnailUrl?: string;
 };
 export declare class StorageService {
@@ -20,6 +20,8 @@ export declare class StorageService {
         thumbnail?: UploadedFilePayload;
         campaignId?: string;
     }): Promise<UploadResult>;
+    private getUploadHandler;
+    private uploadToCloudinary;
     private assertAllowedFile;
     private sanitizeFileName;
     private buildObjectPath;
