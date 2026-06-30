@@ -13,6 +13,7 @@ type EscrowServiceType = import('../../dist/src/payments/escrow.service').Escrow
 type DeliverablesServiceType = import('../../dist/src/payments/deliverables.service').DeliverablesService;
 type WithdrawalServiceType = import('../../dist/src/payments/withdrawal.service').WithdrawalService;
 type RazorpayServiceType = import('../../dist/src/payments/razorpay.service').RazorpayService;
+type StorageServiceType = import('../../dist/src/storage/storage.service').StorageService;
 
 let brandService: BrandServiceType | undefined;
 let creatorService: CreatorServiceType | undefined;
@@ -29,6 +30,7 @@ let escrowService: EscrowServiceType | undefined;
 let deliverablesService: DeliverablesServiceType | undefined;
 let withdrawalService: WithdrawalServiceType | undefined;
 let razorpayService: RazorpayServiceType | undefined;
+let storageService: StorageServiceType | undefined;
 let configService: import('@nestjs/config').ConfigService | undefined;
 
 function getConfigService() {
@@ -79,6 +81,14 @@ function getEscrowService(): EscrowServiceType {
   return escrowService;
 }
 
+function getStorageService(): StorageServiceType {
+  if (!storageService) {
+    const { StorageService } = require('../../dist/src/storage/storage.service') as typeof import('../../dist/src/storage/storage.service');
+    storageService = new StorageService();
+  }
+  return storageService;
+}
+
 function getDeliverablesService(): DeliverablesServiceType {
   if (!deliverablesService) {
     const { DeliverablesService } = require('../../dist/src/payments/deliverables.service') as typeof import('../../dist/src/payments/deliverables.service');
@@ -86,6 +96,7 @@ function getDeliverablesService(): DeliverablesServiceType {
       getPrisma() as never,
       getNotificationsService(),
       getEscrowService(),
+      getStorageService(),
     );
   }
   return deliverablesService;

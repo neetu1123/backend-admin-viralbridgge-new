@@ -14,9 +14,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.CreatorController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
+const storage_constants_1 = require("../storage/storage.constants");
 const creator_service_1 = require("./creator.service");
 const creator_dto_1 = require("./creator.dto");
 let CreatorController = class CreatorController {
@@ -59,6 +61,45 @@ let CreatorController = class CreatorController {
     }
     getDeliverables(req) {
         return this.creatorService.getDeliverables(req.user.id);
+    }
+    uploadDeliverable(req, files, body) {
+        const file = files.file?.[0];
+        if (!file)
+            throw new common_1.BadRequestException('file is required');
+        return this.creatorService.uploadDeliverableMedia(req.user.id, {
+            buffer: file.buffer,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+        }, {
+            campaignId: body.campaign_id,
+            thumbnail: files.thumbnail?.[0]
+                ? {
+                    buffer: files.thumbnail[0].buffer,
+                    originalname: files.thumbnail[0].originalname,
+                    mimetype: files.thumbnail[0].mimetype,
+                    size: files.thumbnail[0].size,
+                }
+                : undefined,
+        });
+    }
+    submitDeliverableFile(req, id, files, body) {
+        const file = files.file?.[0];
+        if (!file)
+            throw new common_1.BadRequestException('file is required');
+        return this.creatorService.submitDeliverableWithFile(req.user.id, id, {
+            buffer: file.buffer,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+        }, body.notes, files.thumbnail?.[0]
+            ? {
+                buffer: files.thumbnail[0].buffer,
+                originalname: files.thumbnail[0].originalname,
+                mimetype: files.thumbnail[0].mimetype,
+                size: files.thumbnail[0].size,
+            }
+            : undefined);
     }
     submitDeliverable(req, id, body) {
         return this.creatorService.submitDeliverable(req.user.id, id, body);
@@ -193,6 +234,37 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getDeliverables", null);
+__decorate([
+    (0, common_1.Post)('deliverables/upload'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload deliverable video/image (returns URL)' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+    ], { limits: { fileSize: storage_constants_1.DELIVERABLE_MAX_UPLOAD_BYTES } })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "uploadDeliverable", null);
+__decorate([
+    (0, common_1.Post)('deliverables/:id/submit-file'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload and submit deliverable in one step' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+    ], { limits: { fileSize: storage_constants_1.DELIVERABLE_MAX_UPLOAD_BYTES } })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.UploadedFiles)()),
+    __param(3, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "submitDeliverableFile", null);
 __decorate([
     (0, common_1.Post)('deliverables/:id/submit'),
     __param(0, (0, common_1.Request)()),

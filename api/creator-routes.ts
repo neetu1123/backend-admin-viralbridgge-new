@@ -62,6 +62,48 @@ router.get('/applications/:id', (req: AuthedRequest, res) =>
 
 router.get('/dashboard', (req: AuthedRequest, res) => run(req, res, (id) => creator().getDashboard(id)));
 router.get('/deliverables', (req: AuthedRequest, res) => run(req, res, (id) => creator().getDeliverables(id)));
+
+router.post('/deliverables/upload', (req: AuthedRequest, res) => {
+  const { deliverableUploadMiddleware, toUploadPayload } = require('./lib/multer-deliverable') as typeof import('./lib/multer-deliverable');
+  deliverableUploadMiddleware(req, res, async (err: unknown) => {
+    if (err) return fail(res, err instanceof Error ? err.message : 'Upload failed', 400);
+    try {
+      const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
+      const file = files?.file?.[0];
+      if (!file) return fail(res, 'file is required', 400);
+      const result = await creator().uploadDeliverableMedia(req.user!.id, toUploadPayload(file), {
+        campaignId: req.body?.campaign_id,
+        thumbnail: files?.thumbnail?.[0] ? toUploadPayload(files.thumbnail[0]) : undefined,
+      });
+      return ok(res, result, 201);
+    } catch (error) {
+      return fail(res, error instanceof Error ? error.message : 'Upload failed', 500);
+    }
+  });
+});
+
+router.post('/deliverables/:id/submit-file', (req: AuthedRequest, res) => {
+  const { deliverableUploadMiddleware, toUploadPayload } = require('./lib/multer-deliverable') as typeof import('./lib/multer-deliverable');
+  deliverableUploadMiddleware(req, res, async (err: unknown) => {
+    if (err) return fail(res, err instanceof Error ? err.message : 'Upload failed', 400);
+    try {
+      const files = req.files as { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] };
+      const file = files?.file?.[0];
+      if (!file) return fail(res, 'file is required', 400);
+      const result = await creator().submitDeliverableWithFile(
+        req.user!.id,
+        paramId(req),
+        toUploadPayload(file),
+        req.body?.notes,
+        files?.thumbnail?.[0] ? toUploadPayload(files.thumbnail[0]) : undefined,
+      );
+      return ok(res, result);
+    } catch (error) {
+      return fail(res, error instanceof Error ? error.message : 'Submit failed', 500);
+    }
+  });
+});
+
 router.post('/deliverables/:id/submit', (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => creator().submitDeliverable(id, paramId(req), req.body), {
     action: 'SUBMIT_DELIVERABLE',

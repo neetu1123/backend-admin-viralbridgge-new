@@ -11,6 +11,7 @@ import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
+import type { UploadedFilePayload } from '../storage/storage.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -273,6 +274,24 @@ export class CreatorService {
 
   async listEscrows(userId: string) {
     return this.escrowService.listEscrows(userId, 'creator');
+  }
+
+  async uploadDeliverableMedia(
+    userId: string,
+    file: UploadedFilePayload,
+    options?: { campaignId?: string; thumbnail?: UploadedFilePayload },
+  ) {
+    return this.deliverablesService.uploadMedia(userId, file, options);
+  }
+
+  async submitDeliverableWithFile(
+    userId: string,
+    deliverableId: string,
+    file: UploadedFilePayload,
+    notes?: string,
+    thumbnail?: UploadedFilePayload,
+  ) {
+    return this.deliverablesService.submitWithUpload(userId, deliverableId, file, notes, thumbnail);
   }
 
   async submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto) {

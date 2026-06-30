@@ -422,6 +422,35 @@ export declare class CreatorController {
         createdAt: string | Date | undefined;
         updatedAt: string | Date | undefined;
     }[]>;
+    uploadDeliverable(req: any, files: {
+        file?: Express.Multer.File[];
+        thumbnail?: Express.Multer.File[];
+    }, body: {
+        campaign_id?: string;
+    }): Promise<import("../storage/storage.service").UploadResult>;
+    submitDeliverableFile(req: any, id: string, files: {
+        file?: Express.Multer.File[];
+        thumbnail?: Express.Multer.File[];
+    }, body: {
+        notes?: string;
+    }): Promise<{
+        id: string;
+        campaignId: string;
+        creatorId: string;
+        title: string;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }>;
     submitDeliverable(req: any, id: string, body: SubmitDeliverableDto): Promise<{
         id: string;
         campaignId: string;

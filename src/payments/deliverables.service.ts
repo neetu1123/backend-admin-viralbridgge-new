@@ -18,6 +18,7 @@ import {
   SubmitDeliverableDto,
 } from './dto/deliverables.dto';
 import { EscrowService } from './escrow.service';
+import { StorageService, UploadedFilePayload } from '../storage/storage.service';
 
 @Injectable()
 export class DeliverablesService {
@@ -25,7 +26,54 @@ export class DeliverablesService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly escrowService: EscrowService,
+    private readonly storage: StorageService,
   ) {}
+
+  async uploadMedia(
+    userId: string,
+    file: UploadedFilePayload,
+    options?: { campaignId?: string; thumbnail?: UploadedFilePayload },
+  ) {
+    await this.ensureCreatorProfile(userId);
+    return this.storage.uploadDeliverable({
+      userId,
+      file,
+      thumbnail: options?.thumbnail,
+      campaignId: options?.campaignId,
+    });
+  }
+
+  async submitWithUpload(
+    userId: string,
+    deliverableId: string,
+    file: UploadedFilePayload,
+    notes?: string,
+    thumbnail?: UploadedFilePayload,
+  ) {
+    const deliverable = await this.prisma.deliverable.findUnique({
+      where: { id: deliverableId },
+      select: { campaign_id: true },
+    });
+    if (!deliverable) throw new NotFoundException('Deliverable not found');
+
+    const upload = await this.uploadMedia(userId, file, {
+      campaignId: deliverable.campaign_id,
+      thumbnail,
+    });
+
+    return this.submit(userId, {
+      deliverable_id: deliverableId,
+      file_url: upload.url,
+      thumbnailUrl: upload.thumbnailUrl,
+      notes,
+    });
+  }
+
+  private async ensureCreatorProfile(userId: string) {
+    const profile = await this.prisma.creatorProfile.findUnique({ where: { user_id: userId } });
+    if (!profile) throw new ForbiddenException('Creator profile required');
+    return profile;
+  }
 
   async submit(userId: string, dto: SubmitDeliverableDto) {
     const profile = await this.prisma.creatorProfile.findUnique({

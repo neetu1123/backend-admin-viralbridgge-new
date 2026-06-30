@@ -3,6 +3,44 @@ import { DeliverableRejectDto, DeliverableRevisionDto, SubmitDeliverableDto } fr
 export declare class DeliverablesController {
     private readonly deliverablesService;
     constructor(deliverablesService: DeliverablesService);
+    upload(req: {
+        user: {
+            id: string;
+        };
+    }, files: {
+        file?: Express.Multer.File[];
+        thumbnail?: Express.Multer.File[];
+    }, body: {
+        campaign_id?: string;
+    }): Promise<import("../storage/storage.service").UploadResult>;
+    submitFile(req: {
+        user: {
+            id: string;
+        };
+    }, files: {
+        file?: Express.Multer.File[];
+        thumbnail?: Express.Multer.File[];
+    }, body: {
+        deliverable_id: string;
+        notes?: string;
+    }): Promise<{
+        id: string;
+        campaignId: string;
+        creatorId: string;
+        title: string;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }>;
     submit(req: {
         user: {
             id: string;

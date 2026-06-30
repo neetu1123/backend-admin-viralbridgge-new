@@ -8,11 +8,16 @@ import {
   Put,
   Query,
   Request,
+  UploadedFiles,
   UseGuards,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { DELIVERABLE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { CreatorService } from './creator.service';
 import {
   ApplyCampaignDto,
@@ -93,6 +98,84 @@ export class CreatorController {
   @Get('deliverables')
   getDeliverables(@Request() req: any) {
     return this.creatorService.getDeliverables(req.user.id);
+  }
+
+  @Post('deliverables/upload')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload deliverable video/image (returns URL)' })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+      ],
+      { limits: { fileSize: DELIVERABLE_MAX_UPLOAD_BYTES } },
+    ),
+  )
+  uploadDeliverable(
+    @Request() req: any,
+    @UploadedFiles() files: { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] },
+    @Body() body: { campaign_id?: string },
+  ) {
+    const file = files.file?.[0];
+    if (!file) throw new BadRequestException('file is required');
+    return this.creatorService.uploadDeliverableMedia(req.user.id, {
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    }, {
+      campaignId: body.campaign_id,
+      thumbnail: files.thumbnail?.[0]
+        ? {
+            buffer: files.thumbnail[0].buffer,
+            originalname: files.thumbnail[0].originalname,
+            mimetype: files.thumbnail[0].mimetype,
+            size: files.thumbnail[0].size,
+          }
+        : undefined,
+    });
+  }
+
+  @Post('deliverables/:id/submit-file')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload and submit deliverable in one step' })
+  @UseInterceptors(
+    FileFieldsInterceptor(
+      [
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+      ],
+      { limits: { fileSize: DELIVERABLE_MAX_UPLOAD_BYTES } },
+    ),
+  )
+  submitDeliverableFile(
+    @Request() req: any,
+    @Param('id') id: string,
+    @UploadedFiles() files: { file?: Express.Multer.File[]; thumbnail?: Express.Multer.File[] },
+    @Body() body: { notes?: string },
+  ) {
+    const file = files.file?.[0];
+    if (!file) throw new BadRequestException('file is required');
+    return this.creatorService.submitDeliverableWithFile(
+      req.user.id,
+      id,
+      {
+        buffer: file.buffer,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+      },
+      body.notes,
+      files.thumbnail?.[0]
+        ? {
+            buffer: files.thumbnail[0].buffer,
+            originalname: files.thumbnail[0].originalname,
+            mimetype: files.thumbnail[0].mimetype,
+            size: files.thumbnail[0].size,
+          }
+        : undefined,
+    );
   }
 
   @Post('deliverables/:id/submit')

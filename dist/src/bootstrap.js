@@ -4,6 +4,7 @@ var __importDefault = (this && this.__importDefault) || function (mod) {
 };
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.configureApp = configureApp;
+const path_1 = require("path");
 const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const helmet_1 = __importDefault(require("helmet"));
@@ -30,6 +31,10 @@ async function configureApp(app) {
     }));
     app.useGlobalFilters(new http_exception_filter_1.HttpExceptionFilter());
     app.useGlobalInterceptors(new api_response_interceptor_1.ApiResponseInterceptor());
+    if (!process.env.VERCEL) {
+        const expressApp = app;
+        expressApp.useStaticAssets((0, path_1.join)(process.cwd(), 'uploads'), { prefix: '/uploads/' });
+    }
     if (!process.env.VERCEL) {
         const config = new swagger_1.DocumentBuilder()
             .setTitle('ViralBridge API')

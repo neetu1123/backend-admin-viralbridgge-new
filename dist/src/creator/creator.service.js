@@ -250,6 +250,12 @@ let CreatorService = class CreatorService {
     async listEscrows(userId) {
         return this.escrowService.listEscrows(userId, 'creator');
     }
+    async uploadDeliverableMedia(userId, file, options) {
+        return this.deliverablesService.uploadMedia(userId, file, options);
+    }
+    async submitDeliverableWithFile(userId, deliverableId, file, notes, thumbnail) {
+        return this.deliverablesService.submitWithUpload(userId, deliverableId, file, notes, thumbnail);
+    }
     async submitDeliverable(userId, deliverableId, dto) {
         return this.deliverablesService.submit(userId, {
             deliverable_id: deliverableId,

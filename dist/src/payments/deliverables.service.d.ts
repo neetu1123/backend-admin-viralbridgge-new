@@ -2,11 +2,36 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { DeliverableRejectDto, DeliverableRevisionDto, SubmitDeliverableDto } from './dto/deliverables.dto';
 import { EscrowService } from './escrow.service';
+import { StorageService, UploadedFilePayload } from '../storage/storage.service';
 export declare class DeliverablesService {
     private readonly prisma;
     private readonly notifications;
     private readonly escrowService;
-    constructor(prisma: PrismaService, notifications: NotificationsService, escrowService: EscrowService);
+    private readonly storage;
+    constructor(prisma: PrismaService, notifications: NotificationsService, escrowService: EscrowService, storage: StorageService);
+    uploadMedia(userId: string, file: UploadedFilePayload, options?: {
+        campaignId?: string;
+        thumbnail?: UploadedFilePayload;
+    }): Promise<import("../storage/storage.service").UploadResult>;
+    submitWithUpload(userId: string, deliverableId: string, file: UploadedFilePayload, notes?: string, thumbnail?: UploadedFilePayload): Promise<{
+        id: string;
+        campaignId: string;
+        creatorId: string;
+        title: string;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }>;
+    private ensureCreatorProfile;
     submit(userId: string, dto: SubmitDeliverableDto): Promise<{
         id: string;
         campaignId: string;

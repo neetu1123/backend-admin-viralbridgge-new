@@ -14,15 +14,42 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.DeliverablesController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
+const storage_constants_1 = require("../storage/storage.constants");
 const deliverables_service_1 = require("./deliverables.service");
 const deliverables_dto_1 = require("./dto/deliverables.dto");
+function toUploadPayload(file) {
+    return {
+        buffer: file.buffer,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+    };
+}
 let DeliverablesController = class DeliverablesController {
     deliverablesService;
     constructor(deliverablesService) {
         this.deliverablesService = deliverablesService;
+    }
+    upload(req, files, body) {
+        const file = files.file?.[0];
+        if (!file)
+            throw new common_1.BadRequestException('file is required');
+        return this.deliverablesService.uploadMedia(req.user.id, toUploadPayload(file), {
+            campaignId: body.campaign_id,
+            thumbnail: files.thumbnail?.[0] ? toUploadPayload(files.thumbnail[0]) : undefined,
+        });
+    }
+    submitFile(req, files, body) {
+        const file = files.file?.[0];
+        if (!file)
+            throw new common_1.BadRequestException('file is required');
+        if (!body.deliverable_id)
+            throw new common_1.BadRequestException('deliverable_id is required');
+        return this.deliverablesService.submitWithUpload(req.user.id, body.deliverable_id, toUploadPayload(file), body.notes, files.thumbnail?.[0] ? toUploadPayload(files.thumbnail[0]) : undefined);
     }
     submit(req, body) {
         return this.deliverablesService.submit(req.user.id, body);
@@ -42,9 +69,64 @@ let DeliverablesController = class DeliverablesController {
 };
 exports.DeliverablesController = DeliverablesController;
 __decorate([
+    (0, common_1.Post)('upload'),
+    (0, roles_decorator_1.Roles)('CREATOR', 'ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload deliverable video/image to storage (returns URL)' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                file: { type: 'string', format: 'binary' },
+                thumbnail: { type: 'string', format: 'binary' },
+                campaign_id: { type: 'string' },
+            },
+            required: ['file'],
+        },
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+    ], { limits: { fileSize: storage_constants_1.DELIVERABLE_MAX_UPLOAD_BYTES } })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", void 0)
+], DeliverablesController.prototype, "upload", null);
+__decorate([
+    (0, common_1.Post)('submit-file'),
+    (0, roles_decorator_1.Roles)('CREATOR', 'ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload file and submit deliverable in one step (escrow must be HELD)' }),
+    (0, swagger_1.ApiBody)({
+        schema: {
+            type: 'object',
+            properties: {
+                file: { type: 'string', format: 'binary' },
+                thumbnail: { type: 'string', format: 'binary' },
+                deliverable_id: { type: 'string' },
+                notes: { type: 'string' },
+            },
+            required: ['file', 'deliverable_id'],
+        },
+    }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileFieldsInterceptor)([
+        { name: 'file', maxCount: 1 },
+        { name: 'thumbnail', maxCount: 1 },
+    ], { limits: { fileSize: storage_constants_1.DELIVERABLE_MAX_UPLOAD_BYTES } })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFiles)()),
+    __param(2, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object, Object]),
+    __metadata("design:returntype", void 0)
+], DeliverablesController.prototype, "submitFile", null);
+__decorate([
     (0, common_1.Post)('submit'),
     (0, roles_decorator_1.Roles)('CREATOR', 'ADMIN', 'SUPER_ADMIN'),
-    (0, swagger_1.ApiOperation)({ summary: 'Submit deliverable (requires escrow HELD)' }),
+    (0, swagger_1.ApiOperation)({ summary: 'Submit deliverable with existing file URL (requires escrow HELD)' }),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
     __metadata("design:type", Function),

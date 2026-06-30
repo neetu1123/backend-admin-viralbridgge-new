@@ -16,14 +16,50 @@ const notifications_service_1 = require("../notifications/notifications.service"
 const wallet_event_emitter_1 = require("../common/wallet-event-emitter");
 const constants_1 = require("./constants");
 const escrow_service_1 = require("./escrow.service");
+const storage_service_1 = require("../storage/storage.service");
 let DeliverablesService = class DeliverablesService {
     prisma;
     notifications;
     escrowService;
-    constructor(prisma, notifications, escrowService) {
+    storage;
+    constructor(prisma, notifications, escrowService, storage) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.escrowService = escrowService;
+        this.storage = storage;
+    }
+    async uploadMedia(userId, file, options) {
+        await this.ensureCreatorProfile(userId);
+        return this.storage.uploadDeliverable({
+            userId,
+            file,
+            thumbnail: options?.thumbnail,
+            campaignId: options?.campaignId,
+        });
+    }
+    async submitWithUpload(userId, deliverableId, file, notes, thumbnail) {
+        const deliverable = await this.prisma.deliverable.findUnique({
+            where: { id: deliverableId },
+            select: { campaign_id: true },
+        });
+        if (!deliverable)
+            throw new common_1.NotFoundException('Deliverable not found');
+        const upload = await this.uploadMedia(userId, file, {
+            campaignId: deliverable.campaign_id,
+            thumbnail,
+        });
+        return this.submit(userId, {
+            deliverable_id: deliverableId,
+            file_url: upload.url,
+            thumbnailUrl: upload.thumbnailUrl,
+            notes,
+        });
+    }
+    async ensureCreatorProfile(userId) {
+        const profile = await this.prisma.creatorProfile.findUnique({ where: { user_id: userId } });
+        if (!profile)
+            throw new common_1.ForbiddenException('Creator profile required');
+        return profile;
     }
     async submit(userId, dto) {
         const profile = await this.prisma.creatorProfile.findUnique({
@@ -288,6 +324,7 @@ exports.DeliverablesService = DeliverablesService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
-        escrow_service_1.EscrowService])
+        escrow_service_1.EscrowService,
+        storage_service_1.StorageService])
 ], DeliverablesService);
 //# sourceMappingURL=deliverables.service.js.map

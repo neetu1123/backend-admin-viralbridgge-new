@@ -10,6 +10,7 @@ import { organizationRouter } from './organization-routes';
 import { securityRouter } from './security-routes';
 import { analyticsRouter } from './analytics-routes';
 import { handleAuthLogin } from './auth-login';
+import { handleAuthRegister } from './auth-register';
 
 try {
   const { initializeFirebaseAdmin } = require('../dist/src/firebase/firebase-admin.config') as typeof import('../dist/src/firebase/firebase-admin.config');
@@ -82,6 +83,7 @@ function isFastPath(path: string): boolean {
 function bypassesNest(path: string, method: string): boolean {
   if (isFastPath(path)) return true;
   if (path === '/auth/login' && method === 'POST') return true;
+  if (path === '/auth/register' && method === 'POST') return true;
   if (path.startsWith('/admin')) return true;
   if (path.startsWith('/brand')) return true;
   if (path.startsWith('/creator')) return true;
@@ -145,6 +147,16 @@ server.post('/auth/login', async (req, res) => {
   } catch (error) {
     console.error('Fast login failed:', error);
     res.status(500).json({ success: false, message: 'Login failed' });
+  }
+});
+
+server.post('/auth/register', async (req, res) => {
+  try {
+    const result = await handleAuthRegister(req.body);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Fast register failed:', error);
+    res.status(500).json({ success: false, message: 'Registration failed' });
   }
 });
 

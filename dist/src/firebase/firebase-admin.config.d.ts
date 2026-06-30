@@ -1,5 +1,10 @@
 import { type App } from 'firebase-admin/app';
 import { type Auth } from 'firebase-admin/auth';
+import { type Storage } from 'firebase-admin/storage';
+import type { Bucket } from '@google-cloud/storage';
 export declare function isFirebaseConfigured(): boolean;
+export declare function getFirebaseStorageBucketName(): string | undefined;
 export declare function initializeFirebaseAdmin(): App | null;
 export declare function getFirebaseAuth(): Auth;
+export declare function getFirebaseStorage(): Storage;
+export declare function getFirebaseBucket(): Bucket;

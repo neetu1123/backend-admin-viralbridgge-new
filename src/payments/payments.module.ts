@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { StorageModule } from '../storage/storage.module';
 import { WalletController } from './wallet.controller';
 import { EscrowController } from './escrow.controller';
 import { DeliverablesController } from './deliverables.controller';
@@ -14,6 +15,7 @@ import { DisputeService } from './dispute.service';
 import { RazorpayService } from './razorpay.service';
 
 @Module({
+  imports: [StorageModule],
   controllers: [
     WalletController,
     EscrowController,

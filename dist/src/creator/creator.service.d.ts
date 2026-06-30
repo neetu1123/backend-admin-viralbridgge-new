@@ -5,6 +5,7 @@ import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
+import type { UploadedFilePayload } from '../storage/storage.service';
 import { ApplyCampaignDto, ApplicationQueryDto, CreatorCampaignQueryDto, NotificationQueryDto, SendMessageDto, SubmitDeliverableDto, TransactionQueryDto, UpdateCreatorProfileDto, UploadDto, WithdrawDto } from './creator.dto';
 export declare class CreatorService {
     private prisma;
@@ -434,6 +435,28 @@ export declare class CreatorService {
         updatedAt: string | Date | undefined;
     }[]>;
     listEscrows(userId: string): Promise<any[]>;
+    uploadDeliverableMedia(userId: string, file: UploadedFilePayload, options?: {
+        campaignId?: string;
+        thumbnail?: UploadedFilePayload;
+    }): Promise<import("../storage/storage.service").UploadResult>;
+    submitDeliverableWithFile(userId: string, deliverableId: string, file: UploadedFilePayload, notes?: string, thumbnail?: UploadedFilePayload): Promise<{
+        id: string;
+        campaignId: string;
+        creatorId: string;
+        title: string;
+        fileUrl: string | null | undefined;
+        mediaUrl: string | null | undefined;
+        thumbnailUrl: string | null | undefined;
+        notes: string | null | undefined;
+        revisionNotes: string | null | undefined;
+        version: number;
+        status: string;
+        submittedAt: string | Date | null;
+        reviewedAt: string | Date | null;
+        autoReleaseAt: string | Date | null;
+        createdAt: string | Date | undefined;
+        updatedAt: string | Date | undefined;
+    }>;
     submitDeliverable(userId: string, deliverableId: string, dto: SubmitDeliverableDto): Promise<{
         id: string;
         campaignId: string;

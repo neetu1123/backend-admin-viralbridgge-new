@@ -1,3 +1,5 @@
+import { NestExpressApplication } from '@nestjs/platform-express';
+import { join } from 'path';
 import { INestApplication, ValidationPipe } from '@nestjs/common';
 import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import helmet from 'helmet';
@@ -30,6 +32,11 @@ export async function configureApp(app: INestApplication) {
   );
   app.useGlobalFilters(new HttpExceptionFilter());
   app.useGlobalInterceptors(new ApiResponseInterceptor());
+
+  if (!process.env.VERCEL) {
+    const expressApp = app as NestExpressApplication;
+    expressApp.useStaticAssets(join(process.cwd(), 'uploads'), { prefix: '/uploads/' });
+  }
 
   if (!process.env.VERCEL) {
     const config = new DocumentBuilder()
