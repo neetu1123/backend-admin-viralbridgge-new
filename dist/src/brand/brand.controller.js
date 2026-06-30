@@ -87,6 +87,9 @@ let BrandController = class BrandController {
     listEscrows(req) {
         return this.brandService.listEscrows(req.user.id);
     }
+    fundEscrow(req, body) {
+        return this.brandService.fundEscrow(req.user.id, body);
+    }
     releaseEscrow(req, id) {
         return this.brandService.releaseEscrow(req.user.id, id);
     }
@@ -318,6 +321,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "listEscrows", null);
+__decorate([
+    (0, common_1.Post)('escrows/fund'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "fundEscrow", null);
 __decorate([
     (0, common_1.Post)('escrows/:id/release'),
     __param(0, (0, common_1.Request)()),

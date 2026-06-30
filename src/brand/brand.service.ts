@@ -327,6 +327,13 @@ export class BrandService {
     return this.escrowService.releaseEscrow(userId, escrowId);
   }
 
+  async fundEscrow(
+    userId: string,
+    body: { campaign_id: string; creator_id: string; amount?: number },
+  ) {
+    return this.escrowService.createEscrow(userId, body);
+  }
+
   async listEscrows(userId: string) {
     return this.escrowService.listEscrows(userId, 'brand');
   }

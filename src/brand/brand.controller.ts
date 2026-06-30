@@ -146,6 +146,14 @@ export class BrandController {
     return this.brandService.listEscrows(req.user.id);
   }
 
+  @Post('escrows/fund')
+  fundEscrow(
+    @Request() req: any,
+    @Body() body: { campaign_id: string; creator_id: string; amount?: number },
+  ) {
+    return this.brandService.fundEscrow(req.user.id, body);
+  }
+
   @Post('escrows/:id/release')
   releaseEscrow(@Request() req: any, @Param('id') id: string) {
     return this.brandService.releaseEscrow(req.user.id, id);

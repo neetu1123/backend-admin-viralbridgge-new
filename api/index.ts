@@ -9,6 +9,7 @@ import { kycRouter } from './kyc-routes';
 import { organizationRouter } from './organization-routes';
 import { securityRouter } from './security-routes';
 import { analyticsRouter } from './analytics-routes';
+import { escrowRouter } from './escrow-routes';
 import { handleAuthLogin } from './auth-login';
 import { handleAuthRegister } from './auth-register';
 
@@ -91,6 +92,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/organization')) return true;
   if (path.startsWith('/security')) return true;
   if (path.startsWith('/analytics')) return true;
+  if (path.startsWith('/escrow')) return true;
   return false;
 }
 
@@ -139,6 +141,7 @@ server.use('/kyc', kycRouter);
 server.use('/organization', organizationRouter);
 server.use('/security', securityRouter);
 server.use('/analytics', analyticsRouter);
+server.use('/escrow', escrowRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {

@@ -294,6 +294,9 @@ let BrandService = class BrandService {
     async releaseEscrow(userId, escrowId) {
         return this.escrowService.releaseEscrow(userId, escrowId);
     }
+    async fundEscrow(userId, body) {
+        return this.escrowService.createEscrow(userId, body);
+    }
     async listEscrows(userId) {
         return this.escrowService.listEscrows(userId, 'brand');
     }

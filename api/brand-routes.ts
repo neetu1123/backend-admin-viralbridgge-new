@@ -133,6 +133,15 @@ router.post('/deliverables/:id/revise', (req: AuthedRequest, res) =>
   }),
 );
 
+router.post('/escrows/fund', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => brand().fundEscrow(id, req.body), {
+    action: 'FUND_ESCROW',
+    entity: 'Escrow',
+    entityId: () => String(req.body?.campaign_id ?? ''),
+    metadata: () => ({ creator_id: req.body?.creator_id, amount: req.body?.amount }),
+  }),
+);
+
 router.post('/escrows/:id/release', (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => brand().releaseEscrow(id, paramId(req)), {
     action: 'RELEASE_ESCROW',
