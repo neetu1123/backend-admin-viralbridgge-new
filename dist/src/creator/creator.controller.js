@@ -32,8 +32,19 @@ let CreatorController = class CreatorController {
     updateProfile(req, body) {
         return this.creatorService.updateProfile(req.user.id, body);
     }
-    uploadPhoto(req, body) {
-        return this.creatorService.uploadPhoto(req.user.id, body);
+    uploadPhoto(req, file, body) {
+        if (file) {
+            return this.creatorService.uploadPhotoFile(req.user.id, {
+                buffer: file.buffer,
+                originalname: file.originalname,
+                mimetype: file.mimetype,
+                size: file.size,
+            });
+        }
+        if (body?.url) {
+            return this.creatorService.uploadPhoto(req.user.id, body);
+        }
+        throw new common_1.BadRequestException('image file or url is required');
     }
     uploadMediaKit(req, body) {
         return this.creatorService.uploadMediaKit(req.user.id, body);
@@ -162,10 +173,14 @@ __decorate([
 ], CreatorController.prototype, "updateProfile", null);
 __decorate([
     (0, common_1.Post)('upload-photo'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data', 'application/json'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload creator profile photo (multipart image or JSON url)' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', { limits: { fileSize: storage_constants_1.PROFILE_MAX_UPLOAD_BYTES } })),
     __param(0, (0, common_1.Request)()),
-    __param(1, (0, common_1.Body)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, creator_dto_1.UploadDto]),
+    __metadata("design:paramtypes", [Object, Object, creator_dto_1.UploadDto]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "uploadPhoto", null);
 __decorate([

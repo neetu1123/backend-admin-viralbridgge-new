@@ -65,6 +65,37 @@ export declare class BrandController {
         logo: string | null;
         location: string | null;
     }>;
+    uploadLogo(req: any, file: Express.Multer.File | undefined): Promise<{
+        user: {
+            name: string;
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            firebase_uid: string | null;
+            password: string | null;
+            email: string;
+            avatar: string | null;
+            role_id: string | null;
+            is_verified: boolean;
+            is_banned: boolean;
+            is_deleted: boolean;
+            settings: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+    } & {
+        id: string;
+        updated_at: Date;
+        description: string | null;
+        created_at: Date;
+        user_id: string;
+        contact_email: string | null;
+        phone: string | null;
+        company_name: string;
+        industry: string | null;
+        website: string | null;
+        logo: string | null;
+        location: string | null;
+    }>;
     createCampaign(req: any, body: CampaignDto): Promise<{
         id: string;
         status: string;

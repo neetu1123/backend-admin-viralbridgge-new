@@ -11,7 +11,7 @@ import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
-import type { UploadedFilePayload } from '../storage/storage.service';
+import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -36,6 +36,7 @@ export class CreatorService {
     private withdrawalService: WithdrawalService,
     private deliverablesService: DeliverablesService,
     private escrowService: EscrowService,
+    private storageService: StorageService,
   ) {}
 
   async getProfile(userId: string) {
@@ -73,6 +74,16 @@ export class CreatorService {
     return this.prisma.creatorProfile.update({
       where: { id: profile.id },
       data: { photo: dto.url },
+    });
+  }
+
+  async uploadPhotoFile(userId: string, file: UploadedFilePayload) {
+    const upload = await this.storageService.uploadProfileImage({ userId, file });
+    const profile = await this.ensureCreatorProfile(userId);
+    return this.prisma.creatorProfile.update({
+      where: { id: profile.id },
+      data: { photo: upload.url },
+      include: { user: true },
     });
   }
 

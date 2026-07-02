@@ -14,9 +14,11 @@ var __param = (this && this.__param) || function (paramIndex, decorator) {
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.BrandController = void 0;
 const common_1 = require("@nestjs/common");
+const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
+const storage_constants_1 = require("../storage/storage.constants");
 const brand_service_1 = require("./brand.service");
 const brand_dto_1 = require("./brand.dto");
 let BrandController = class BrandController {
@@ -29,6 +31,16 @@ let BrandController = class BrandController {
     }
     updateProfile(req, body) {
         return this.brandService.updateProfile(req.user.id, body);
+    }
+    uploadLogo(req, file) {
+        if (!file)
+            throw new common_1.BadRequestException('image file is required');
+        return this.brandService.uploadLogoFile(req.user.id, {
+            buffer: file.buffer,
+            originalname: file.originalname,
+            mimetype: file.mimetype,
+            size: file.size,
+        });
     }
     createCampaign(req, body) {
         return this.brandService.createCampaign(req.user.id, body);
@@ -167,6 +179,17 @@ __decorate([
     __metadata("design:paramtypes", [Object, brand_dto_1.UpdateBrandProfileDto]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "updateProfile", null);
+__decorate([
+    (0, common_1.Post)('upload-logo'),
+    (0, swagger_1.ApiConsumes)('multipart/form-data'),
+    (0, swagger_1.ApiOperation)({ summary: 'Upload brand logo image' }),
+    (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', { limits: { fileSize: storage_constants_1.PROFILE_MAX_UPLOAD_BYTES } })),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.UploadedFile)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "uploadLogo", null);
 __decorate([
     (0, common_1.Post)('campaigns'),
     __param(0, (0, common_1.Request)()),

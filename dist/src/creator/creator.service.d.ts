@@ -5,7 +5,7 @@ import { WithdrawalService } from '../payments/withdrawal.service';
 import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
-import type { UploadedFilePayload } from '../storage/storage.service';
+import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
 import { ApplyCampaignDto, ApplicationQueryDto, CreatorCampaignQueryDto, NotificationQueryDto, SendMessageDto, SubmitDeliverableDto, TransactionQueryDto, UpdateCreatorProfileDto, UploadDto, WithdrawDto } from './creator.dto';
 export declare class CreatorService {
     private prisma;
@@ -15,7 +15,8 @@ export declare class CreatorService {
     private withdrawalService;
     private deliverablesService;
     private escrowService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService, deliverablesService: DeliverablesService, escrowService: EscrowService);
+    private storageService;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService, deliverablesService: DeliverablesService, escrowService: EscrowService, storageService: StorageService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -89,6 +90,42 @@ export declare class CreatorService {
         photo: string | null;
     }>;
     uploadPhoto(userId: string, dto: UploadDto): Promise<{
+        id: string;
+        updated_at: Date;
+        locality: string | null;
+        languages: string[];
+        created_at: Date;
+        user_id: string;
+        full_name: string | null;
+        bio: string | null;
+        niche: string | null;
+        followers: number;
+        engagement_rate: number;
+        social_links: import("@prisma/client/runtime/library").JsonValue | null;
+        media_kit: string | null;
+        portfolio: string | null;
+        contact_email: string | null;
+        phone: string | null;
+        photo: string | null;
+    }>;
+    uploadPhotoFile(userId: string, file: UploadedFilePayload): Promise<{
+        user: {
+            name: string;
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            firebase_uid: string | null;
+            password: string | null;
+            email: string;
+            avatar: string | null;
+            role_id: string | null;
+            is_verified: boolean;
+            is_banned: boolean;
+            is_deleted: boolean;
+            settings: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+    } & {
         id: string;
         updated_at: Date;
         locality: string | null;

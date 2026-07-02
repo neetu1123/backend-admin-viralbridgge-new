@@ -17,3 +17,12 @@ export const DELIVERABLE_THUMBNAIL_MIMES = [
   'image/webp',
   'image/gif',
 ] as const;
+
+export const PROFILE_IMAGE_MIMES = [
+  'image/jpeg',
+  'image/png',
+  'image/webp',
+  'image/gif',
+] as const;
+
+export const PROFILE_MAX_UPLOAD_BYTES = 5 * 1024 * 1024;

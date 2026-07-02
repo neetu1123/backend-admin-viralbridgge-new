@@ -18,6 +18,7 @@ const wallet_service_1 = require("../payments/wallet.service");
 const escrow_service_1 = require("../payments/escrow.service");
 const deliverables_service_1 = require("../payments/deliverables.service");
 const razorpay_service_1 = require("../payments/razorpay.service");
+const storage_service_1 = require("../storage/storage.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let BrandService = class BrandService {
     prisma;
@@ -27,7 +28,8 @@ let BrandService = class BrandService {
     escrowService;
     deliverablesService;
     razorpayService;
-    constructor(prisma, matchingService, notifications, walletService, escrowService, deliverablesService, razorpayService) {
+    storageService;
+    constructor(prisma, matchingService, notifications, walletService, escrowService, deliverablesService, razorpayService, storageService) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
@@ -35,6 +37,7 @@ let BrandService = class BrandService {
         this.escrowService = escrowService;
         this.deliverablesService = deliverablesService;
         this.razorpayService = razorpayService;
+        this.storageService = storageService;
     }
     async getProfile(userId) {
         return this.ensureBrandProfile(userId);
@@ -53,6 +56,15 @@ let BrandService = class BrandService {
                 phone: dto.phone,
                 location: dto.location,
             },
+            include: { user: true },
+        });
+    }
+    async uploadLogoFile(userId, file) {
+        const upload = await this.storageService.uploadProfileImage({ userId, file });
+        const profile = await this.ensureBrandProfile(userId);
+        return this.prisma.brandProfile.update({
+            where: { id: profile.id },
+            data: { logo: upload.url },
             include: { user: true },
         });
     }
@@ -531,6 +543,7 @@ exports.BrandService = BrandService = __decorate([
         wallet_service_1.WalletService,
         escrow_service_1.EscrowService,
         deliverables_service_1.DeliverablesService,
-        razorpay_service_1.RazorpayService])
+        razorpay_service_1.RazorpayService,
+        storage_service_1.StorageService])
 ], BrandService);
 //# sourceMappingURL=brand.service.js.map

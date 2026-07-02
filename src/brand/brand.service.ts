@@ -11,6 +11,7 @@ import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
+import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   BrandCampaignQueryDto,
@@ -33,6 +34,7 @@ export class BrandService {
     private escrowService: EscrowService,
     private deliverablesService: DeliverablesService,
     private razorpayService: RazorpayService,
+    private storageService: StorageService,
   ) {}
 
   async getProfile(userId: string) {
@@ -53,6 +55,16 @@ export class BrandService {
         phone: dto.phone,
         location: dto.location,
       },
+      include: { user: true },
+    });
+  }
+
+  async uploadLogoFile(userId: string, file: UploadedFilePayload) {
+    const upload = await this.storageService.uploadProfileImage({ userId, file });
+    const profile = await this.ensureBrandProfile(userId);
+    return this.prisma.brandProfile.update({
+      where: { id: profile.id },
+      data: { logo: upload.url },
       include: { user: true },
     });
   }

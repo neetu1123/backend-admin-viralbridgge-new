@@ -5,6 +5,7 @@ import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
+import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
 import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
 export declare class BrandService {
     private prisma;
@@ -14,7 +15,8 @@ export declare class BrandService {
     private escrowService;
     private deliverablesService;
     private razorpayService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, deliverablesService: DeliverablesService, razorpayService: RazorpayService);
+    private storageService;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, deliverablesService: DeliverablesService, razorpayService: RazorpayService, storageService: StorageService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;
@@ -47,6 +49,37 @@ export declare class BrandService {
         location: string | null;
     }>;
     updateProfile(userId: string, dto: UpdateBrandProfileDto): Promise<{
+        user: {
+            name: string;
+            id: string;
+            status: string;
+            updated_at: Date;
+            created_at: Date;
+            firebase_uid: string | null;
+            password: string | null;
+            email: string;
+            avatar: string | null;
+            role_id: string | null;
+            is_verified: boolean;
+            is_banned: boolean;
+            is_deleted: boolean;
+            settings: import("@prisma/client/runtime/library").JsonValue | null;
+        };
+    } & {
+        id: string;
+        updated_at: Date;
+        description: string | null;
+        created_at: Date;
+        user_id: string;
+        contact_email: string | null;
+        phone: string | null;
+        company_name: string;
+        industry: string | null;
+        website: string | null;
+        logo: string | null;
+        location: string | null;
+    }>;
+    uploadLogoFile(userId: string, file: UploadedFilePayload): Promise<{
         user: {
             name: string;
             id: string;

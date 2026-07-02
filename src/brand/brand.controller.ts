@@ -9,11 +9,16 @@ import {
   Put,
   Query,
   Request,
+  UploadedFile,
   UseGuards,
+  UseInterceptors,
+  BadRequestException,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiTags } from '@nestjs/swagger';
+import { FileInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { BrandService } from './brand.service';
 import {
   BrandCampaignQueryDto,
@@ -45,6 +50,20 @@ export class BrandController {
   @Put('profile')
   updateProfile(@Request() req: any, @Body() body: UpdateBrandProfileDto) {
     return this.brandService.updateProfile(req.user.id, body);
+  }
+
+  @Post('upload-logo')
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({ summary: 'Upload brand logo image' })
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: PROFILE_MAX_UPLOAD_BYTES } }))
+  uploadLogo(@Request() req: any, @UploadedFile() file: Express.Multer.File | undefined) {
+    if (!file) throw new BadRequestException('image file is required');
+    return this.brandService.uploadLogoFile(req.user.id, {
+      buffer: file.buffer,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size,
+    });
   }
 
   @Post('campaigns')

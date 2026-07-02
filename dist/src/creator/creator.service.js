@@ -18,6 +18,7 @@ const withdrawal_service_1 = require("../payments/withdrawal.service");
 const wallet_service_1 = require("../payments/wallet.service");
 const escrow_service_1 = require("../payments/escrow.service");
 const deliverables_service_1 = require("../payments/deliverables.service");
+const storage_service_1 = require("../storage/storage.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let CreatorService = class CreatorService {
     prisma;
@@ -27,7 +28,8 @@ let CreatorService = class CreatorService {
     withdrawalService;
     deliverablesService;
     escrowService;
-    constructor(prisma, matchingService, notifications, walletService, withdrawalService, deliverablesService, escrowService) {
+    storageService;
+    constructor(prisma, matchingService, notifications, walletService, withdrawalService, deliverablesService, escrowService, storageService) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
@@ -35,6 +37,7 @@ let CreatorService = class CreatorService {
         this.withdrawalService = withdrawalService;
         this.deliverablesService = deliverablesService;
         this.escrowService = escrowService;
+        this.storageService = storageService;
     }
     async getProfile(userId) {
         return this.ensureCreatorProfile(userId);
@@ -69,6 +72,15 @@ let CreatorService = class CreatorService {
         return this.prisma.creatorProfile.update({
             where: { id: profile.id },
             data: { photo: dto.url },
+        });
+    }
+    async uploadPhotoFile(userId, file) {
+        const upload = await this.storageService.uploadProfileImage({ userId, file });
+        const profile = await this.ensureCreatorProfile(userId);
+        return this.prisma.creatorProfile.update({
+            where: { id: profile.id },
+            data: { photo: upload.url },
+            include: { user: true },
         });
     }
     async uploadMediaKit(userId, dto) {
@@ -385,6 +397,7 @@ exports.CreatorService = CreatorService = __decorate([
         wallet_service_1.WalletService,
         withdrawal_service_1.WithdrawalService,
         deliverables_service_1.DeliverablesService,
-        escrow_service_1.EscrowService])
+        escrow_service_1.EscrowService,
+        storage_service_1.StorageService])
 ], CreatorService);
 //# sourceMappingURL=creator.service.js.map

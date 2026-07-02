@@ -8,16 +8,17 @@ import {
   Put,
   Query,
   Request,
+  UploadedFile,
   UploadedFiles,
   UseGuards,
   UseInterceptors,
   BadRequestException,
 } from '@nestjs/common';
-import { FileFieldsInterceptor } from '@nestjs/platform-express';
+import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
-import { DELIVERABLE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
+import { DELIVERABLE_MAX_UPLOAD_BYTES, PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { CreatorService } from './creator.service';
 import {
   ApplyCampaignDto,
@@ -51,8 +52,26 @@ export class CreatorController {
   }
 
   @Post('upload-photo')
-  uploadPhoto(@Request() req: any, @Body() body: UploadDto) {
-    return this.creatorService.uploadPhoto(req.user.id, body);
+  @ApiConsumes('multipart/form-data', 'application/json')
+  @ApiOperation({ summary: 'Upload creator profile photo (multipart image or JSON url)' })
+  @UseInterceptors(FileInterceptor('image', { limits: { fileSize: PROFILE_MAX_UPLOAD_BYTES } }))
+  uploadPhoto(
+    @Request() req: any,
+    @UploadedFile() file: Express.Multer.File | undefined,
+    @Body() body: UploadDto,
+  ) {
+    if (file) {
+      return this.creatorService.uploadPhotoFile(req.user.id, {
+        buffer: file.buffer,
+        originalname: file.originalname,
+        mimetype: file.mimetype,
+        size: file.size,
+      });
+    }
+    if (body?.url) {
+      return this.creatorService.uploadPhoto(req.user.id, body);
+    }
+    throw new BadRequestException('image file or url is required');
   }
 
   @Post('upload-media-kit')

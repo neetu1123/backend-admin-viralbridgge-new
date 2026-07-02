@@ -30,6 +30,14 @@ let StorageService = StorageService_1 = class StorageService {
         }
         return main;
     }
+    async uploadProfileImage(params) {
+        this.assertAllowedFile(params.file, [...storage_constants_1.PROFILE_IMAGE_MIMES], 'image');
+        if (params.file.size > storage_constants_1.PROFILE_MAX_UPLOAD_BYTES) {
+            throw new common_1.BadRequestException('Image exceeds maximum size of 5MB');
+        }
+        const uploadFile = this.getUploadHandler();
+        return uploadFile(params.userId, params.file, undefined, 'avatar');
+    }
     getUploadHandler() {
         if ((0, cloudinary_config_1.isCloudinaryConfigured)()) {
             return this.uploadToCloudinary.bind(this);
@@ -84,6 +92,9 @@ let StorageService = StorageService_1 = class StorageService {
     buildObjectPath(userId, file, campaignId, folder = 'files') {
         const ext = (0, path_1.extname)(file.originalname) || this.extFromMime(file.mimetype);
         const safeName = this.sanitizeFileName(file.originalname.replace(ext, ''));
+        if (folder === 'avatar' && !campaignId) {
+            return `profiles/${userId}/avatar/${Date.now()}-${(0, crypto_1.randomUUID)()}-${safeName}${ext}`;
+        }
         const campaignPart = campaignId ? `${campaignId}/` : '';
         return `deliverables/${userId}/${campaignPart}${folder}/${Date.now()}-${(0, crypto_1.randomUUID)()}-${safeName}${ext}`;
     }

@@ -11,6 +11,8 @@ import {
   DELIVERABLE_MAX_UPLOAD_BYTES,
   DELIVERABLE_THUMBNAIL_MIMES,
   DELIVERABLE_UPLOAD_MIMES,
+  PROFILE_IMAGE_MIMES,
+  PROFILE_MAX_UPLOAD_BYTES,
 } from './storage.constants';
 
 export type UploadedFilePayload = {
@@ -54,6 +56,18 @@ export class StorageService {
     }
 
     return main;
+  }
+
+  async uploadProfileImage(params: {
+    userId: string;
+    file: UploadedFilePayload;
+  }): Promise<UploadResult> {
+    this.assertAllowedFile(params.file, [...PROFILE_IMAGE_MIMES], 'image');
+    if (params.file.size > PROFILE_MAX_UPLOAD_BYTES) {
+      throw new BadRequestException('Image exceeds maximum size of 5MB');
+    }
+    const uploadFile = this.getUploadHandler();
+    return uploadFile(params.userId, params.file, undefined, 'avatar');
   }
 
   /** Cloudinary (free tier) → Firebase → local disk (dev only) */
@@ -135,6 +149,9 @@ export class StorageService {
   ): string {
     const ext = extname(file.originalname) || this.extFromMime(file.mimetype);
     const safeName = this.sanitizeFileName(file.originalname.replace(ext, ''));
+    if (folder === 'avatar' && !campaignId) {
+      return `profiles/${userId}/avatar/${Date.now()}-${randomUUID()}-${safeName}${ext}`;
+    }
     const campaignPart = campaignId ? `${campaignId}/` : '';
     return `deliverables/${userId}/${campaignPart}${folder}/${Date.now()}-${randomUUID()}-${safeName}${ext}`;
   }

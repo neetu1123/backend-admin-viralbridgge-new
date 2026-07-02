@@ -12,6 +12,7 @@ const prisma_module_1 = require("../prisma/prisma.module");
 const matching_module_1 = require("../matching/matching.module");
 const notifications_module_1 = require("../notifications/notifications.module");
 const payments_module_1 = require("../payments/payments.module");
+const storage_module_1 = require("../storage/storage.module");
 const brand_controller_1 = require("./brand.controller");
 const brand_service_1 = require("./brand.service");
 let BrandModule = class BrandModule {
@@ -19,7 +20,7 @@ let BrandModule = class BrandModule {
 exports.BrandModule = BrandModule;
 exports.BrandModule = BrandModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule, payments_module_1.PaymentsModule],
+        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule, payments_module_1.PaymentsModule, storage_module_1.StorageModule],
         controllers: [brand_controller_1.BrandController],
         providers: [brand_service_1.BrandService],
     })

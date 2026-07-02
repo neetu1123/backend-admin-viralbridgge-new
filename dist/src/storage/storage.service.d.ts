@@ -20,6 +20,10 @@ export declare class StorageService {
         thumbnail?: UploadedFilePayload;
         campaignId?: string;
     }): Promise<UploadResult>;
+    uploadProfileImage(params: {
+        userId: string;
+        file: UploadedFilePayload;
+    }): Promise<UploadResult>;
     private getUploadHandler;
     private uploadToCloudinary;
     private assertAllowedFile;

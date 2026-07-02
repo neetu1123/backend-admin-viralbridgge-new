@@ -75,7 +75,7 @@ export declare class CreatorController {
         phone: string | null;
         photo: string | null;
     }>;
-    uploadPhoto(req: any, body: UploadDto): Promise<{
+    uploadPhoto(req: any, file: Express.Multer.File | undefined, body: UploadDto): Promise<{
         id: string;
         updated_at: Date;
         locality: string | null;
