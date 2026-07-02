@@ -16,6 +16,7 @@ const pagination_query_dto_1 = require("../../common/dto/pagination-query.dto");
 class RequestWithdrawalDto {
     amount;
     notes;
+    otp;
 }
 exports.RequestWithdrawalDto = RequestWithdrawalDto;
 __decorate([
@@ -30,6 +31,12 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], RequestWithdrawalDto.prototype, "notes", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ description: '6-digit OTP sent to registered email' }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], RequestWithdrawalDto.prototype, "otp", void 0);
 class RejectWithdrawalDto {
     reason;
 }

@@ -2,10 +2,12 @@ import {
   BadRequestException,
   ForbiddenException,
   Injectable,
+  Logger,
   NotFoundException,
 } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { emitWalletEvent } from '../common/wallet-event-emitter';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import { TRANSACTION_STATUSES, TRANSACTION_TYPES, WITHDRAWAL_STATUSES } from './constants';
@@ -14,11 +16,58 @@ import { WalletService } from './wallet.service';
 
 @Injectable()
 export class WithdrawalService {
+  private readonly logger = new Logger(WithdrawalService.name);
+
   constructor(
     private readonly prisma: PrismaService,
     private readonly wallet: WalletService,
     private readonly notifications: NotificationsService,
+    private readonly email: EmailService,
   ) {}
+
+  async sendWithdrawOtp(userId: string) {
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+
+    const code = String(Math.floor(100000 + Math.random() * 900000));
+    const expires = new Date(Date.now() + 10 * 60 * 1000);
+    const settings = (user.settings as Record<string, unknown> | null) ?? {};
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        settings: {
+          ...settings,
+          withdrawOtp: { code, expires: expires.toISOString() },
+        },
+      },
+    });
+
+    if (this.email.isConfigured()) {
+      await this.email.sendWithdrawalOtp(user.email, code);
+    } else {
+      this.logger.warn(`Withdraw OTP for ${user.email}: ${code} (email not configured)`);
+    }
+
+    return { sent: true, expiresAt: expires.toISOString() };
+  }
+
+  private verifyWithdrawOtp(user: { settings: unknown }, otp?: string) {
+    if (!otp?.trim()) {
+      throw new BadRequestException('OTP is required. Request a code first.');
+    }
+    const settings = (user.settings as Record<string, unknown> | null) ?? {};
+    const stored = settings.withdrawOtp as { code?: string; expires?: string } | undefined;
+    if (!stored?.code || !stored.expires) {
+      throw new BadRequestException('No OTP found. Please request a new code.');
+    }
+    if (new Date(stored.expires) < new Date()) {
+      throw new BadRequestException('OTP expired. Please request a new code.');
+    }
+    if (stored.code !== otp.trim()) {
+      throw new BadRequestException('Invalid OTP');
+    }
+  }
 
   async requestWithdrawal(userId: string, dto: RequestWithdrawalDto) {
     const user = await this.prisma.user.findUnique({
@@ -28,6 +77,8 @@ export class WithdrawalService {
     if (!user?.role || !['CREATOR', 'ADMIN', 'SUPER_ADMIN'].includes(user.role.name)) {
       throw new ForbiddenException('Only creators can request withdrawals');
     }
+
+    this.verifyWithdrawOtp(user, dto.otp);
 
     const creatorProfile = user.creator_profile ?? await this.prisma.creatorProfile.findUnique({
       where: { user_id: userId },

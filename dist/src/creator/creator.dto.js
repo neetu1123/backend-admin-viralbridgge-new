@@ -239,6 +239,7 @@ __decorate([
 ], SubmitDeliverableDto.prototype, "notes", void 0);
 class WithdrawDto {
     amount;
+    otp;
 }
 exports.WithdrawDto = WithdrawDto;
 __decorate([
@@ -246,6 +247,11 @@ __decorate([
     (0, class_validator_1.Min)(1),
     __metadata("design:type", Number)
 ], WithdrawDto.prototype, "amount", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], WithdrawDto.prototype, "otp", void 0);
 class UploadDto {
     url;
 }

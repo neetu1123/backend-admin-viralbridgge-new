@@ -12,6 +12,11 @@ export class RequestWithdrawalDto {
   @IsOptional()
   @IsString()
   notes?: string;
+
+  @ApiPropertyOptional({ description: '6-digit OTP sent to registered email' })
+  @IsOptional()
+  @IsString()
+  otp?: string;
 }
 
 export class RejectWithdrawalDto {

@@ -47,6 +47,7 @@ export declare class SubmitDeliverableDto {
 }
 export declare class WithdrawDto {
     amount: number;
+    otp?: string;
 }
 export declare class UploadDto {
     url: string;

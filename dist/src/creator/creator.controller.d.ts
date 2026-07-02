@@ -481,6 +481,10 @@ export declare class CreatorController {
         createdAt: string;
         updatedAt: string;
     }>;
+    sendWithdrawOtp(req: any): Promise<{
+        sent: boolean;
+        expiresAt: string;
+    }>;
     withdraw(req: any, body: WithdrawDto): Promise<{
         id: string;
         creatorId: string;

@@ -271,6 +271,9 @@ let CreatorService = class CreatorService {
     async withdraw(userId, dto) {
         return this.withdrawalService.requestWithdrawal(userId, dto);
     }
+    async sendWithdrawOtp(userId) {
+        return this.withdrawalService.sendWithdrawOtp(userId);
+    }
     async getWalletTransactions(userId, query) {
         return this.walletService.getTransactions(userId, query);
     }

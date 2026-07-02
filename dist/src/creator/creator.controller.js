@@ -107,6 +107,9 @@ let CreatorController = class CreatorController {
     getWallet(req) {
         return this.creatorService.getWallet(req.user.id);
     }
+    sendWithdrawOtp(req) {
+        return this.creatorService.sendWithdrawOtp(req.user.id);
+    }
     withdraw(req, body) {
         return this.creatorService.withdraw(req.user.id, body);
     }
@@ -281,6 +284,13 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getWallet", null);
+__decorate([
+    (0, common_1.Post)('wallet/withdraw-otp'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "sendWithdrawOtp", null);
 __decorate([
     (0, common_1.Post)('wallet/withdraw'),
     __param(0, (0, common_1.Request)()),

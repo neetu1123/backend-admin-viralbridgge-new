@@ -8,23 +8,68 @@ var __decorate = (this && this.__decorate) || function (decorators, target, key,
 var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
+var WithdrawalService_1;
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.WithdrawalService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const email_service_1 = require("../email/email.service");
 const wallet_event_emitter_1 = require("../common/wallet-event-emitter");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 const constants_1 = require("./constants");
 const wallet_service_1 = require("./wallet.service");
-let WithdrawalService = class WithdrawalService {
+let WithdrawalService = WithdrawalService_1 = class WithdrawalService {
     prisma;
     wallet;
     notifications;
-    constructor(prisma, wallet, notifications) {
+    email;
+    logger = new common_1.Logger(WithdrawalService_1.name);
+    constructor(prisma, wallet, notifications, email) {
         this.prisma = prisma;
         this.wallet = wallet;
         this.notifications = notifications;
+        this.email = email;
+    }
+    async sendWithdrawOtp(userId) {
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        const code = String(Math.floor(100000 + Math.random() * 900000));
+        const expires = new Date(Date.now() + 10 * 60 * 1000);
+        const settings = user.settings ?? {};
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                settings: {
+                    ...settings,
+                    withdrawOtp: { code, expires: expires.toISOString() },
+                },
+            },
+        });
+        if (this.email.isConfigured()) {
+            await this.email.sendWithdrawalOtp(user.email, code);
+        }
+        else {
+            this.logger.warn(`Withdraw OTP for ${user.email}: ${code} (email not configured)`);
+        }
+        return { sent: true, expiresAt: expires.toISOString() };
+    }
+    verifyWithdrawOtp(user, otp) {
+        if (!otp?.trim()) {
+            throw new common_1.BadRequestException('OTP is required. Request a code first.');
+        }
+        const settings = user.settings ?? {};
+        const stored = settings.withdrawOtp;
+        if (!stored?.code || !stored.expires) {
+            throw new common_1.BadRequestException('No OTP found. Please request a new code.');
+        }
+        if (new Date(stored.expires) < new Date()) {
+            throw new common_1.BadRequestException('OTP expired. Please request a new code.');
+        }
+        if (stored.code !== otp.trim()) {
+            throw new common_1.BadRequestException('Invalid OTP');
+        }
     }
     async requestWithdrawal(userId, dto) {
         const user = await this.prisma.user.findUnique({
@@ -34,6 +79,7 @@ let WithdrawalService = class WithdrawalService {
         if (!user?.role || !['CREATOR', 'ADMIN', 'SUPER_ADMIN'].includes(user.role.name)) {
             throw new common_1.ForbiddenException('Only creators can request withdrawals');
         }
+        this.verifyWithdrawOtp(user, dto.otp);
         const creatorProfile = user.creator_profile ?? await this.prisma.creatorProfile.findUnique({
             where: { user_id: userId },
         });
@@ -263,10 +309,11 @@ let WithdrawalService = class WithdrawalService {
     }
 };
 exports.WithdrawalService = WithdrawalService;
-exports.WithdrawalService = WithdrawalService = __decorate([
+exports.WithdrawalService = WithdrawalService = WithdrawalService_1 = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         wallet_service_1.WalletService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        email_service_1.EmailService])
 ], WithdrawalService);
 //# sourceMappingURL=withdrawal.service.js.map

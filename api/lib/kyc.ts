@@ -213,6 +213,9 @@ export async function rejectKyc(
   adminId: string,
   remarks?: string,
 ) {
+  if (!remarks?.trim()) {
+    throw new Error('Rejection reason is required');
+  }
   const request = await prisma.kycRequest.findUnique({
     where: { id: requestId },
     include: { creator_kyc: true, brand_kyc: true },

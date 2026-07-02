@@ -79,6 +79,14 @@ export class EmailService {
     });
   }
 
+  async sendWithdrawalOtp(to: string, code: string): Promise<void> {
+    await this.send({
+      to,
+      subject: 'Withdrawal verification code',
+      html: `<p>Your ViralBridge withdrawal OTP is <strong>${code}</strong>. Valid for 10 minutes.</p>`,
+    });
+  }
+
   private async send(payload: { to: string; subject: string; html: string }): Promise<void> {
     if (!this.resend) {
       this.logger.error('RESEND_API_KEY is not configured — cannot send email');

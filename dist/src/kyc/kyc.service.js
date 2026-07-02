@@ -162,6 +162,9 @@ let KycService = class KycService {
         return request;
     }
     async reject(requestId, adminId, remarks) {
+        if (!remarks?.trim()) {
+            throw new common_1.BadRequestException('Rejection reason is required');
+        }
         const request = await this.prisma.kycRequest.findUnique({
             where: { id: requestId },
             include: { creator_kyc: true, brand_kyc: true },

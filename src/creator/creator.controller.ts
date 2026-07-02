@@ -192,6 +192,11 @@ export class CreatorController {
     return this.creatorService.getWallet(req.user.id);
   }
 
+  @Post('wallet/withdraw-otp')
+  sendWithdrawOtp(@Request() req: any) {
+    return this.creatorService.sendWithdrawOtp(req.user.id);
+  }
+
   @Post('wallet/withdraw')
   withdraw(@Request() req: any, @Body() body: WithdrawDto) {
     return this.creatorService.withdraw(req.user.id, body);

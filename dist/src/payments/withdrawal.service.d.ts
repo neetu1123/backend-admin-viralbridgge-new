@@ -1,12 +1,20 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
 import { RequestWithdrawalDto, WithdrawalQueryDto } from './dto/withdrawal.dto';
 import { WalletService } from './wallet.service';
 export declare class WithdrawalService {
     private readonly prisma;
     private readonly wallet;
     private readonly notifications;
-    constructor(prisma: PrismaService, wallet: WalletService, notifications: NotificationsService);
+    private readonly email;
+    private readonly logger;
+    constructor(prisma: PrismaService, wallet: WalletService, notifications: NotificationsService, email: EmailService);
+    sendWithdrawOtp(userId: string): Promise<{
+        sent: boolean;
+        expiresAt: string;
+    }>;
+    private verifyWithdrawOtp;
     requestWithdrawal(userId: string, dto: RequestWithdrawalDto): Promise<{
         id: string;
         creatorId: string;

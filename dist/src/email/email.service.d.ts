@@ -14,5 +14,6 @@ export declare class EmailService {
     sendReInvitation(params: TeamInvitationEmailParams): Promise<void>;
     sendInvitationAccepted(params: InvitationAcceptedEmailParams): Promise<void>;
     sendMemberRemoved(params: MemberRemovedEmailParams): Promise<void>;
+    sendWithdrawalOtp(to: string, code: string): Promise<void>;
     private send;
 }

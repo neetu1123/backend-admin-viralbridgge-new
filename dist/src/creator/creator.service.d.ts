@@ -498,6 +498,10 @@ export declare class CreatorService {
         rejectedAt: string | null;
         rejectionReason: string | null;
     }>;
+    sendWithdrawOtp(userId: string): Promise<{
+        sent: boolean;
+        expiresAt: string;
+    }>;
     getWalletTransactions(userId: string, query: TransactionQueryDto): Promise<{
         data: {
             id: string;

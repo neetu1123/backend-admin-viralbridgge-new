@@ -312,6 +312,10 @@ export class CreatorService {
     return this.withdrawalService.requestWithdrawal(userId, dto);
   }
 
+  async sendWithdrawOtp(userId: string) {
+    return this.withdrawalService.sendWithdrawOtp(userId);
+  }
+
   async getWalletTransactions(userId: string, query: TransactionQueryDto) {
     return this.walletService.getTransactions(userId, query);
   }
