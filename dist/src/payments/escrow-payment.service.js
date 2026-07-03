@@ -15,6 +15,8 @@ const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
 const wallet_event_emitter_1 = require("../common/wallet-event-emitter");
 const constants_1 = require("./constants");
+const escrow_service_1 = require("./escrow.service");
+const platform_wallet_service_1 = require("./platform-wallet.service");
 const razorpay_service_1 = require("./razorpay.service");
 const wallet_service_1 = require("./wallet.service");
 let EscrowPaymentService = class EscrowPaymentService {
@@ -22,11 +24,15 @@ let EscrowPaymentService = class EscrowPaymentService {
     razorpay;
     wallet;
     notifications;
-    constructor(prisma, razorpay, wallet, notifications) {
+    escrowService;
+    platformWallet;
+    constructor(prisma, razorpay, wallet, notifications, escrowService, platformWallet) {
         this.prisma = prisma;
         this.razorpay = razorpay;
         this.wallet = wallet;
         this.notifications = notifications;
+        this.escrowService = escrowService;
+        this.platformWallet = platformWallet;
     }
     async createEscrowPaymentOrder(userId, escrowId) {
         const brand = await this.prisma.brandProfile.findUnique({ where: { user_id: userId } });
@@ -46,13 +52,16 @@ let EscrowPaymentService = class EscrowPaymentService {
         if (escrow.status !== constants_1.ESCROW_STATUSES.PENDING) {
             throw new common_1.BadRequestException(`Escrow is already ${escrow.status}`);
         }
-        return this.razorpay.createOrder(userId, escrow.amount, {
+        const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
+        return this.razorpay.createOrder(userId, breakdown.brandTotal, {
             purpose: constants_1.PAYMENT_ORDER_PURPOSES.ESCROW_FUND,
             escrowId: escrow.id,
             notes: {
                 escrow_id: escrow.id,
                 campaign_id: escrow.campaign_id,
                 creator_id: escrow.creator_id,
+                creator_amount: String(breakdown.creatorAmount),
+                platform_fee: String(breakdown.platformFee),
             },
         });
     }
@@ -116,9 +125,7 @@ let EscrowPaymentService = class EscrowPaymentService {
         if (escrow.status !== constants_1.ESCROW_STATUSES.PENDING) {
             throw new common_1.BadRequestException(`Cannot fund escrow in ${escrow.status} status`);
         }
-        const platformFeePercent = escrow.platform_fee_percent ?? constants_1.PLATFORM_FEE_PERCENT;
-        const platformFeeAmount = Math.round((escrow.amount * platformFeePercent) / 100 * 100) / 100;
-        const creatorAmount = Math.max(0, escrow.amount - platformFeeAmount);
+        const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
         const now = new Date();
         const result = await this.prisma.$transaction(async (tx) => {
             await tx.paymentOrder.update({
@@ -128,15 +135,18 @@ let EscrowPaymentService = class EscrowPaymentService {
                     razorpay_payment_id: params.razorpay_payment_id,
                 },
             });
-            await this.wallet.lockEscrowFromGateway(tx, params.brandUserId, escrow.amount, escrow.id, params.razorpay_payment_id);
+            await this.wallet.lockEscrowFromGateway(tx, params.brandUserId, breakdown.creatorAmount, escrow.id, params.razorpay_payment_id);
+            if (breakdown.platformFee > 0) {
+                await this.platformWallet.creditPlatformFee(tx, breakdown.platformFee, escrow.id);
+            }
             const updated = await tx.escrow.update({
                 where: { id: escrow.id },
                 data: {
                     status: constants_1.ESCROW_STATUSES.HELD,
-                    platform_fee_percent: platformFeePercent,
-                    platform_fee_amount: platformFeeAmount,
-                    platform_fee: platformFeeAmount,
-                    creator_amount: creatorAmount,
+                    platform_fee_percent: breakdown.platformFeePercent,
+                    platform_fee_amount: breakdown.platformFee,
+                    platform_fee: breakdown.platformFee,
+                    creator_amount: breakdown.creatorAmount,
                     payment_gateway: 'RAZORPAY',
                     payment_id: params.razorpay_payment_id,
                     funded_at: now,
@@ -154,7 +164,7 @@ let EscrowPaymentService = class EscrowPaymentService {
         await this.notifications.create({
             userId: params.brandUserId,
             title: 'Payment Successful',
-            message: `₹${escrow.amount.toLocaleString()} secured in escrow for ${result.escrow.campaign.title}.`,
+            message: `₹${breakdown.brandTotal.toLocaleString()} paid (₹${breakdown.creatorAmount.toLocaleString()} in escrow + ₹${breakdown.platformFee.toLocaleString()} platform fee) for ${result.escrow.campaign.title}.`,
             type: 'PAYMENT',
             entityType: 'Escrow',
             entityId: escrow.id,
@@ -162,7 +172,7 @@ let EscrowPaymentService = class EscrowPaymentService {
         await this.notifications.create({
             userId: escrow.creator.user_id,
             title: 'Payment Secured',
-            message: `Payment secured for ${result.escrow.campaign.title}. You may start working.`,
+            message: `₹${breakdown.creatorAmount.toLocaleString()} is held in escrow for ${result.escrow.campaign.title}. You may start working.`,
             type: 'PAYMENT',
             entityType: 'Escrow',
             entityId: escrow.id,
@@ -179,6 +189,8 @@ exports.EscrowPaymentService = EscrowPaymentService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         razorpay_service_1.RazorpayService,
         wallet_service_1.WalletService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        escrow_service_1.EscrowService,
+        platform_wallet_service_1.PlatformWalletService])
 ], EscrowPaymentService);
 //# sourceMappingURL=escrow-payment.service.js.map

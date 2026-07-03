@@ -10,8 +10,9 @@ import { emitWalletEvent } from '../common/wallet-event-emitter';
 import {
   ESCROW_STATUSES,
   PAYMENT_ORDER_PURPOSES,
-  PLATFORM_FEE_PERCENT,
 } from './constants';
+import { EscrowService } from './escrow.service';
+import { PlatformWalletService } from './platform-wallet.service';
 import { RazorpayService } from './razorpay.service';
 import { WalletService } from './wallet.service';
 
@@ -22,6 +23,8 @@ export class EscrowPaymentService {
     private readonly razorpay: RazorpayService,
     private readonly wallet: WalletService,
     private readonly notifications: NotificationsService,
+    private readonly escrowService: EscrowService,
+    private readonly platformWallet: PlatformWalletService,
   ) {}
 
   async createEscrowPaymentOrder(userId: string, escrowId: string) {
@@ -41,13 +44,17 @@ export class EscrowPaymentService {
       throw new BadRequestException(`Escrow is already ${escrow.status}`);
     }
 
-    return this.razorpay.createOrder(userId, escrow.amount, {
+    const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
+
+    return this.razorpay.createOrder(userId, breakdown.brandTotal, {
       purpose: PAYMENT_ORDER_PURPOSES.ESCROW_FUND,
       escrowId: escrow.id,
       notes: {
         escrow_id: escrow.id,
         campaign_id: escrow.campaign_id,
         creator_id: escrow.creator_id,
+        creator_amount: String(breakdown.creatorAmount),
+        platform_fee: String(breakdown.platformFee),
       },
     });
   }
@@ -121,9 +128,7 @@ export class EscrowPaymentService {
       throw new BadRequestException(`Cannot fund escrow in ${escrow.status} status`);
     }
 
-    const platformFeePercent = escrow.platform_fee_percent ?? PLATFORM_FEE_PERCENT;
-    const platformFeeAmount = Math.round((escrow.amount * platformFeePercent) / 100 * 100) / 100;
-    const creatorAmount = Math.max(0, escrow.amount - platformFeeAmount);
+    const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
     const now = new Date();
 
     const result = await this.prisma.$transaction(async (tx) => {
@@ -138,19 +143,23 @@ export class EscrowPaymentService {
       await this.wallet.lockEscrowFromGateway(
         tx,
         params.brandUserId,
-        escrow.amount,
+        breakdown.creatorAmount,
         escrow.id,
         params.razorpay_payment_id,
       );
+
+      if (breakdown.platformFee > 0) {
+        await this.platformWallet.creditPlatformFee(tx, breakdown.platformFee, escrow.id);
+      }
 
       const updated = await tx.escrow.update({
         where: { id: escrow.id },
         data: {
           status: ESCROW_STATUSES.HELD,
-          platform_fee_percent: platformFeePercent,
-          platform_fee_amount: platformFeeAmount,
-          platform_fee: platformFeeAmount,
-          creator_amount: creatorAmount,
+          platform_fee_percent: breakdown.platformFeePercent,
+          platform_fee_amount: breakdown.platformFee,
+          platform_fee: breakdown.platformFee,
+          creator_amount: breakdown.creatorAmount,
           payment_gateway: 'RAZORPAY',
           payment_id: params.razorpay_payment_id,
           funded_at: now,
@@ -170,7 +179,7 @@ export class EscrowPaymentService {
     await this.notifications.create({
       userId: params.brandUserId,
       title: 'Payment Successful',
-      message: `₹${escrow.amount.toLocaleString()} secured in escrow for ${result.escrow.campaign.title}.`,
+      message: `₹${breakdown.brandTotal.toLocaleString()} paid (₹${breakdown.creatorAmount.toLocaleString()} in escrow + ₹${breakdown.platformFee.toLocaleString()} platform fee) for ${result.escrow.campaign.title}.`,
       type: 'PAYMENT',
       entityType: 'Escrow',
       entityId: escrow.id,
@@ -179,7 +188,7 @@ export class EscrowPaymentService {
     await this.notifications.create({
       userId: escrow.creator.user_id,
       title: 'Payment Secured',
-      message: `Payment secured for ${result.escrow.campaign.title}. You may start working.`,
+      message: `₹${breakdown.creatorAmount.toLocaleString()} is held in escrow for ${result.escrow.campaign.title}. You may start working.`,
       type: 'PAYMENT',
       entityType: 'Escrow',
       entityId: escrow.id,

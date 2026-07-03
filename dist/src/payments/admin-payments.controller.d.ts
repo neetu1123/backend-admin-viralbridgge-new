@@ -92,8 +92,10 @@ export declare class AdminPaymentsController {
         campaignTitle: string | undefined;
         brandId: unknown;
         creatorId: unknown;
-        amount: unknown;
-        platformFee: {};
+        amount: number;
+        platformFee: number;
+        platformFeePercent: number;
+        brandTotal: number;
         creatorPayout: number;
         status: unknown;
         lockedAt: {} | null;

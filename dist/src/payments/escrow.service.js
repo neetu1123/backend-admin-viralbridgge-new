@@ -29,7 +29,28 @@ let EscrowService = class EscrowService {
         this.notifications = notifications;
     }
     calculatePlatformFee(amount) {
+        if (constants_1.PLATFORM_FEE_PERCENT <= 0)
+            return 0;
         return Math.round((amount * constants_1.PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
+    }
+    resolveCreatorPayout(escrow) {
+        return escrow.amount;
+    }
+    getBrandFundingBreakdown(creatorAmount) {
+        const platformFee = this.calculatePlatformFee(creatorAmount);
+        return {
+            creatorAmount,
+            platformFee,
+            platformFeePercent: constants_1.PLATFORM_FEE_PERCENT,
+            brandTotal: creatorAmount + platformFee,
+        };
+    }
+    async fundBrandEscrowFromWallet(tx, brandUserId, escrowId, breakdown) {
+        await this.wallet.moveToPending(tx, brandUserId, breakdown.creatorAmount, escrowId);
+        if (breakdown.platformFee > 0) {
+            await this.wallet.chargeBrandPlatformFee(tx, brandUserId, breakdown.platformFee, escrowId);
+            await this.platformWallet.creditPlatformFee(tx, breakdown.platformFee, escrowId);
+        }
     }
     async getEscrow(userId, escrowId) {
         const escrow = await this.prisma.escrow.findUnique({
@@ -163,7 +184,7 @@ let EscrowService = class EscrowService {
         if (existing)
             return existing;
         const platformFee = this.calculatePlatformFee(amount);
-        const creatorAmount = Math.max(0, amount - platformFee);
+        const creatorAmount = amount;
         return this.prisma.escrow.create({
             data: {
                 campaign_id: application.campaign_id,
@@ -190,19 +211,22 @@ let EscrowService = class EscrowService {
             throw new common_1.ForbiddenException('Only the brand can fund escrow');
         }
         const amount = params.amount;
-        const platformFee = this.calculatePlatformFee(amount);
-        const creatorAmount = Math.max(0, amount - platformFee);
+        const breakdown = this.getBrandFundingBreakdown(amount);
+        const brandWallet = await this.wallet.ensureWallet(params.brandUserId);
+        if (brandWallet.available_balance < breakdown.brandTotal) {
+            throw new common_1.BadRequestException(`Insufficient wallet balance. Required ₹${breakdown.brandTotal.toLocaleString()} (₹${breakdown.creatorAmount} campaign + ₹${breakdown.platformFee} platform fee at ${breakdown.platformFeePercent}%)`);
+        }
         const now = new Date();
         const result = await this.prisma.$transaction(async (tx) => {
-            await this.wallet.moveToPending(tx, params.brandUserId, amount, escrowId);
+            await this.fundBrandEscrowFromWallet(tx, params.brandUserId, escrowId, breakdown);
             const updated = await tx.escrow.update({
                 where: { id: escrowId },
                 data: {
                     amount,
-                    platform_fee_percent: constants_1.PLATFORM_FEE_PERCENT,
-                    platform_fee_amount: platformFee,
-                    platform_fee: platformFee,
-                    creator_amount: creatorAmount,
+                    platform_fee_percent: breakdown.platformFeePercent,
+                    platform_fee_amount: breakdown.platformFee,
+                    platform_fee: breakdown.platformFee,
+                    creator_amount: breakdown.creatorAmount,
                     status: constants_1.ESCROW_STATUSES.HELD,
                     locked_at: now,
                     funded_at: now,
@@ -223,18 +247,32 @@ let EscrowService = class EscrowService {
         return result.escrow;
     }
     async lockFundsForEscrow(params) {
-        const platformFee = this.calculatePlatformFee(params.amount);
+        const breakdown = this.getBrandFundingBreakdown(params.amount);
+        const brandWalletCheck = await this.wallet.ensureWallet(params.brandUserId);
+        if (brandWalletCheck.available_balance < breakdown.brandTotal) {
+            throw new common_1.BadRequestException(`Insufficient wallet balance. Required ₹${breakdown.brandTotal.toLocaleString()} (₹${breakdown.creatorAmount} campaign + ₹${breakdown.platformFee} platform fee at ${breakdown.platformFeePercent}%)`);
+        }
         const result = await this.prisma.$transaction(async (tx) => {
-            await this.wallet.moveToPending(tx, params.brandUserId, params.amount);
             const escrow = await tx.escrow.create({
                 data: {
                     campaign_id: params.campaignId,
                     brand_id: params.brandId,
                     creator_id: params.creatorId,
                     amount: params.amount,
-                    platform_fee: platformFee,
+                    platform_fee: breakdown.platformFee,
+                    platform_fee_percent: breakdown.platformFeePercent,
+                    platform_fee_amount: breakdown.platformFee,
+                    creator_amount: breakdown.creatorAmount,
+                    status: constants_1.ESCROW_STATUSES.PENDING,
+                },
+            });
+            await this.fundBrandEscrowFromWallet(tx, params.brandUserId, escrow.id, breakdown);
+            const held = await tx.escrow.update({
+                where: { id: escrow.id },
+                data: {
                     status: constants_1.ESCROW_STATUSES.HELD,
                     locked_at: new Date(),
+                    funded_at: new Date(),
                 },
                 include: {
                     campaign: { select: { title: true } },
@@ -243,7 +281,7 @@ let EscrowService = class EscrowService {
                 },
             });
             const brandWallet = await this.wallet.ensureWallet(params.brandUserId, tx);
-            return { escrow, brandWallet };
+            return { escrow: held, brandWallet };
         });
         await this.notifyEscrowHeld(result.escrow, params.brandUserId, params.creatorUserId, params.campaignTitle);
         (0, wallet_event_emitter_1.emitWalletEvent)(params.brandUserId, 'wallet:updated', result.brandWallet);
@@ -305,12 +343,10 @@ let EscrowService = class EscrowService {
         if (escrow.status !== constants_1.ESCROW_STATUSES.HELD && escrow.status !== constants_1.ESCROW_STATUSES.DISPUTED) {
             throw new common_1.BadRequestException(`Cannot release escrow in ${escrow.status} status`);
         }
-        const platformFeeAmount = escrow.platform_fee_amount ?? escrow.platform_fee ?? this.calculatePlatformFee(escrow.amount);
-        const creatorPayout = escrow.creator_amount ?? Math.max(0, escrow.amount - platformFeeAmount);
+        const creatorPayout = this.resolveCreatorPayout(escrow);
         const result = await this.prisma.$transaction(async (tx) => {
             await this.wallet.releaseLocked(tx, escrow.brand.user_id, escrow.amount, escrow.id);
             const creatorResult = await this.wallet.creditCreatorPayout(tx, escrow.creator.user_id, creatorPayout, escrow.id);
-            await this.platformWallet.creditPlatformFee(tx, platformFeeAmount, escrow.id);
             const updated = await tx.escrow.update({
                 where: { id: escrow.id },
                 data: { status: constants_1.ESCROW_STATUSES.RELEASED, released_at: new Date() },
@@ -501,15 +537,19 @@ let EscrowService = class EscrowService {
         }
     }
     formatEscrow(escrow) {
+        const amount = Number(escrow.amount);
+        const platformFee = Number(escrow.platform_fee_amount ?? escrow.platform_fee ?? this.calculatePlatformFee(amount));
         return {
             id: escrow.id,
             campaignId: escrow.campaign_id,
             campaignTitle: escrow.campaign?.title,
             brandId: escrow.brand_id,
             creatorId: escrow.creator_id,
-            amount: escrow.amount,
-            platformFee: escrow.platform_fee ?? 0,
-            creatorPayout: Math.max(0, Number(escrow.amount) - Number(escrow.platform_fee ?? 0)),
+            amount,
+            platformFee,
+            platformFeePercent: Number(escrow.platform_fee_percent ?? constants_1.PLATFORM_FEE_PERCENT),
+            brandTotal: amount + platformFee,
+            creatorPayout: amount,
             status: escrow.status,
             lockedAt: escrow.locked_at?.toISOString?.() ?? escrow.locked_at ?? null,
             createdAt: escrow.created_at?.toISOString?.() ?? escrow.created_at,

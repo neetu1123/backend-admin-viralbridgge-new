@@ -290,6 +290,19 @@ export declare class WalletService {
             reference_id: string | null;
         };
     }>;
+    chargeBrandPlatformFee(tx: TxClient, userId: string, amount: number, referenceId?: string): Promise<{
+        id: string;
+        updated_at: Date;
+        created_at: Date;
+        user_id: string;
+        available_balance: number;
+        locked_balance: number;
+        pending_balance: number;
+        lifetime_earnings: number;
+        currency: string;
+        is_platform: boolean;
+        is_frozen: boolean;
+    }>;
     moveToPending(tx: TxClient, userId: string, amount: number, referenceId?: string): Promise<{
         wallet: {
             id: string;

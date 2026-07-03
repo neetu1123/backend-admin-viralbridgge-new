@@ -121,7 +121,7 @@ let DisputeService = class DisputeService {
             throw new common_1.BadRequestException('No escrow found for this dispute');
         await this.prisma.$transaction(async (tx) => {
             if (mode === 'release_creator') {
-                const creatorPayout = Math.max(0, escrow.amount - (escrow.platform_fee ?? 0));
+                const creatorPayout = escrow.amount;
                 await this.wallet.releasePending(tx, escrow.brand.user_id, escrow.amount);
                 await this.wallet.creditWalletInternal(tx, escrow.creator.user_id, creatorPayout, constants_1.TRANSACTION_TYPES.ESCROW_RELEASE, escrow.id);
                 await tx.escrow.update({

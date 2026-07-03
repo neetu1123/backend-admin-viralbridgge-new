@@ -1,3 +1,4 @@
+import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { CreateEscrowDto, OpenDisputeDto } from './dto/escrow.dto';
@@ -10,14 +11,24 @@ export declare class EscrowService {
     private readonly notifications;
     constructor(prisma: PrismaService, wallet: WalletService, platformWallet: PlatformWalletService, notifications: NotificationsService);
     calculatePlatformFee(amount: number): number;
+    private resolveCreatorPayout;
+    getBrandFundingBreakdown(creatorAmount: number): {
+        creatorAmount: number;
+        platformFee: number;
+        platformFeePercent: number;
+        brandTotal: number;
+    };
+    private fundBrandEscrowFromWallet;
     getEscrow(userId: string, escrowId: string): Promise<{
         id: unknown;
         campaignId: unknown;
         campaignTitle: string | undefined;
         brandId: unknown;
         creatorId: unknown;
-        amount: unknown;
-        platformFee: {};
+        amount: number;
+        platformFee: number;
+        platformFeePercent: number;
+        brandTotal: number;
         creatorPayout: number;
         status: unknown;
         lockedAt: {} | null;
@@ -43,7 +54,7 @@ export declare class EscrowService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
+                settings: Prisma.JsonValue | null;
             };
         } & {
             id: string;
@@ -57,7 +68,7 @@ export declare class EscrowService {
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            social_links: Prisma.JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
             contact_email: string | null;
@@ -79,7 +90,7 @@ export declare class EscrowService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
-                settings: import("@prisma/client/runtime/library").JsonValue | null;
+                settings: Prisma.JsonValue | null;
             };
         } & {
             id: string;
@@ -122,8 +133,10 @@ export declare class EscrowService {
         campaignTitle: string | undefined;
         brandId: unknown;
         creatorId: unknown;
-        amount: unknown;
-        platformFee: {};
+        amount: number;
+        platformFee: number;
+        platformFeePercent: number;
+        brandTotal: number;
         creatorPayout: number;
         status: unknown;
         lockedAt: {} | null;
@@ -151,7 +164,7 @@ export declare class EscrowService {
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            social_links: Prisma.JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
             contact_email: string | null;
@@ -293,7 +306,7 @@ export declare class EscrowService {
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            social_links: Prisma.JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
             contact_email: string | null;
@@ -358,7 +371,7 @@ export declare class EscrowService {
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            social_links: Prisma.JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
             contact_email: string | null;
@@ -443,7 +456,7 @@ export declare class EscrowService {
             niche: string | null;
             followers: number;
             engagement_rate: number;
-            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            social_links: Prisma.JsonValue | null;
             media_kit: string | null;
             portfolio: string | null;
             contact_email: string | null;
@@ -532,8 +545,10 @@ export declare class EscrowService {
         campaignTitle: string | undefined;
         brandId: unknown;
         creatorId: unknown;
-        amount: unknown;
-        platformFee: {};
+        amount: number;
+        platformFee: number;
+        platformFeePercent: number;
+        brandTotal: number;
         creatorPayout: number;
         status: unknown;
         lockedAt: {} | null;

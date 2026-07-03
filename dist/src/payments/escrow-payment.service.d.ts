@@ -1,5 +1,7 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EscrowService } from './escrow.service';
+import { PlatformWalletService } from './platform-wallet.service';
 import { RazorpayService } from './razorpay.service';
 import { WalletService } from './wallet.service';
 export declare class EscrowPaymentService {
@@ -7,7 +9,9 @@ export declare class EscrowPaymentService {
     private readonly razorpay;
     private readonly wallet;
     private readonly notifications;
-    constructor(prisma: PrismaService, razorpay: RazorpayService, wallet: WalletService, notifications: NotificationsService);
+    private readonly escrowService;
+    private readonly platformWallet;
+    constructor(prisma: PrismaService, razorpay: RazorpayService, wallet: WalletService, notifications: NotificationsService, escrowService: EscrowService, platformWallet: PlatformWalletService);
     createEscrowPaymentOrder(userId: string, escrowId: string): Promise<{
         orderId: string;
         amount: number;

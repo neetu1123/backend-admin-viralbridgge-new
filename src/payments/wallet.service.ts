@@ -283,6 +283,39 @@ export class WalletService {
     return { wallet: updatedWallet, transaction };
   }
 
+  /** Deduct platform fee from brand available balance when funding escrow. */
+  async chargeBrandPlatformFee(
+    tx: TxClient,
+    userId: string,
+    amount: number,
+    referenceId?: string,
+  ) {
+    if (amount <= 0) {
+      return this.ensureWallet(userId, tx);
+    }
+    const wallet = await this.ensureWallet(userId, tx);
+    this.assertWalletActive(wallet);
+    if (wallet.available_balance < amount) {
+      throw new BadRequestException('Insufficient wallet balance for platform fee');
+    }
+    const updatedWallet = await tx.wallet.update({
+      where: { id: wallet.id },
+      data: { available_balance: { decrement: amount } },
+    });
+    await tx.walletTransaction.create({
+      data: {
+        wallet_id: wallet.id,
+        type: TRANSACTION_TYPES.PLATFORM_FEE,
+        amount,
+        balance_after: updatedWallet.available_balance,
+        reference_type: 'Escrow',
+        reference_id: referenceId,
+        status: TRANSACTION_STATUSES.COMPLETED,
+      },
+    });
+    return updatedWallet;
+  }
+
   /** Lock brand funds for escrow from wallet balance. */
   async moveToPending(tx: TxClient, userId: string, amount: number, referenceId?: string) {
     const wallet = await this.ensureWallet(userId, tx);
