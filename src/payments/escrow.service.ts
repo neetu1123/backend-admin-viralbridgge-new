@@ -28,9 +28,20 @@ export class EscrowService {
     private readonly notifications: NotificationsService,
   ) {}
 
-  calculatePlatformFee(amount: number): number {
-    if (PLATFORM_FEE_PERCENT <= 0) return 0;
-    return Math.round((amount * PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
+  calculatePlatformFee(amount: number, feePercent = PLATFORM_FEE_PERCENT): number {
+    if (feePercent <= 0) return 0;
+    return Math.round((amount * feePercent) / 100 * 100) / 100;
+  }
+
+  private async resolvePlatformFeePercent(): Promise<number> {
+    try {
+      const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'default' } });
+      const fee = Number((settings as { platform_fee_percent?: number } | null)?.platform_fee_percent);
+      if (Number.isFinite(fee) && fee >= 0) return fee;
+    } catch {
+      /* use env default */
+    }
+    return PLATFORM_FEE_PERCENT;
   }
 
   /** Creator receives the full escrow amount when brand approves deliverables. */
@@ -39,12 +50,13 @@ export class EscrowService {
   }
 
   /** Brand pays campaign amount + platform fee; creator receives only the campaign amount. */
-  getBrandFundingBreakdown(creatorAmount: number) {
-    const platformFee = this.calculatePlatformFee(creatorAmount);
+  async getBrandFundingBreakdown(creatorAmount: number) {
+    const feePercent = await this.resolvePlatformFeePercent();
+    const platformFee = this.calculatePlatformFee(creatorAmount, feePercent);
     return {
       creatorAmount,
       platformFee,
-      platformFeePercent: PLATFORM_FEE_PERCENT,
+      platformFeePercent: feePercent,
       brandTotal: creatorAmount + platformFee,
     };
   }
@@ -53,7 +65,7 @@ export class EscrowService {
     tx: Prisma.TransactionClient,
     brandUserId: string,
     escrowId: string,
-    breakdown: ReturnType<EscrowService['getBrandFundingBreakdown']>,
+    breakdown: Awaited<ReturnType<EscrowService['getBrandFundingBreakdown']>>,
   ) {
     await this.wallet.moveToPending(tx, brandUserId, breakdown.creatorAmount, escrowId);
     if (breakdown.platformFee > 0) {
@@ -207,7 +219,8 @@ export class EscrowService {
     });
     if (existing) return existing;
 
-    const platformFee = this.calculatePlatformFee(amount);
+    const feePercent = await this.resolvePlatformFeePercent();
+    const platformFee = this.calculatePlatformFee(amount, feePercent);
     const creatorAmount = amount;
     return this.prisma.escrow.create({
       data: {
@@ -215,7 +228,7 @@ export class EscrowService {
         brand_id: application.campaign.brand_id,
         creator_id: application.creator_id,
         amount,
-        platform_fee_percent: PLATFORM_FEE_PERCENT,
+        platform_fee_percent: feePercent,
         platform_fee_amount: platformFee,
         platform_fee: platformFee,
         creator_amount: creatorAmount,
@@ -253,7 +266,7 @@ export class EscrowService {
     }
 
     const amount = params.amount;
-    const breakdown = this.getBrandFundingBreakdown(amount);
+    const breakdown = await this.getBrandFundingBreakdown(amount);
     const brandWallet = await this.wallet.ensureWallet(params.brandUserId);
     if (brandWallet.available_balance < breakdown.brandTotal) {
       throw new BadRequestException(
@@ -305,7 +318,7 @@ export class EscrowService {
     amount: number;
     campaignTitle: string;
   }) {
-    const breakdown = this.getBrandFundingBreakdown(params.amount);
+    const breakdown = await this.getBrandFundingBreakdown(params.amount);
     const brandWalletCheck = await this.wallet.ensureWallet(params.brandUserId);
     if (brandWalletCheck.available_balance < breakdown.brandTotal) {
       throw new BadRequestException(

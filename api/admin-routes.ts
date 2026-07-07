@@ -538,6 +538,48 @@ router.patch('/notifications/:id/read', async (req: AuthedRequest, res) => {
   return ok(res, result);
 });
 
+router.get('/email/status', async (_req, res) => {
+  try {
+    const { getEmailStatus } = require('./lib/admin-broadcast') as typeof import('./lib/admin-broadcast');
+    const { getEmailService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, getEmailStatus(getEmailService()));
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load email status', 500);
+  }
+});
+
+router.post('/email/test', async (req: AuthedRequest, res) => {
+  try {
+    const { sendTestEmail } = require('./lib/admin-broadcast') as typeof import('./lib/admin-broadcast');
+    const { getEmailService } = require('./lib/services') as typeof import('./lib/services');
+    const to = String(req.body?.to ?? '').trim();
+    if (!to) return fail(res, 'Recipient email (to) is required', 400);
+    const result = await sendTestEmail(getEmailService(), to);
+    await audit(req.user?.id, 'SEND_TEST_EMAIL', 'Email', to, {});
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Test email failed', 400);
+  }
+});
+
+router.post('/broadcast', async (req: AuthedRequest, res) => {
+  try {
+    const { sendAdminBroadcast } = require('./lib/admin-broadcast') as typeof import('./lib/admin-broadcast');
+    const { getEmailService, getNotificationsService } = require('./lib/services') as typeof import('./lib/services');
+    const result = await sendAdminBroadcast(
+      prisma(),
+      getEmailService(),
+      getNotificationsService(),
+      req.body ?? {},
+      req.user?.id,
+    );
+    await audit(req.user?.id, 'SEND_BROADCAST', 'Broadcast', String(req.body?.audience ?? 'all'), result);
+    return ok(res, result);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Broadcast failed', 400);
+  }
+});
+
 router.get('/withdrawals', async (req, res) => {
   const status = String(req.query.status ?? 'PENDING').toUpperCase();
   const statuses =

@@ -402,7 +402,12 @@ export class CreatorService {
   }
 
   async updateSettings(userId: string, settings: Record<string, any>) {
-    return this.prisma.user.update({ where: { id: userId }, data: { settings } });
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    const existing = (user?.settings as Record<string, unknown>) ?? {};
+    return this.prisma.user.update({
+      where: { id: userId },
+      data: { settings: { ...existing, ...settings } },
+    });
   }
 
   private async ensureCreatorProfile(userId: string) {

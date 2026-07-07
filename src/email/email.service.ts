@@ -11,6 +11,7 @@ import {
 import { buildInvitationAcceptedHtml } from './templates/invitation-accepted.template';
 import { buildMemberRemovedHtml } from './templates/member-removed.template';
 import { buildTeamInvitationHtml, buildTeamReInvitationHtml } from './templates/team-invitation.template';
+import { buildBroadcastHtml } from './templates/broadcast.template';
 
 @Injectable()
 export class EmailService {
@@ -36,6 +37,18 @@ export class EmailService {
 
   isConfigured(): boolean {
     return Boolean(this.resend);
+  }
+
+  getConfigStatus() {
+    return {
+      configured: this.isConfigured(),
+      fromEmail: this.fromEmail,
+      appUrl: this.appUrl,
+      provider: 'Resend',
+      hint: this.isConfigured()
+        ? 'Emails send via Resend. Verify your domain at resend.com/domains.'
+        : 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend environment variables (Vercel → Settings → Environment Variables).',
+    };
   }
 
   /** Resend onboarding test — verify API key and sender domain. */
@@ -84,6 +97,26 @@ export class EmailService {
       to,
       subject: 'Withdrawal verification code',
       html: `<p>Your ViralBridge withdrawal OTP is <strong>${code}</strong>. Valid for 10 minutes.</p>`,
+    });
+  }
+
+  async sendBroadcastEmail(params: {
+    to: string;
+    subject: string;
+    title: string;
+    message: string;
+    ctaLabel?: string;
+    ctaUrl?: string;
+  }): Promise<void> {
+    await this.send({
+      to: params.to,
+      subject: params.subject,
+      html: buildBroadcastHtml({
+        title: params.title,
+        message: params.message,
+        ctaLabel: params.ctaLabel,
+        ctaUrl: params.ctaUrl,
+      }),
     });
   }
 

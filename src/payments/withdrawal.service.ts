@@ -164,16 +164,19 @@ export class WithdrawalService {
   }
 
   async listAdminWithdrawals(status = 'PENDING') {
-    const normalized = status.toUpperCase();
-    const statuses =
-      normalized === WITHDRAWAL_STATUSES.APPROVED
-        ? [WITHDRAWAL_STATUSES.APPROVED, WITHDRAWAL_STATUSES.COMPLETED]
-        : [normalized];
+    const normalized = (status || 'PENDING').toUpperCase();
+    const where =
+      normalized === 'ALL'
+        ? {}
+        : {
+            status:
+              normalized === WITHDRAWAL_STATUSES.APPROVED
+                ? { in: [WITHDRAWAL_STATUSES.APPROVED, WITHDRAWAL_STATUSES.COMPLETED] }
+                : normalized,
+          };
 
     const rows = await this.prisma.withdrawal.findMany({
-      where: {
-        status: statuses.length === 1 ? statuses[0] : { in: statuses },
-      },
+      where,
       include: {
         creator: { include: { user: { include: { role: true } } } },
       },

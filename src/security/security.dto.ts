@@ -14,6 +14,18 @@ export class ChangePasswordDto {
   newPassword: string;
 }
 
+export class DeactivateAccountDto {
+  @ApiProperty({ example: 'brand@1234' })
+  @IsString()
+  @IsNotEmpty()
+  currentPassword: string;
+
+  @ApiProperty({ example: 'DELETE' })
+  @IsString()
+  @IsNotEmpty()
+  confirmation: string;
+}
+
 export class Enable2FaDto {
   @ApiProperty({ example: '+919876543210' })
   @IsString()

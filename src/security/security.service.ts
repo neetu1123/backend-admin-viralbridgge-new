@@ -14,7 +14,7 @@ import {
   SecurityActivityType,
 } from './security.constants';
 import { parseUserAgent, SessionMeta } from './security-session.helper';
-import { Confirm2FaDto, ChangePasswordDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
+import { Confirm2FaDto, ChangePasswordDto, DeactivateAccountDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
 
 @Injectable()
 export class SecurityService {
@@ -105,6 +105,43 @@ export class SecurityService {
     await this.notify(userId, 'Password updated', 'Your password was changed successfully.', 'SECURITY');
 
     return { message: 'Password changed successfully.' };
+  }
+
+  async deactivateAccount(userId: string, dto: DeactivateAccountDto, meta: SessionMeta) {
+    if (dto.confirmation !== 'DELETE') {
+      throw new BadRequestException('Type DELETE to confirm account deactivation');
+    }
+
+    const user = await this.prisma.user.findUnique({ where: { id: userId } });
+    if (!user) throw new NotFoundException('User not found');
+    if (user.is_deleted) {
+      throw new BadRequestException('Account is already deactivated');
+    }
+
+    if (user.password) {
+      const isValid = await bcrypt.compare(dto.currentPassword, user.password);
+      if (!isValid) {
+        throw new BadRequestException('Current password is incorrect');
+      }
+    }
+
+    await this.prisma.user.update({
+      where: { id: userId },
+      data: {
+        is_deleted: true,
+        status: 'DEACTIVATED',
+      },
+    });
+
+    await this.prisma.userSession.updateMany({
+      where: { user_id: userId, is_active: true },
+      data: { is_active: false },
+    });
+
+    await this.createAuditLog(userId, 'ACCOUNT_DEACTIVATED', meta);
+    await this.recordActivity(userId, 'ACCOUNT_DEACTIVATED', meta);
+
+    return { message: 'Account deactivated successfully.' };
   }
 
   async enable2Fa(userId: string, dto: Enable2FaDto, meta: SessionMeta) {

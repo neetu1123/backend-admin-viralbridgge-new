@@ -406,6 +406,7 @@ model AuditLog {
 model PlatformSettings {
   id                   String   @id @default("default")
   ai_matching_enabled  Boolean  @default(true)
+  platform_fee_percent Float    @default(10)
   updated_at           DateTime @updatedAt
   updated_by           String?
 

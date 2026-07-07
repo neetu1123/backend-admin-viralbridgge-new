@@ -1,10 +1,13 @@
-import { Controller, Get, Post, Put, Delete, Patch, Param, Body, Query, UseGuards, Request } from '@nestjs/common';
+import { Controller, Get, Post, Put, Delete, Patch, Param, Body, Query, UseGuards, Request, BadRequestException } from '@nestjs/common';
 import { ApiTags, ApiBearerAuth, ApiOperation, ApiQuery } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import { AdminService } from './admin.service';
 import { KycService } from '../kyc/kyc.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { sendAdminBroadcast, type BroadcastBody } from './admin-broadcast.helper';
 
 @ApiTags('Admin')
 @ApiBearerAuth()
@@ -16,6 +19,8 @@ export class AdminController {
     private readonly adminService: AdminService,
     private readonly kycService: KycService,
     private readonly notifications: NotificationsService,
+    private readonly email: EmailService,
+    private readonly prisma: PrismaService,
   ) {}
 
   // ─── Roles & Admins ──────────────────────────────────────────────────────────
@@ -36,6 +41,25 @@ export class AdminController {
   @Delete('roles/:id')
   deleteRole(@Param('id') id: string, @Request() req: any) {
     return this.adminService.deleteRole(id, req.user?.id);
+  }
+
+  @Get('permissions')
+  getPermissions() {
+    return this.adminService.getPermissions();
+  }
+
+  @Get('roles/:id/permissions')
+  getRolePermissions(@Param('id') id: string) {
+    return this.adminService.getRolePermissions(id);
+  }
+
+  @Put('roles/:id/permissions')
+  updateRolePermissions(
+    @Param('id') id: string,
+    @Body() body: { permissionKeys: string[] },
+    @Request() req: any,
+  ) {
+    return this.adminService.updateRolePermissions(id, body.permissionKeys ?? [], req.user?.id);
   }
 
   @Get('admins')
@@ -111,7 +135,7 @@ export class AdminController {
   @Patch('settings')
   @ApiOperation({ summary: 'Update platform settings' })
   updateSettings(
-    @Body() body: { aiMatchingEnabled?: boolean },
+    @Body() body: { aiMatchingEnabled?: boolean; platformFeePercent?: number },
     @Request() req: any,
   ) {
     return this.adminService.updateSettings(body, req.user?.id);
@@ -240,6 +264,42 @@ export class AdminController {
   @Patch('notifications/:id/read')
   markNotificationRead(@Param('id') id: string, @Request() req: any) {
     return this.notifications.markRead(req.user.id, id);
+  }
+
+  // ─── Email / Broadcast ────────────────────────────────────────────────────────
+
+  @Get('email/status')
+  @ApiOperation({ summary: 'Check if transactional email (Resend) is configured' })
+  getEmailStatus() {
+    return this.email.getConfigStatus();
+  }
+
+  @Post('email/test')
+  @ApiOperation({ summary: 'Send a test email to verify Resend configuration' })
+  async sendTestEmail(@Body() body: { to?: string }) {
+    if (!this.email.isConfigured()) {
+      throw new BadRequestException(this.email.getConfigStatus().hint);
+    }
+    const to = body?.to?.trim();
+    if (!to) throw new BadRequestException('Recipient email (to) is required');
+    await this.email.sendTestEmail(to);
+    return { sent: true, to };
+  }
+
+  @Post('broadcast')
+  @ApiOperation({ summary: 'Send broadcast email + in-app notification to users' })
+  async sendBroadcast(@Body() body: BroadcastBody, @Request() req: any) {
+    try {
+      return await sendAdminBroadcast(
+        this.prisma,
+        this.email,
+        this.notifications,
+        body,
+        req.user?.id,
+      );
+    } catch (err) {
+      throw new BadRequestException(err instanceof Error ? err.message : 'Broadcast failed');
+    }
   }
 
   // ─── Quick Actions ────────────────────────────────────────────────────────────

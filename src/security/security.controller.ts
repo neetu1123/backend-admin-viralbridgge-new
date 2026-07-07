@@ -16,6 +16,7 @@ import { extractClientIp } from './security-session.helper';
 import {
   Confirm2FaDto,
   ChangePasswordDto,
+  DeactivateAccountDto,
   Enable2FaDto,
   SecurityActivityQueryDto,
   SecurityActivityResponseDto,
@@ -60,6 +61,12 @@ export class SecurityController {
   @ApiOperation({ summary: 'Change password (requires current password)' })
   changePassword(@Request() req: SecurityRequest, @Body() body: ChangePasswordDto) {
     return this.securityService.changePassword(req.user.id, body, sessionMeta(req));
+  }
+
+  @Post('deactivate-account')
+  @ApiOperation({ summary: 'Deactivate account (soft delete)' })
+  deactivateAccount(@Request() req: SecurityRequest, @Body() body: DeactivateAccountDto) {
+    return this.securityService.deactivateAccount(req.user.id, body, sessionMeta(req));
   }
 
   @Get('2fa/status')
