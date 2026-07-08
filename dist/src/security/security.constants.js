@@ -8,6 +8,7 @@ exports.SECURITY_ACTIVITY_TYPES = [
     '2FA_DISABLED',
     'SESSION_REMOVED',
     'LOGOUT_ALL',
+    'ACCOUNT_DEACTIVATED',
 ];
 exports.SECURITY_AUDIT_ACTIONS = {
     PASSWORD_RESET_REQUESTED: 'PASSWORD_RESET_REQUESTED',
@@ -24,5 +25,6 @@ exports.SECURITY_ACTIVITY_LABELS = {
     '2FA_DISABLED': 'Two-factor authentication disabled',
     SESSION_REMOVED: 'Session removed',
     LOGOUT_ALL: 'Signed out of all devices',
+    ACCOUNT_DEACTIVATED: 'Account deactivated',
 };
 //# sourceMappingURL=security.constants.js.map

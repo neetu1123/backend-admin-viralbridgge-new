@@ -52,7 +52,7 @@ let EscrowPaymentService = class EscrowPaymentService {
         if (escrow.status !== constants_1.ESCROW_STATUSES.PENDING) {
             throw new common_1.BadRequestException(`Escrow is already ${escrow.status}`);
         }
-        const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
+        const breakdown = await this.escrowService.getBrandFundingBreakdown(escrow.amount);
         return this.razorpay.createOrder(userId, breakdown.brandTotal, {
             purpose: constants_1.PAYMENT_ORDER_PURPOSES.ESCROW_FUND,
             escrowId: escrow.id,
@@ -125,7 +125,7 @@ let EscrowPaymentService = class EscrowPaymentService {
         if (escrow.status !== constants_1.ESCROW_STATUSES.PENDING) {
             throw new common_1.BadRequestException(`Cannot fund escrow in ${escrow.status} status`);
         }
-        const breakdown = this.escrowService.getBrandFundingBreakdown(escrow.amount);
+        const breakdown = await this.escrowService.getBrandFundingBreakdown(escrow.amount);
         const now = new Date();
         const result = await this.prisma.$transaction(async (tx) => {
             await tx.paymentOrder.update({

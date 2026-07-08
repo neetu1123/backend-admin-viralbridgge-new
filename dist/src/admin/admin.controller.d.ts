@@ -1,15 +1,30 @@
 import { AdminService } from './admin.service';
 import { KycService } from '../kyc/kyc.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { EmailService } from '../email/email.service';
+import { PrismaService } from '../prisma/prisma.service';
+import { type BroadcastBody } from './admin-broadcast.helper';
 export declare class AdminController {
     private readonly adminService;
     private readonly kycService;
     private readonly notifications;
-    constructor(adminService: AdminService, kycService: KycService, notifications: NotificationsService);
+    private readonly email;
+    private readonly prisma;
+    constructor(adminService: AdminService, kycService: KycService, notifications: NotificationsService, email: EmailService, prisma: PrismaService);
     getRoles(): Promise<({
         _count: {
             users: number;
         };
+        permissions: ({
+            permission: {
+                id: string;
+                description: string | null;
+                key: string;
+            };
+        } & {
+            role_id: string;
+            permission_id: string;
+        })[];
     } & {
         name: string;
         id: string;
@@ -35,6 +50,31 @@ export declare class AdminController {
         name: string;
         id: string;
         description: string | null;
+    }>;
+    getPermissions(): Promise<{
+        id: string;
+        description: string | null;
+        key: string;
+    }[]>;
+    getRolePermissions(id: string): Promise<{
+        roleId: string;
+        roleName: string;
+        permissions: {
+            id: string;
+            description: string | null;
+            key: string;
+        }[];
+    }>;
+    updateRolePermissions(id: string, body: {
+        permissionKeys: string[];
+    }, req: any): Promise<{
+        roleId: string;
+        roleName: string;
+        permissions: {
+            id: string;
+            description: string | null;
+            key: string;
+        }[];
     }>;
     getAdmins(): Promise<({
         role: {
@@ -441,12 +481,15 @@ export declare class AdminController {
     }>;
     getSettings(): Promise<{
         aiMatchingEnabled: boolean;
+        platformFeePercent: number;
         updatedAt: Date;
     }>;
     updateSettings(body: {
         aiMatchingEnabled?: boolean;
+        platformFeePercent?: number;
     }, req: any): Promise<{
         aiMatchingEnabled: any;
+        platformFeePercent: number;
         updatedAt: any;
     }>;
     getMatches(): Promise<{
@@ -717,6 +760,27 @@ export declare class AdminController {
         created_at: Date;
         metadata: {} | null;
     } | null>;
+    getEmailStatus(): {
+        configured: boolean;
+        fromEmail: string;
+        appUrl: string;
+        provider: string;
+        hint: string;
+    };
+    sendTestEmail(body: {
+        to?: string;
+    }): Promise<{
+        sent: boolean;
+        to: string;
+    }>;
+    sendBroadcast(body: BroadcastBody, req: any): Promise<{
+        sent: number;
+        failed: number;
+        inApp: number;
+        total: number;
+        audience: import("./admin-broadcast.helper").BroadcastAudience;
+        errors: string[];
+    }>;
     inviteAdmin(body: {
         email: string;
         role_id: string;

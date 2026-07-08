@@ -39,6 +39,9 @@ let SecurityController = class SecurityController {
     changePassword(req, body) {
         return this.securityService.changePassword(req.user.id, body, sessionMeta(req));
     }
+    deactivateAccount(req, body) {
+        return this.securityService.deactivateAccount(req.user.id, body, sessionMeta(req));
+    }
     get2FaStatus(req) {
         return this.securityService.get2FaStatus(req.user.id);
     }
@@ -83,6 +86,15 @@ __decorate([
     __metadata("design:paramtypes", [Object, security_dto_1.ChangePasswordDto]),
     __metadata("design:returntype", void 0)
 ], SecurityController.prototype, "changePassword", null);
+__decorate([
+    (0, common_1.Post)('deactivate-account'),
+    (0, swagger_1.ApiOperation)({ summary: 'Deactivate account (soft delete)' }),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, security_dto_1.DeactivateAccountDto]),
+    __metadata("design:returntype", void 0)
+], SecurityController.prototype, "deactivateAccount", null);
 __decorate([
     (0, common_1.Get)('2fa/status'),
     (0, swagger_1.ApiOperation)({ summary: 'Get two-factor authentication status' }),

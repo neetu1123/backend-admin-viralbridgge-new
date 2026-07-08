@@ -20,14 +20,21 @@ const roles_decorator_1 = require("../auth/roles.decorator");
 const admin_service_1 = require("./admin.service");
 const kyc_service_1 = require("../kyc/kyc.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const email_service_1 = require("../email/email.service");
+const prisma_service_1 = require("../prisma/prisma.service");
+const admin_broadcast_helper_1 = require("./admin-broadcast.helper");
 let AdminController = class AdminController {
     adminService;
     kycService;
     notifications;
-    constructor(adminService, kycService, notifications) {
+    email;
+    prisma;
+    constructor(adminService, kycService, notifications, email, prisma) {
         this.adminService = adminService;
         this.kycService = kycService;
         this.notifications = notifications;
+        this.email = email;
+        this.prisma = prisma;
     }
     getRoles() { return this.adminService.getRoles(); }
     createRole(body, req) {
@@ -38,6 +45,15 @@ let AdminController = class AdminController {
     }
     deleteRole(id, req) {
         return this.adminService.deleteRole(id, req.user?.id);
+    }
+    getPermissions() {
+        return this.adminService.getPermissions();
+    }
+    getRolePermissions(id) {
+        return this.adminService.getRolePermissions(id);
+    }
+    updateRolePermissions(id, body, req) {
+        return this.adminService.updateRolePermissions(id, body.permissionKeys ?? [], req.user?.id);
     }
     getAdmins() { return this.adminService.getAdmins(); }
     assignRoleByEmail(body, req) {
@@ -134,6 +150,27 @@ let AdminController = class AdminController {
     markNotificationRead(id, req) {
         return this.notifications.markRead(req.user.id, id);
     }
+    getEmailStatus() {
+        return this.email.getConfigStatus();
+    }
+    async sendTestEmail(body) {
+        if (!this.email.isConfigured()) {
+            throw new common_1.BadRequestException(this.email.getConfigStatus().hint);
+        }
+        const to = body?.to?.trim();
+        if (!to)
+            throw new common_1.BadRequestException('Recipient email (to) is required');
+        await this.email.sendTestEmail(to);
+        return { sent: true, to };
+    }
+    async sendBroadcast(body, req) {
+        try {
+            return await (0, admin_broadcast_helper_1.sendAdminBroadcast)(this.prisma, this.email, this.notifications, body, req.user?.id);
+        }
+        catch (err) {
+            throw new common_1.BadRequestException(err instanceof Error ? err.message : 'Broadcast failed');
+        }
+    }
     inviteAdmin(body, req) {
         return this.adminService.assignRoleByEmail(body, req.user?.id);
     }
@@ -189,6 +226,28 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "deleteRole", null);
+__decorate([
+    (0, common_1.Get)('permissions'),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getPermissions", null);
+__decorate([
+    (0, common_1.Get)('roles/:id/permissions'),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getRolePermissions", null);
+__decorate([
+    (0, common_1.Put)('roles/:id/permissions'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "updateRolePermissions", null);
 __decorate([
     (0, common_1.Get)('admins'),
     __metadata("design:type", Function),
@@ -425,6 +484,30 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "markNotificationRead", null);
 __decorate([
+    (0, common_1.Get)('email/status'),
+    (0, swagger_1.ApiOperation)({ summary: 'Check if transactional email (Resend) is configured' }),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", []),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getEmailStatus", null);
+__decorate([
+    (0, common_1.Post)('email/test'),
+    (0, swagger_1.ApiOperation)({ summary: 'Send a test email to verify Resend configuration' }),
+    __param(0, (0, common_1.Body)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "sendTestEmail", null);
+__decorate([
+    (0, common_1.Post)('broadcast'),
+    (0, swagger_1.ApiOperation)({ summary: 'Send broadcast email + in-app notification to users' }),
+    __param(0, (0, common_1.Body)()),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, Object]),
+    __metadata("design:returntype", Promise)
+], AdminController.prototype, "sendBroadcast", null);
+__decorate([
     (0, common_1.Post)('invite-admin'),
     __param(0, (0, common_1.Body)()),
     __param(1, (0, common_1.Request)()),
@@ -475,6 +558,8 @@ exports.AdminController = AdminController = __decorate([
     (0, common_1.Controller)('admin'),
     __metadata("design:paramtypes", [admin_service_1.AdminService,
         kyc_service_1.KycService,
-        notifications_service_1.NotificationsService])
+        notifications_service_1.NotificationsService,
+        email_service_1.EmailService,
+        prisma_service_1.PrismaService])
 ], AdminController);
 //# sourceMappingURL=admin.controller.js.map

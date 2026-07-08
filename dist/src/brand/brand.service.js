@@ -271,9 +271,9 @@ let BrandService = class BrandService {
             this.prisma.application.findMany({
                 where,
                 include: {
-                    creator: { include: { user: true, applications: { include: { campaign: true } } } },
+                    creator: { include: { user: true } },
                     campaign: true,
-                    deliverables: true,
+                    deliverables: { select: { id: true, status: true } },
                 },
                 orderBy: { updated_at: 'desc' },
                 skip: (page - 1) * limit,

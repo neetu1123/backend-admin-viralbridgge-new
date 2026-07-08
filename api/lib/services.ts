@@ -213,8 +213,10 @@ export function getAdminAnalyticsService(): AdminAnalyticsServiceType {
   return adminAnalyticsService;
 }
 
-// Exported for payment routes that may need direct access on Vercel
+// Exported for payment routes and admin email/broadcast on Vercel express path
 export {
+  getEmailService,
+  getNotificationsService,
   getWalletService,
   getEscrowService,
   getDeliverablesService,

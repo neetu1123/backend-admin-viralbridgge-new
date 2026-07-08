@@ -59,6 +59,16 @@ export declare class AdminService {
         _count: {
             users: number;
         };
+        permissions: ({
+            permission: {
+                id: string;
+                description: string | null;
+                key: string;
+            };
+        } & {
+            role_id: string;
+            permission_id: string;
+        })[];
     } & {
         name: string;
         id: string;
@@ -395,13 +405,41 @@ export declare class AdminService {
     }>;
     getSettings(): Promise<{
         aiMatchingEnabled: boolean;
+        platformFeePercent: number;
         updatedAt: Date;
     }>;
     updateSettings(body: {
         aiMatchingEnabled?: boolean;
+        platformFeePercent?: number;
     }, adminId?: string): Promise<{
         aiMatchingEnabled: any;
+        platformFeePercent: number;
         updatedAt: any;
+    }>;
+    private readonly defaultPermissions;
+    ensureDefaultPermissions(): Promise<void>;
+    getPermissions(): Promise<{
+        id: string;
+        description: string | null;
+        key: string;
+    }[]>;
+    getRolePermissions(roleId: string): Promise<{
+        roleId: string;
+        roleName: string;
+        permissions: {
+            id: string;
+            description: string | null;
+            key: string;
+        }[];
+    }>;
+    updateRolePermissions(roleId: string, permissionKeys: string[], adminId?: string): Promise<{
+        roleId: string;
+        roleName: string;
+        permissions: {
+            id: string;
+            description: string | null;
+            key: string;
+        }[];
     }>;
     getMatches(): Promise<{
         enabled: boolean;

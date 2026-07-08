@@ -2,7 +2,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
 import { FirebaseSecurityService } from './firebase-security.service';
 import { SessionMeta } from './security-session.helper';
-import { Confirm2FaDto, ChangePasswordDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
+import { Confirm2FaDto, ChangePasswordDto, DeactivateAccountDto, Enable2FaDto, SecurityActivityQueryDto, SignOutAllDto } from './security.dto';
 export declare class SecurityService {
     private prisma;
     private notifications;
@@ -23,6 +23,9 @@ export declare class SecurityService {
         firebaseMfaEnrolled: boolean;
     }>;
     changePassword(userId: string, dto: ChangePasswordDto, meta: SessionMeta): Promise<{
+        message: string;
+    }>;
+    deactivateAccount(userId: string, dto: DeactivateAccountDto, meta: SessionMeta): Promise<{
         message: string;
     }>;
     enable2Fa(userId: string, dto: Enable2FaDto, meta: SessionMeta): Promise<{

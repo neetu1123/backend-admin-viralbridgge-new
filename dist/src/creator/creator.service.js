@@ -353,7 +353,12 @@ let CreatorService = class CreatorService {
         return user?.settings ?? {};
     }
     async updateSettings(userId, settings) {
-        return this.prisma.user.update({ where: { id: userId }, data: { settings } });
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        const existing = user?.settings ?? {};
+        return this.prisma.user.update({
+            where: { id: userId },
+            data: { settings: { ...existing, ...settings } },
+        });
     }
     async ensureCreatorProfile(userId) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });

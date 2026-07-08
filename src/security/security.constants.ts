@@ -5,6 +5,7 @@ export const SECURITY_ACTIVITY_TYPES = [
   '2FA_DISABLED',
   'SESSION_REMOVED',
   'LOGOUT_ALL',
+  'ACCOUNT_DEACTIVATED',
 ] as const;
 
 export type SecurityActivityType = (typeof SECURITY_ACTIVITY_TYPES)[number];
@@ -25,4 +26,5 @@ export const SECURITY_ACTIVITY_LABELS: Record<SecurityActivityType, string> = {
   '2FA_DISABLED': 'Two-factor authentication disabled',
   SESSION_REMOVED: 'Session removed',
   LOGOUT_ALL: 'Signed out of all devices',
+  ACCOUNT_DEACTIVATED: 'Account deactivated',
 };

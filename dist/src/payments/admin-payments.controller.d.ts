@@ -286,12 +286,12 @@ export declare class AdminPaymentsController {
         campaign_id: string;
         creator_id: string;
         status: string;
+        platform_fee_percent: number;
         updated_at: Date;
         brand_id: string;
         created_at: Date;
         platform_fee: number;
         amount: number;
-        platform_fee_percent: number;
         platform_fee_amount: number;
         creator_amount: number;
         payment_gateway: string | null;
@@ -306,12 +306,12 @@ export declare class AdminPaymentsController {
         campaign_id: string;
         creator_id: string;
         status: string;
+        platform_fee_percent: number;
         updated_at: Date;
         brand_id: string;
         created_at: Date;
         platform_fee: number;
         amount: number;
-        platform_fee_percent: number;
         platform_fee_amount: number;
         creator_amount: number;
         payment_gateway: string | null;

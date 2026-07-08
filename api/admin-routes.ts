@@ -565,11 +565,10 @@ router.post('/email/test', async (req: AuthedRequest, res) => {
 router.post('/broadcast', async (req: AuthedRequest, res) => {
   try {
     const { sendAdminBroadcast } = require('./lib/admin-broadcast') as typeof import('./lib/admin-broadcast');
-    const { getEmailService, getNotificationsService } = require('./lib/services') as typeof import('./lib/services');
+    const { getEmailService } = require('./lib/services') as typeof import('./lib/services');
     const result = await sendAdminBroadcast(
       prisma(),
       getEmailService(),
-      getNotificationsService(),
       req.body ?? {},
       req.user?.id,
     );

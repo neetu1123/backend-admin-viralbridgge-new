@@ -18,6 +18,7 @@ const email_constants_1 = require("./email.constants");
 const invitation_accepted_template_1 = require("./templates/invitation-accepted.template");
 const member_removed_template_1 = require("./templates/member-removed.template");
 const team_invitation_template_1 = require("./templates/team-invitation.template");
+const broadcast_template_1 = require("./templates/broadcast.template");
 let EmailService = EmailService_1 = class EmailService {
     config;
     logger = new common_1.Logger(EmailService_1.name);
@@ -38,6 +39,17 @@ let EmailService = EmailService_1 = class EmailService {
     }
     isConfigured() {
         return Boolean(this.resend);
+    }
+    getConfigStatus() {
+        return {
+            configured: this.isConfigured(),
+            fromEmail: this.fromEmail,
+            appUrl: this.appUrl,
+            provider: 'Resend',
+            hint: this.isConfigured()
+                ? 'Emails send via Resend. Verify your domain at resend.com/domains.'
+                : 'Set RESEND_API_KEY and RESEND_FROM_EMAIL in backend environment variables (Vercel → Settings → Environment Variables).',
+        };
     }
     async sendTestEmail(to = 'neetuchaurasiya5041@gmail.com') {
         await this.send({
@@ -79,6 +91,18 @@ let EmailService = EmailService_1 = class EmailService {
             to,
             subject: 'Withdrawal verification code',
             html: `<p>Your ViralBridge withdrawal OTP is <strong>${code}</strong>. Valid for 10 minutes.</p>`,
+        });
+    }
+    async sendBroadcastEmail(params) {
+        await this.send({
+            to: params.to,
+            subject: params.subject,
+            html: (0, broadcast_template_1.buildBroadcastHtml)({
+                title: params.title,
+                message: params.message,
+                ctaLabel: params.ctaLabel,
+                ctaUrl: params.ctaUrl,
+            }),
         });
     }
     async send(payload) {

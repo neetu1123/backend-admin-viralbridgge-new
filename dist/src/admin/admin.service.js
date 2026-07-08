@@ -83,12 +83,16 @@ let AdminService = class AdminService {
         return { total, today: todayCount, byEntity: entityGroups };
     }
     async getRoles() {
+        await this.ensureDefaultPermissions();
         return this.prisma.role.findMany({
             include: {
                 _count: {
-                    select: { users: true }
-                }
-            }
+                    select: { users: true },
+                },
+                permissions: {
+                    include: { permission: true },
+                },
+            },
         });
     }
     async createRole(name, description, adminId) {
@@ -293,17 +297,24 @@ let AdminService = class AdminService {
         const settings = await this.matchingService.getOrCreatePlatformSettings();
         return {
             aiMatchingEnabled: settings.ai_matching_enabled,
+            platformFeePercent: Number(settings.platform_fee_percent ?? 10),
             updatedAt: settings.updated_at,
         };
     }
     async updateSettings(body, adminId) {
         const settings = await this.matchingService.getOrCreatePlatformSettings();
+        if (body.platformFeePercent != null && (body.platformFeePercent < 0 || body.platformFeePercent > 50)) {
+            throw new (require('@nestjs/common').BadRequestException)('Platform fee must be between 0 and 50 percent');
+        }
         let updated;
         try {
             updated = await this.prisma.platformSettings.update({
                 where: { id: 'default' },
                 data: {
                     ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
+                    ...(body.platformFeePercent != null
+                        ? { platform_fee_percent: body.platformFeePercent }
+                        : {}),
                     updated_by: adminId ?? null,
                 },
             });
@@ -321,13 +332,90 @@ let AdminService = class AdminService {
                 action: 'UPDATE_PLATFORM_SETTINGS',
                 entity: 'platform_settings',
                 entity_id: 'default',
-                metadata: { aiMatchingEnabled: updated.ai_matching_enabled },
+                metadata: {
+                    aiMatchingEnabled: updated.ai_matching_enabled,
+                    platformFeePercent: updated.platform_fee_percent,
+                },
             });
         }
         return {
             aiMatchingEnabled: updated.ai_matching_enabled,
+            platformFeePercent: Number(updated.platform_fee_percent ?? 10),
             updatedAt: updated.updated_at,
         };
+    }
+    defaultPermissions = [
+        { key: 'users.view', description: 'View user list' },
+        { key: 'users.manage', description: 'Ban/unban users' },
+        { key: 'campaigns.view', description: 'View campaigns' },
+        { key: 'campaigns.manage', description: 'Approve/reject campaigns' },
+        { key: 'kyc.view', description: 'View KYC requests' },
+        { key: 'kyc.manage', description: 'Approve/reject KYC' },
+        { key: 'disputes.view', description: 'View disputes' },
+        { key: 'disputes.manage', description: 'Resolve disputes' },
+        { key: 'payments.view', description: 'View transactions & escrows' },
+        { key: 'payments.manage', description: 'Approve payouts' },
+        { key: 'settings.view', description: 'View platform settings' },
+        { key: 'settings.manage', description: 'Edit platform settings' },
+        { key: 'roles.view', description: 'View roles' },
+        { key: 'roles.manage', description: 'Manage roles & permissions' },
+        { key: 'analytics.view', description: 'View analytics' },
+    ];
+    async ensureDefaultPermissions() {
+        const count = await this.prisma.permission.count();
+        if (count > 0)
+            return;
+        await this.prisma.permission.createMany({
+            data: this.defaultPermissions,
+            skipDuplicates: true,
+        });
+    }
+    async getPermissions() {
+        await this.ensureDefaultPermissions();
+        return this.prisma.permission.findMany({ orderBy: { key: 'asc' } });
+    }
+    async getRolePermissions(roleId) {
+        await this.ensureDefaultPermissions();
+        const role = await this.prisma.role.findUnique({
+            where: { id: roleId },
+            include: { permissions: { include: { permission: true } } },
+        });
+        if (!role)
+            throw new common_1.NotFoundException('Role not found');
+        return {
+            roleId: role.id,
+            roleName: role.name,
+            permissions: role.permissions.map((rp) => rp.permission),
+        };
+    }
+    async updateRolePermissions(roleId, permissionKeys, adminId) {
+        await this.ensureDefaultPermissions();
+        const role = await this.prisma.role.findUnique({ where: { id: roleId } });
+        if (!role)
+            throw new common_1.NotFoundException('Role not found');
+        if (['SUPER_ADMIN', 'ADMIN'].includes(role.name)) {
+            throw new (require('@nestjs/common').BadRequestException)('System roles cannot have permissions modified');
+        }
+        const permissions = await this.prisma.permission.findMany({
+            where: { key: { in: permissionKeys } },
+        });
+        await this.prisma.rolePermission.deleteMany({ where: { role_id: roleId } });
+        if (permissions.length) {
+            await this.prisma.rolePermission.createMany({
+                data: permissions.map((p) => ({ role_id: roleId, permission_id: p.id })),
+                skipDuplicates: true,
+            });
+        }
+        if (adminId) {
+            await this.createAuditLog({
+                admin_id: adminId,
+                action: 'UPDATE_ROLE_PERMISSIONS',
+                entity: 'Role',
+                entity_id: roleId,
+                metadata: { permissionKeys },
+            });
+        }
+        return this.getRolePermissions(roleId);
     }
     getMatches() {
         return this.matchingService.getAdminMatches();

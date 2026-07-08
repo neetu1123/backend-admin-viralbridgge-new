@@ -408,12 +408,12 @@ export declare class BrandService {
                 campaign_id: string;
                 creator_id: string;
                 status: string;
+                platform_fee_percent: number;
                 updated_at: Date;
                 brand_id: string;
                 created_at: Date;
                 platform_fee: number;
                 amount: number;
-                platform_fee_percent: number;
                 platform_fee_amount: number;
                 creator_amount: number;
                 payment_gateway: string | null;
@@ -755,12 +755,12 @@ export declare class BrandService {
             campaign_id: string;
             creator_id: string;
             status: string;
+            platform_fee_percent: number;
             updated_at: Date;
             brand_id: string;
             created_at: Date;
             platform_fee: number;
             amount: number;
-            platform_fee_percent: number;
             platform_fee_amount: number;
             creator_amount: number;
             payment_gateway: string | null;
@@ -1050,35 +1050,6 @@ export declare class BrandService {
                     is_deleted: boolean;
                     settings: import("@prisma/client/runtime/library").JsonValue | null;
                 };
-                applications: ({
-                    campaign: {
-                        id: string;
-                        status: string;
-                        updated_at: Date;
-                        brand_id: string;
-                        title: string;
-                        description: string;
-                        platform: string;
-                        budget: number;
-                        remaining_budget: number;
-                        deadline: Date;
-                        deliverables: string[];
-                        locality: string | null;
-                        languages: string[];
-                        created_by_admin_id: string | null;
-                        metadata: import("@prisma/client/runtime/library").JsonValue | null;
-                        created_at: Date;
-                    };
-                } & {
-                    message: string | null;
-                    id: string;
-                    campaign_id: string;
-                    creator_id: string;
-                    status: string;
-                    updated_at: Date;
-                    created_at: Date;
-                    proposed_price: number | null;
-                })[];
             } & {
                 id: string;
                 updated_at: Date;
@@ -1100,24 +1071,7 @@ export declare class BrandService {
             };
             deliverables: {
                 id: string;
-                campaign_id: string;
-                creator_id: string;
                 status: string;
-                updated_at: Date;
-                title: string;
-                created_at: Date;
-                type: string | null;
-                file_url: string | null;
-                submitted_at: Date | null;
-                reviewed_at: Date | null;
-                notes: string | null;
-                application_id: string | null;
-                media_url: string | null;
-                thumbnail_url: string | null;
-                revision_notes: string | null;
-                version: number;
-                due_date: Date | null;
-                auto_release_at: Date | null;
             }[];
         } & {
             message: string | null;
@@ -1272,12 +1226,12 @@ export declare class BrandService {
         campaign_id: string;
         creator_id: string;
         status: string;
+        platform_fee_percent: number;
         updated_at: Date;
         brand_id: string;
         created_at: Date;
         platform_fee: number;
         amount: number;
-        platform_fee_percent: number;
         platform_fee_amount: number;
         creator_amount: number;
         payment_gateway: string | null;
@@ -1343,12 +1297,12 @@ export declare class BrandService {
         campaign_id: string;
         creator_id: string;
         status: string;
+        platform_fee_percent: number;
         updated_at: Date;
         brand_id: string;
         created_at: Date;
         platform_fee: number;
         amount: number;
-        platform_fee_percent: number;
         platform_fee_amount: number;
         creator_amount: number;
         payment_gateway: string | null;

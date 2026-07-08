@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.SecurityActivityResponseDto = exports.UserSessionResponseDto = exports.TwoFactorStatusResponseDto = exports.SecuritySettingsResponseDto = exports.SecurityActivityQueryDto = exports.SignOutAllDto = exports.Confirm2FaDto = exports.Enable2FaDto = exports.ChangePasswordDto = void 0;
+exports.SecurityActivityResponseDto = exports.UserSessionResponseDto = exports.TwoFactorStatusResponseDto = exports.SecuritySettingsResponseDto = exports.SecurityActivityQueryDto = exports.SignOutAllDto = exports.Confirm2FaDto = exports.Enable2FaDto = exports.DeactivateAccountDto = exports.ChangePasswordDto = void 0;
 const swagger_1 = require("@nestjs/swagger");
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
@@ -30,6 +30,23 @@ __decorate([
     (0, class_validator_1.MinLength)(8, { message: 'New password must be at least 8 characters' }),
     __metadata("design:type", String)
 ], ChangePasswordDto.prototype, "newPassword", void 0);
+class DeactivateAccountDto {
+    currentPassword;
+    confirmation;
+}
+exports.DeactivateAccountDto = DeactivateAccountDto;
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'brand@1234' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], DeactivateAccountDto.prototype, "currentPassword", void 0);
+__decorate([
+    (0, swagger_1.ApiProperty)({ example: 'DELETE' }),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.IsNotEmpty)(),
+    __metadata("design:type", String)
+], DeactivateAccountDto.prototype, "confirmation", void 0);
 class Enable2FaDto {
     phoneNumber;
 }

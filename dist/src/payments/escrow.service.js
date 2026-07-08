@@ -28,20 +28,32 @@ let EscrowService = class EscrowService {
         this.platformWallet = platformWallet;
         this.notifications = notifications;
     }
-    calculatePlatformFee(amount) {
-        if (constants_1.PLATFORM_FEE_PERCENT <= 0)
+    calculatePlatformFee(amount, feePercent = constants_1.PLATFORM_FEE_PERCENT) {
+        if (feePercent <= 0)
             return 0;
-        return Math.round((amount * constants_1.PLATFORM_FEE_PERCENT) / 100 * 100) / 100;
+        return Math.round((amount * feePercent) / 100 * 100) / 100;
+    }
+    async resolvePlatformFeePercent() {
+        try {
+            const settings = await this.prisma.platformSettings.findUnique({ where: { id: 'default' } });
+            const fee = Number(settings?.platform_fee_percent);
+            if (Number.isFinite(fee) && fee >= 0)
+                return fee;
+        }
+        catch {
+        }
+        return constants_1.PLATFORM_FEE_PERCENT;
     }
     resolveCreatorPayout(escrow) {
         return escrow.amount;
     }
-    getBrandFundingBreakdown(creatorAmount) {
-        const platformFee = this.calculatePlatformFee(creatorAmount);
+    async getBrandFundingBreakdown(creatorAmount) {
+        const feePercent = await this.resolvePlatformFeePercent();
+        const platformFee = this.calculatePlatformFee(creatorAmount, feePercent);
         return {
             creatorAmount,
             platformFee,
-            platformFeePercent: constants_1.PLATFORM_FEE_PERCENT,
+            platformFeePercent: feePercent,
             brandTotal: creatorAmount + platformFee,
         };
     }
@@ -183,7 +195,8 @@ let EscrowService = class EscrowService {
         });
         if (existing)
             return existing;
-        const platformFee = this.calculatePlatformFee(amount);
+        const feePercent = await this.resolvePlatformFeePercent();
+        const platformFee = this.calculatePlatformFee(amount, feePercent);
         const creatorAmount = amount;
         return this.prisma.escrow.create({
             data: {
@@ -191,7 +204,7 @@ let EscrowService = class EscrowService {
                 brand_id: application.campaign.brand_id,
                 creator_id: application.creator_id,
                 amount,
-                platform_fee_percent: constants_1.PLATFORM_FEE_PERCENT,
+                platform_fee_percent: feePercent,
                 platform_fee_amount: platformFee,
                 platform_fee: platformFee,
                 creator_amount: creatorAmount,
@@ -211,7 +224,7 @@ let EscrowService = class EscrowService {
             throw new common_1.ForbiddenException('Only the brand can fund escrow');
         }
         const amount = params.amount;
-        const breakdown = this.getBrandFundingBreakdown(amount);
+        const breakdown = await this.getBrandFundingBreakdown(amount);
         const brandWallet = await this.wallet.ensureWallet(params.brandUserId);
         if (brandWallet.available_balance < breakdown.brandTotal) {
             throw new common_1.BadRequestException(`Insufficient wallet balance. Required ₹${breakdown.brandTotal.toLocaleString()} (₹${breakdown.creatorAmount} campaign + ₹${breakdown.platformFee} platform fee at ${breakdown.platformFeePercent}%)`);
@@ -247,7 +260,7 @@ let EscrowService = class EscrowService {
         return result.escrow;
     }
     async lockFundsForEscrow(params) {
-        const breakdown = this.getBrandFundingBreakdown(params.amount);
+        const breakdown = await this.getBrandFundingBreakdown(params.amount);
         const brandWalletCheck = await this.wallet.ensureWallet(params.brandUserId);
         if (brandWalletCheck.available_balance < breakdown.brandTotal) {
             throw new common_1.BadRequestException(`Insufficient wallet balance. Required ₹${breakdown.brandTotal.toLocaleString()} (₹${breakdown.creatorAmount} campaign + ₹${breakdown.platformFee} platform fee at ${breakdown.platformFeePercent}%)`);

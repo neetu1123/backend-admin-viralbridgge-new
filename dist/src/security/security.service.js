@@ -129,6 +129,37 @@ let SecurityService = class SecurityService {
         await this.notify(userId, 'Password updated', 'Your password was changed successfully.', 'SECURITY');
         return { message: 'Password changed successfully.' };
     }
+    async deactivateAccount(userId, dto, meta) {
+        if (dto.confirmation !== 'DELETE') {
+            throw new common_1.BadRequestException('Type DELETE to confirm account deactivation');
+        }
+        const user = await this.prisma.user.findUnique({ where: { id: userId } });
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        if (user.is_deleted) {
+            throw new common_1.BadRequestException('Account is already deactivated');
+        }
+        if (user.password) {
+            const isValid = await bcrypt.compare(dto.currentPassword, user.password);
+            if (!isValid) {
+                throw new common_1.BadRequestException('Current password is incorrect');
+            }
+        }
+        await this.prisma.user.update({
+            where: { id: userId },
+            data: {
+                is_deleted: true,
+                status: 'DEACTIVATED',
+            },
+        });
+        await this.prisma.userSession.updateMany({
+            where: { user_id: userId, is_active: true },
+            data: { is_active: false },
+        });
+        await this.createAuditLog(userId, 'ACCOUNT_DEACTIVATED', meta);
+        await this.recordActivity(userId, 'ACCOUNT_DEACTIVATED', meta);
+        return { message: 'Account deactivated successfully.' };
+    }
     async enable2Fa(userId, dto, meta) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         if (!user)

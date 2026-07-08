@@ -155,14 +155,16 @@ let WithdrawalService = WithdrawalService_1 = class WithdrawalService {
         return { data: rows.map((w) => this.formatWithdrawal(w)), meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total) };
     }
     async listAdminWithdrawals(status = 'PENDING') {
-        const normalized = status.toUpperCase();
-        const statuses = normalized === constants_1.WITHDRAWAL_STATUSES.APPROVED
-            ? [constants_1.WITHDRAWAL_STATUSES.APPROVED, constants_1.WITHDRAWAL_STATUSES.COMPLETED]
-            : [normalized];
+        const normalized = (status || 'PENDING').toUpperCase();
+        const where = normalized === 'ALL'
+            ? {}
+            : {
+                status: normalized === constants_1.WITHDRAWAL_STATUSES.APPROVED
+                    ? { in: [constants_1.WITHDRAWAL_STATUSES.APPROVED, constants_1.WITHDRAWAL_STATUSES.COMPLETED] }
+                    : normalized,
+            };
         const rows = await this.prisma.withdrawal.findMany({
-            where: {
-                status: statuses.length === 1 ? statuses[0] : { in: statuses },
-            },
+            where,
             include: {
                 creator: { include: { user: { include: { role: true } } } },
             },

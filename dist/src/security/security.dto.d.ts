@@ -2,6 +2,10 @@ export declare class ChangePasswordDto {
     currentPassword: string;
     newPassword: string;
 }
+export declare class DeactivateAccountDto {
+    currentPassword: string;
+    confirmation: string;
+}
 export declare class Enable2FaDto {
     phoneNumber: string;
 }
