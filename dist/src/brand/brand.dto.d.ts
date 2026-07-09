@@ -40,6 +40,7 @@ export declare class CreatorDiscoveryQueryDto extends PaginationQueryDto {
     locality?: string;
     language?: string;
     followersMin?: number;
+    followersMax?: number;
     engagementMin?: number;
     sort?: string;
 }

@@ -146,6 +146,12 @@ export class CreatorDiscoveryQueryDto extends PaginationQueryDto {
   @Type(() => Number)
   @IsNumber()
   @Min(0)
+  followersMax?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  @Min(0)
   engagementMin?: number;
 
   @IsOptional()

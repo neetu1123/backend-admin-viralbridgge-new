@@ -254,7 +254,12 @@ export class BrandService {
     if (query.niche) where.niche = { contains: query.niche, mode: 'insensitive' };
     if (query.locality) where.locality = { contains: query.locality, mode: 'insensitive' };
     if (query.language) where.languages = { has: query.language };
-    if (query.followersMin) where.followers = { gte: query.followersMin };
+    if (query.followersMin != null || query.followersMax != null) {
+      where.followers = {
+        ...(query.followersMin != null ? { gte: query.followersMin } : {}),
+        ...(query.followersMax != null ? { lte: query.followersMax } : {}),
+      };
+    }
     if (query.engagementMin) where.engagement_rate = { gte: query.engagementMin };
 
     const orderBy =
@@ -264,7 +269,7 @@ export class BrandService {
           ? { engagement_rate: 'desc' as const }
           : { updated_at: 'desc' as const };
 
-    const [data, total] = await Promise.all([
+    const [rows, totalBeforePlatform] = await Promise.all([
       this.prisma.creatorProfile.findMany({
         where,
         include: { user: true, applications: { include: { campaign: true } } },
@@ -274,6 +279,21 @@ export class BrandService {
       }),
       this.prisma.creatorProfile.count({ where }),
     ]);
+
+    let data = rows;
+    let total = totalBeforePlatform;
+    if (query.platform) {
+      const platformKey = query.platform.toLowerCase();
+      const matchesPlatform = (row: (typeof rows)[number]) => {
+        const social = (row.social_links as Record<string, string> | null) ?? {};
+        if (platformKey.includes('instagram')) return Boolean(social.instagram);
+        if (platformKey.includes('youtube')) return Boolean(social.youtube);
+        if (platformKey.includes('tiktok')) return Boolean(social.tiktok);
+        return String(row.niche ?? '').toLowerCase().includes(platformKey);
+      };
+      data = rows.filter(matchesPlatform);
+      total = data.length;
+    }
 
     return { data, meta: paginationMeta(page, limit, total) };
   }
