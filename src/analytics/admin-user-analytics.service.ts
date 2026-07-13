@@ -2,6 +2,7 @@ import { Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { formatMonthLabel, monthKey } from './analytics-date.util';
 import type { AdminUserAnalyticsQueryDto } from './admin-user-analytics.dto';
+import { isPrismaMissingTableError } from '../common/prisma-error.util';
 
 @Injectable()
 export class AdminUserAnalyticsService {
@@ -43,11 +44,12 @@ export class AdminUserAnalyticsService {
           wallets: { select: { available_balance: true, lifetime_earnings: true } },
           creator_profile: { include: { _count: { select: { applications: true } } } },
           brand_profile: { include: { _count: { select: { campaigns: true } } } },
-          user_activity: true,
         },
       }),
       this.prisma.user.count({ where }),
     ]);
+
+    const activityMap = await this.loadActivityMap(users.map((u) => u.id));
 
     const data = users.map((u) => {
       const wallet = u.wallets[0];
@@ -66,7 +68,7 @@ export class AdminUserAnalyticsService {
         campaignCount,
         walletBalance: wallet?.available_balance ?? 0,
         totalEarnings: wallet?.lifetime_earnings ?? 0,
-        lastActive: u.user_activity?.last_active?.toISOString() ?? null,
+        lastActive: activityMap.get(u.id)?.last_active?.toISOString() ?? null,
         joinedAt: u.created_at.toISOString(),
       };
     });
@@ -84,10 +86,14 @@ export class AdminUserAnalyticsService {
         creator_kyc: true,
         brand_kyc: true,
         wallets: true,
-        user_activity: true,
       },
     });
     if (!user) throw new NotFoundException('User not found');
+
+    const activity = await this.prisma.userActivity.findUnique({ where: { user_id: userId } }).catch((error) => {
+      if (isPrismaMissingTableError(error)) return null;
+      throw error;
+    });
 
     const roleName = user.role?.name ?? '';
     const wallet = user.wallets[0];
@@ -119,10 +125,10 @@ export class AdminUserAnalyticsService {
         pendingBalance: wallet?.pending_balance ?? 0,
       },
       activitySummary: {
-        lastLogin: user.user_activity?.last_login?.toISOString() ?? null,
-        lastActive: user.user_activity?.last_active?.toISOString() ?? null,
-        lastCampaign: user.user_activity?.last_campaign_activity?.toISOString() ?? null,
-        lastMessage: user.user_activity?.last_message_activity?.toISOString() ?? null,
+        lastLogin: activity?.last_login?.toISOString() ?? null,
+        lastActive: activity?.last_active?.toISOString() ?? null,
+        lastCampaign: activity?.last_campaign_activity?.toISOString() ?? null,
+        lastMessage: activity?.last_message_activity?.toISOString() ?? null,
         profileCompletion: this.calcProfileCompletion(user),
       },
       roleSpecific,
@@ -511,6 +517,20 @@ export class AdminUserAnalyticsService {
       return Math.round((filled / fields.length) * 100);
     }
     return 0;
+  }
+
+  private async loadActivityMap(userIds: string[]) {
+    if (userIds.length === 0) return new Map<string, { last_active: Date | null }>();
+    try {
+      const rows = await this.prisma.userActivity.findMany({
+        where: { user_id: { in: userIds } },
+        select: { user_id: true, last_active: true },
+      });
+      return new Map(rows.map((r) => [r.user_id, r]));
+    } catch (error) {
+      if (isPrismaMissingTableError(error)) return new Map();
+      throw error;
+    }
   }
 
   private async ensureUser(userId: string) {

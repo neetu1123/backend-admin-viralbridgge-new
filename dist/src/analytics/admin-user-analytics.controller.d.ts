@@ -13,7 +13,7 @@ export declare class AdminUserAnalyticsController {
             campaignCount: number;
             walletBalance: number;
             totalEarnings: number;
-            lastActive: string | null;
+            lastActive: any;
             joinedAt: string;
         }[];
         total: number;

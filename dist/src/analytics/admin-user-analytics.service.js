@@ -13,6 +13,7 @@ exports.AdminUserAnalyticsService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const analytics_date_util_1 = require("./analytics-date.util");
+const prisma_error_util_1 = require("../common/prisma-error.util");
 let AdminUserAnalyticsService = class AdminUserAnalyticsService {
     prisma;
     constructor(prisma) {
@@ -50,11 +51,11 @@ let AdminUserAnalyticsService = class AdminUserAnalyticsService {
                     wallets: { select: { available_balance: true, lifetime_earnings: true } },
                     creator_profile: { include: { _count: { select: { applications: true } } } },
                     brand_profile: { include: { _count: { select: { campaigns: true } } } },
-                    user_activity: true,
                 },
             }),
             this.prisma.user.count({ where }),
         ]);
+        const activityMap = await this.loadActivityMap(users.map((u) => u.id));
         const data = users.map((u) => {
             const wallet = u.wallets[0];
             const roleName = u.role?.name ?? '';
@@ -70,7 +71,7 @@ let AdminUserAnalyticsService = class AdminUserAnalyticsService {
                 campaignCount,
                 walletBalance: wallet?.available_balance ?? 0,
                 totalEarnings: wallet?.lifetime_earnings ?? 0,
-                lastActive: u.user_activity?.last_active?.toISOString() ?? null,
+                lastActive: activityMap.get(u.id)?.last_active?.toISOString() ?? null,
                 joinedAt: u.created_at.toISOString(),
             };
         });
@@ -86,11 +87,15 @@ let AdminUserAnalyticsService = class AdminUserAnalyticsService {
                 creator_kyc: true,
                 brand_kyc: true,
                 wallets: true,
-                user_activity: true,
             },
         });
         if (!user)
             throw new common_1.NotFoundException('User not found');
+        const activity = await this.prisma.userActivity.findUnique({ where: { user_id: userId } }).catch((error) => {
+            if ((0, prisma_error_util_1.isPrismaMissingTableError)(error))
+                return null;
+            throw error;
+        });
         const roleName = user.role?.name ?? '';
         const wallet = user.wallets[0];
         const isCreator = roleName === 'CREATOR';
@@ -119,10 +124,10 @@ let AdminUserAnalyticsService = class AdminUserAnalyticsService {
                 pendingBalance: wallet?.pending_balance ?? 0,
             },
             activitySummary: {
-                lastLogin: user.user_activity?.last_login?.toISOString() ?? null,
-                lastActive: user.user_activity?.last_active?.toISOString() ?? null,
-                lastCampaign: user.user_activity?.last_campaign_activity?.toISOString() ?? null,
-                lastMessage: user.user_activity?.last_message_activity?.toISOString() ?? null,
+                lastLogin: activity?.last_login?.toISOString() ?? null,
+                lastActive: activity?.last_active?.toISOString() ?? null,
+                lastCampaign: activity?.last_campaign_activity?.toISOString() ?? null,
+                lastMessage: activity?.last_message_activity?.toISOString() ?? null,
                 profileCompletion: this.calcProfileCompletion(user),
             },
             roleSpecific,
@@ -458,6 +463,22 @@ let AdminUserAnalyticsService = class AdminUserAnalyticsService {
             return Math.round((filled / fields.length) * 100);
         }
         return 0;
+    }
+    async loadActivityMap(userIds) {
+        if (userIds.length === 0)
+            return new Map();
+        try {
+            const rows = await this.prisma.userActivity.findMany({
+                where: { user_id: { in: userIds } },
+                select: { user_id: true, last_active: true },
+            });
+            return new Map(rows.map((r) => [r.user_id, r]));
+        }
+        catch (error) {
+            if ((0, prisma_error_util_1.isPrismaMissingTableError)(error))
+                return new Map();
+            throw error;
+        }
     }
     async ensureUser(userId) {
         const user = await this.prisma.user.findUnique({

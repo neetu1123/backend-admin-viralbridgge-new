@@ -25,7 +25,7 @@
     "neon:fix-migration": "node scripts/resolve-neon-failed-migration.mjs",
     "neon:fix-migration:sql": "prisma db execute --file prisma/fix-failed-migration.sql --schema prisma/schema.prisma",
     "postinstall": "prisma generate",
-    "vercel-build": "prisma generate && nest build",
+    "vercel-build": "prisma generate && node scripts/vercel-migrate.mjs && nest build",
     "vercel-build:migrate": "prisma generate && node scripts/vercel-migrate.mjs && nest build",
     "seed": "node prisma/seed.js",
     "backfill:organizations": "node scripts/backfill-organizations.mjs",

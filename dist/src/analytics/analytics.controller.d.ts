@@ -185,7 +185,7 @@ export declare class AnalyticsController {
             campaignCount: number;
             walletBalance: number;
             totalEarnings: number;
-            lastActive: string | null;
+            lastActive: any;
             joinedAt: string;
         }[];
         total: number;

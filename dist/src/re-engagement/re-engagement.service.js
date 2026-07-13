@@ -17,6 +17,7 @@ const email_service_1 = require("../email/email.service");
 const matching_service_1 = require("../matching/matching.service");
 const user_activity_service_1 = require("../user-activity/user-activity.service");
 const re_engagement_template_1 = require("../email/templates/re-engagement.template");
+const prisma_error_util_1 = require("../common/prisma-error.util");
 const TEST_MODE = process.env.RE_ENGAGEMENT_TEST_MODE === 'true';
 function parseInactivePeriod(period) {
     if (TEST_MODE)
@@ -65,18 +66,26 @@ let ReEngagementService = ReEngagementService_1 = class ReEngagementService {
         };
     }
     async getAnalytics() {
-        const [sent, opened, returned] = await Promise.all([
-            this.prisma.reEngagementEmailLog.count(),
-            this.prisma.reEngagementEmailLog.count({ where: { opened_at: { not: null } } }),
-            this.prisma.reEngagementEmailLog.count({ where: { returned_at: { not: null } } }),
-        ]);
-        return {
-            emailsSent: sent,
-            emailsOpened: opened,
-            usersReturned: returned,
-            openRate: sent > 0 ? Math.round((opened / sent) * 1000) / 10 : 0,
-            returnRate: sent > 0 ? Math.round((returned / sent) * 1000) / 10 : 0,
-        };
+        try {
+            const [sent, opened, returned] = await Promise.all([
+                this.prisma.reEngagementEmailLog.count(),
+                this.prisma.reEngagementEmailLog.count({ where: { opened_at: { not: null } } }),
+                this.prisma.reEngagementEmailLog.count({ where: { returned_at: { not: null } } }),
+            ]);
+            return {
+                emailsSent: sent,
+                emailsOpened: opened,
+                usersReturned: returned,
+                openRate: sent > 0 ? Math.round((opened / sent) * 1000) / 10 : 0,
+                returnRate: sent > 0 ? Math.round((returned / sent) * 1000) / 10 : 0,
+            };
+        }
+        catch (error) {
+            if ((0, prisma_error_util_1.isPrismaMissingTableError)(error)) {
+                return { emailsSent: 0, emailsOpened: 0, usersReturned: 0, openRate: 0, returnRate: 0 };
+            }
+            throw error;
+        }
     }
     async processInactiveUsers() {
         const settings = await this.matching.getOrCreatePlatformSettings();

@@ -4,6 +4,7 @@ import { EmailService } from '../email/email.service';
 import { MatchingService } from '../matching/matching.service';
 import { UserActivityService } from '../user-activity/user-activity.service';
 import { buildBrandReEngagementHtml, buildCreatorReEngagementHtml } from '../email/templates/re-engagement.template';
+import { isPrismaMissingTableError } from '../common/prisma-error.util';
 
 const TEST_MODE = process.env.RE_ENGAGEMENT_TEST_MODE === 'true';
 
@@ -56,19 +57,26 @@ export class ReEngagementService implements OnModuleInit {
   }
 
   async getAnalytics() {
-    const [sent, opened, returned] = await Promise.all([
-      this.prisma.reEngagementEmailLog.count(),
-      this.prisma.reEngagementEmailLog.count({ where: { opened_at: { not: null } } }),
-      this.prisma.reEngagementEmailLog.count({ where: { returned_at: { not: null } } }),
-    ]);
+    try {
+      const [sent, opened, returned] = await Promise.all([
+        this.prisma.reEngagementEmailLog.count(),
+        this.prisma.reEngagementEmailLog.count({ where: { opened_at: { not: null } } }),
+        this.prisma.reEngagementEmailLog.count({ where: { returned_at: { not: null } } }),
+      ]);
 
-    return {
-      emailsSent: sent,
-      emailsOpened: opened,
-      usersReturned: returned,
-      openRate: sent > 0 ? Math.round((opened / sent) * 1000) / 10 : 0,
-      returnRate: sent > 0 ? Math.round((returned / sent) * 1000) / 10 : 0,
-    };
+      return {
+        emailsSent: sent,
+        emailsOpened: opened,
+        usersReturned: returned,
+        openRate: sent > 0 ? Math.round((opened / sent) * 1000) / 10 : 0,
+        returnRate: sent > 0 ? Math.round((returned / sent) * 1000) / 10 : 0,
+      };
+    } catch (error) {
+      if (isPrismaMissingTableError(error)) {
+        return { emailsSent: 0, emailsOpened: 0, usersReturned: 0, openRate: 0, returnRate: 0 };
+      }
+      throw error;
+    }
   }
 
   async processInactiveUsers() {

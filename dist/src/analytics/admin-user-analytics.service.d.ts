@@ -13,7 +13,7 @@ export declare class AdminUserAnalyticsService {
             campaignCount: number;
             walletBalance: number;
             totalEarnings: number;
-            lastActive: string | null;
+            lastActive: any;
             joinedAt: string;
         }[];
         total: number;
@@ -175,5 +175,6 @@ export declare class AdminUserAnalyticsService {
     private getEarningsTrend;
     private buildCampaignGrowth;
     private calcProfileCompletion;
+    private loadActivityMap;
     private ensureUser;
 }
