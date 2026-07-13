@@ -482,6 +482,9 @@ export declare class AdminController {
     getSettings(): Promise<{
         aiMatchingEnabled: boolean;
         platformFeePercent: number;
+        reengagementEnabled: boolean;
+        reengagementInactivePeriod: string;
+        reengagementEmailFrequencyDays: number;
         updatedAt: Date;
     }>;
     updateSettings(body: {
@@ -490,6 +493,9 @@ export declare class AdminController {
     }, req: any): Promise<{
         aiMatchingEnabled: any;
         platformFeePercent: number;
+        reengagementEnabled: any;
+        reengagementInactivePeriod: any;
+        reengagementEmailFrequencyDays: any;
         updatedAt: any;
     }>;
     getMatches(): Promise<{

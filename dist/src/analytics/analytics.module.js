@@ -10,6 +10,8 @@ exports.AnalyticsModule = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_module_1 = require("../prisma/prisma.module");
 const admin_analytics_service_1 = require("./admin-analytics.service");
+const admin_user_analytics_controller_1 = require("./admin-user-analytics.controller");
+const admin_user_analytics_service_1 = require("./admin-user-analytics.service");
 const analytics_cache_service_1 = require("./analytics-cache.service");
 const analytics_controller_1 = require("./analytics.controller");
 const creator_analytics_service_1 = require("./creator-analytics.service");
@@ -19,9 +21,9 @@ exports.AnalyticsModule = AnalyticsModule;
 exports.AnalyticsModule = AnalyticsModule = __decorate([
     (0, common_1.Module)({
         imports: [prisma_module_1.PrismaModule],
-        controllers: [analytics_controller_1.AnalyticsController],
-        providers: [analytics_cache_service_1.AnalyticsCacheService, creator_analytics_service_1.CreatorAnalyticsService, admin_analytics_service_1.AdminAnalyticsService],
-        exports: [creator_analytics_service_1.CreatorAnalyticsService, admin_analytics_service_1.AdminAnalyticsService, analytics_cache_service_1.AnalyticsCacheService],
+        controllers: [analytics_controller_1.AnalyticsController, admin_user_analytics_controller_1.AdminUserAnalyticsController],
+        providers: [analytics_cache_service_1.AnalyticsCacheService, creator_analytics_service_1.CreatorAnalyticsService, admin_analytics_service_1.AdminAnalyticsService, admin_user_analytics_service_1.AdminUserAnalyticsService],
+        exports: [creator_analytics_service_1.CreatorAnalyticsService, admin_analytics_service_1.AdminAnalyticsService, admin_user_analytics_service_1.AdminUserAnalyticsService, analytics_cache_service_1.AnalyticsCacheService],
     })
 ], AnalyticsModule);
 //# sourceMappingURL=analytics.module.js.map

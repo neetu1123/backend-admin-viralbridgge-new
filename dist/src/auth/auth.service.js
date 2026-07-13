@@ -53,16 +53,22 @@ const crypto_1 = require("crypto");
 const prisma_service_1 = require("../prisma/prisma.service");
 const security_service_1 = require("../security/security.service");
 const user_provisioning_service_1 = require("../users/user-provisioning.service");
+const user_activity_service_1 = require("../user-activity/user-activity.service");
+const re_engagement_service_1 = require("../re-engagement/re-engagement.service");
 let AuthService = class AuthService {
     prisma;
     jwtService;
     userProvisioning;
     securityService;
-    constructor(prisma, jwtService, userProvisioning, securityService) {
+    userActivity;
+    reEngagement;
+    constructor(prisma, jwtService, userProvisioning, securityService, userActivity, reEngagement) {
         this.prisma = prisma;
         this.jwtService = jwtService;
         this.userProvisioning = userProvisioning;
         this.securityService = securityService;
+        this.userActivity = userActivity;
+        this.reEngagement = reEngagement;
     }
     async signToken(user) {
         const jti = (0, crypto_1.randomUUID)();
@@ -141,6 +147,8 @@ let AuthService = class AuthService {
                 console.error('Failed to record login session:', error);
             });
         }
+        await this.userActivity.recordLogin(user.id).catch(() => undefined);
+        await this.reEngagement.markUserReturned(user.id).catch(() => undefined);
         return {
             access_token: token.access_token,
             user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
@@ -170,6 +178,8 @@ exports.AuthService = AuthService = __decorate([
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         jwt_1.JwtService,
         user_provisioning_service_1.UserProvisioningService,
-        security_service_1.SecurityService])
+        security_service_1.SecurityService,
+        user_activity_service_1.UserActivityService,
+        re_engagement_service_1.ReEngagementService])
 ], AuthService);
 //# sourceMappingURL=auth.service.js.map

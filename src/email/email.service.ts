@@ -120,6 +120,14 @@ export class EmailService {
     });
   }
 
+  async sendReEngagementEmail(params: { to: string; subject: string; html: string }): Promise<void> {
+    await this.send(params);
+  }
+
+  getAppUrl(): string {
+    return this.appUrl;
+  }
+
   private async send(payload: { to: string; subject: string; html: string }): Promise<void> {
     if (!this.resend) {
       this.logger.error('RESEND_API_KEY is not configured — cannot send email');

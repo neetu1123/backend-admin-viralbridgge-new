@@ -105,6 +105,12 @@ let EmailService = EmailService_1 = class EmailService {
             }),
         });
     }
+    async sendReEngagementEmail(params) {
+        await this.send(params);
+    }
+    getAppUrl() {
+        return this.appUrl;
+    }
     async send(payload) {
         if (!this.resend) {
             this.logger.error('RESEND_API_KEY is not configured — cannot send email');

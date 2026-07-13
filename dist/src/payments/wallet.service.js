@@ -13,6 +13,7 @@ exports.WalletService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notifications_service_1 = require("../notifications/notifications.service");
+const user_activity_service_1 = require("../user-activity/user-activity.service");
 const wallet_event_emitter_1 = require("../common/wallet-event-emitter");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 const constants_1 = require("./constants");
@@ -21,10 +22,15 @@ let WalletService = class WalletService {
     prisma;
     notifications;
     razorpay;
-    constructor(prisma, notifications, razorpay) {
+    userActivity;
+    constructor(prisma, notifications, razorpay, userActivity) {
         this.prisma = prisma;
         this.notifications = notifications;
         this.razorpay = razorpay;
+        this.userActivity = userActivity;
+    }
+    touchWalletActivity(userId) {
+        void this.userActivity.recordWalletActivity(userId).catch(() => undefined);
     }
     formatWallet(wallet) {
         return {
@@ -137,6 +143,7 @@ let WalletService = class WalletService {
                 entityId: result.transaction.id,
             });
             (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', result.wallet);
+            this.touchWalletActivity(userId);
             return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
         });
     }
@@ -151,6 +158,7 @@ let WalletService = class WalletService {
             entityId: result.transaction.id,
         });
         (0, wallet_event_emitter_1.emitWalletEvent)(userId, 'wallet:updated', this.formatWallet(result.wallet));
+        this.touchWalletActivity(userId);
         return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
     }
     async creditWalletInternal(tx, userId, amount, type, referenceType, referenceId) {
@@ -347,6 +355,7 @@ exports.WalletService = WalletService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
         notifications_service_1.NotificationsService,
-        razorpay_service_1.RazorpayService])
+        razorpay_service_1.RazorpayService,
+        user_activity_service_1.UserActivityService])
 ], WalletService);
 //# sourceMappingURL=wallet.service.js.map

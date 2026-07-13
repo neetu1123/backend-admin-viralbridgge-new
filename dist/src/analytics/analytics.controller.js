@@ -17,15 +17,19 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
+const admin_user_analytics_dto_1 = require("./admin-user-analytics.dto");
+const admin_user_analytics_service_1 = require("./admin-user-analytics.service");
 const admin_analytics_service_1 = require("./admin-analytics.service");
 const analytics_dto_1 = require("./analytics.dto");
 const creator_analytics_service_1 = require("./creator-analytics.service");
 let AnalyticsController = class AnalyticsController {
     creatorAnalytics;
     adminAnalytics;
-    constructor(creatorAnalytics, adminAnalytics) {
+    adminUserAnalytics;
+    constructor(creatorAnalytics, adminAnalytics, adminUserAnalytics) {
         this.creatorAnalytics = creatorAnalytics;
         this.adminAnalytics = adminAnalytics;
+        this.adminUserAnalytics = adminUserAnalytics;
     }
     creatorDashboard(req, query) {
         return this.creatorAnalytics.getDashboard(req.user.id, query);
@@ -56,6 +60,21 @@ let AnalyticsController = class AnalyticsController {
     }
     adminPlatforms(req, query) {
         return this.adminAnalytics.getPlatforms(req.user.id, query);
+    }
+    adminUserList(query) {
+        return this.adminUserAnalytics.listUsers(query);
+    }
+    adminUserDetail(userId) {
+        return this.adminUserAnalytics.getUserDetail(userId);
+    }
+    adminUserWallet(userId, query) {
+        return this.adminUserAnalytics.getUserWallet(userId, query);
+    }
+    adminUserActivity(userId, query) {
+        return this.adminUserAnalytics.getUserActivity(userId, query);
+    }
+    adminUserCampaigns(userId, query) {
+        return this.adminUserAnalytics.getUserCampaigns(userId, query);
     }
 };
 exports.AnalyticsController = AnalyticsController;
@@ -159,12 +178,61 @@ __decorate([
     __metadata("design:paramtypes", [Object, analytics_dto_1.AnalyticsQueryDto]),
     __metadata("design:returntype", void 0)
 ], AnalyticsController.prototype, "adminPlatforms", null);
+__decorate([
+    (0, common_1.Get)('admin/user-list'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Paginated user list for admin analytics' }),
+    __param(0, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [admin_user_analytics_dto_1.AdminUserAnalyticsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "adminUserList", null);
+__decorate([
+    (0, common_1.Get)('admin/user-analytics/:userId'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Detailed analytics for a single user' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "adminUserDetail", null);
+__decorate([
+    (0, common_1.Get)('admin/user-analytics/:userId/wallet'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Wallet analytics for a user' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_user_analytics_dto_1.AdminUserAnalyticsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "adminUserWallet", null);
+__decorate([
+    (0, common_1.Get)('admin/user-analytics/:userId/activity'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Activity analytics for a user' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_user_analytics_dto_1.AdminUserAnalyticsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "adminUserActivity", null);
+__decorate([
+    (0, common_1.Get)('admin/user-analytics/:userId/campaigns'),
+    (0, roles_decorator_1.Roles)('ADMIN', 'SUPER_ADMIN'),
+    (0, swagger_1.ApiOperation)({ summary: 'Campaign/application analytics for a user' }),
+    __param(0, (0, common_1.Param)('userId')),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, admin_user_analytics_dto_1.AdminUserAnalyticsQueryDto]),
+    __metadata("design:returntype", void 0)
+], AnalyticsController.prototype, "adminUserCampaigns", null);
 exports.AnalyticsController = AnalyticsController = __decorate([
     (0, swagger_1.ApiTags)('Analytics'),
     (0, swagger_1.ApiBearerAuth)(),
     (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, common_1.Controller)('analytics'),
     __metadata("design:paramtypes", [creator_analytics_service_1.CreatorAnalyticsService,
-        admin_analytics_service_1.AdminAnalyticsService])
+        admin_analytics_service_1.AdminAnalyticsService,
+        admin_user_analytics_service_1.AdminUserAnalyticsService])
 ], AnalyticsController);
 //# sourceMappingURL=analytics.controller.js.map

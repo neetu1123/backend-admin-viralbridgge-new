@@ -337,18 +337,40 @@ export class AdminService {
     return {
       aiMatchingEnabled: settings.ai_matching_enabled,
       platformFeePercent: Number((settings as { platform_fee_percent?: number }).platform_fee_percent ?? 10),
+      reengagementEnabled: settings.reengagement_enabled,
+      reengagementInactivePeriod: settings.reengagement_inactive_period,
+      reengagementEmailFrequencyDays: settings.reengagement_email_frequency_days,
       updatedAt: settings.updated_at,
     };
   }
 
   async updateSettings(
-    body: { aiMatchingEnabled?: boolean; platformFeePercent?: number },
+    body: {
+      aiMatchingEnabled?: boolean;
+      platformFeePercent?: number;
+      reengagementEnabled?: boolean;
+      reengagementInactivePeriod?: string;
+      reengagementEmailFrequencyDays?: number;
+    },
     adminId?: string,
   ) {
     const settings = await this.matchingService.getOrCreatePlatformSettings();
     if (body.platformFeePercent != null && (body.platformFeePercent < 0 || body.platformFeePercent > 50)) {
       throw new (require('@nestjs/common').BadRequestException)(
         'Platform fee must be between 0 and 50 percent',
+      );
+    }
+    if (body.reengagementInactivePeriod != null) {
+      const valid = ['5m', '7d', '14d', '30d'];
+      if (!valid.includes(body.reengagementInactivePeriod)) {
+        throw new (require('@nestjs/common').BadRequestException)(
+          'Inactive period must be one of: 5m, 7d, 14d, 30d',
+        );
+      }
+    }
+    if (body.reengagementEmailFrequencyDays != null && body.reengagementEmailFrequencyDays < 1) {
+      throw new (require('@nestjs/common').BadRequestException)(
+        'Email frequency must be at least 1 day',
       );
     }
     let updated;
@@ -359,6 +381,15 @@ export class AdminService {
           ai_matching_enabled: body.aiMatchingEnabled ?? settings.ai_matching_enabled,
           ...(body.platformFeePercent != null
             ? { platform_fee_percent: body.platformFeePercent }
+            : {}),
+          ...(body.reengagementEnabled != null
+            ? { reengagement_enabled: body.reengagementEnabled }
+            : {}),
+          ...(body.reengagementInactivePeriod != null
+            ? { reengagement_inactive_period: body.reengagementInactivePeriod }
+            : {}),
+          ...(body.reengagementEmailFrequencyDays != null
+            ? { reengagement_email_frequency_days: body.reengagementEmailFrequencyDays }
             : {}),
           updated_by: adminId ?? null,
         },
@@ -387,6 +418,9 @@ export class AdminService {
     return {
       aiMatchingEnabled: updated.ai_matching_enabled,
       platformFeePercent: Number((updated as { platform_fee_percent?: number }).platform_fee_percent ?? 10),
+      reengagementEnabled: updated.reengagement_enabled,
+      reengagementInactivePeriod: updated.reengagement_inactive_period,
+      reengagementEmailFrequencyDays: updated.reengagement_email_frequency_days,
       updatedAt: updated.updated_at,
     };
   }

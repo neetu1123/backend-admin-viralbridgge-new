@@ -20,6 +20,9 @@ import { SecurityModule } from './security/security.module';
 import { AnalyticsModule } from './analytics/analytics.module';
 import { PaymentsModule } from './payments/payments.module';
 import { EmailModule } from './email/email.module';
+import { UserActivityModule } from './user-activity/user-activity.module';
+import { CampaignPromptModule } from './campaign-prompt/campaign-prompt.module';
+import { ReEngagementModule } from './re-engagement/re-engagement.module';
 
 @Module({
   imports: [
@@ -31,6 +34,7 @@ import { EmailModule } from './email/email.module';
       limit: 100,
     }]),
     PrismaModule,
+    UserActivityModule,
     NotificationsModule,
     EmailModule,
     MatchingModule,
@@ -45,6 +49,8 @@ import { EmailModule } from './email/email.module';
     OrganizationModule,
     SecurityModule,
     AnalyticsModule,
+    CampaignPromptModule,
+    ReEngagementModule,
   ],
   controllers: [AppController],
   providers: [

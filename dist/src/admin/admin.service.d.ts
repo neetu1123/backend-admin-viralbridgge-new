@@ -406,14 +406,23 @@ export declare class AdminService {
     getSettings(): Promise<{
         aiMatchingEnabled: boolean;
         platformFeePercent: number;
+        reengagementEnabled: boolean;
+        reengagementInactivePeriod: string;
+        reengagementEmailFrequencyDays: number;
         updatedAt: Date;
     }>;
     updateSettings(body: {
         aiMatchingEnabled?: boolean;
         platformFeePercent?: number;
+        reengagementEnabled?: boolean;
+        reengagementInactivePeriod?: string;
+        reengagementEmailFrequencyDays?: number;
     }, adminId?: string): Promise<{
         aiMatchingEnabled: any;
         platformFeePercent: number;
+        reengagementEnabled: any;
+        reengagementInactivePeriod: any;
+        reengagementEmailFrequencyDays: any;
         updatedAt: any;
     }>;
     private readonly defaultPermissions;

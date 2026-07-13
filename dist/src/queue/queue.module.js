@@ -11,6 +11,8 @@ exports.QueueModule = void 0;
 const common_1 = require("@nestjs/common");
 const bullmq_1 = require("@nestjs/bullmq");
 const escrow_auto_release_processor_1 = require("./escrow-auto-release.processor");
+const re_engagement_processor_1 = require("./re-engagement.processor");
+const re_engagement_module_1 = require("../re-engagement/re-engagement.module");
 function redisConnection() {
     const redisUrl = process.env.REDIS_URL?.trim();
     if (!redisUrl)
@@ -45,7 +47,10 @@ let QueueModule = QueueModule_1 = class QueueModule {
             imports: [
                 bullmq_1.BullModule.forRoot({ connection }),
                 bullmq_1.BullModule.registerQueue({ name: escrow_auto_release_processor_1.ESCROW_AUTO_RELEASE_QUEUE }),
+                bullmq_1.BullModule.registerQueue({ name: re_engagement_processor_1.RE_ENGAGEMENT_QUEUE }),
+                re_engagement_module_1.ReEngagementModule,
             ],
+            providers: [re_engagement_processor_1.ReEngagementProcessor],
             exports: [bullmq_1.BullModule],
         };
     }

@@ -28,6 +28,9 @@ const security_module_1 = require("./security/security.module");
 const analytics_module_1 = require("./analytics/analytics.module");
 const payments_module_1 = require("./payments/payments.module");
 const email_module_1 = require("./email/email.module");
+const user_activity_module_1 = require("./user-activity/user-activity.module");
+const campaign_prompt_module_1 = require("./campaign-prompt/campaign-prompt.module");
+const re_engagement_module_1 = require("./re-engagement/re-engagement.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -42,6 +45,7 @@ exports.AppModule = AppModule = __decorate([
                     limit: 100,
                 }]),
             prisma_module_1.PrismaModule,
+            user_activity_module_1.UserActivityModule,
             notifications_module_1.NotificationsModule,
             email_module_1.EmailModule,
             matching_module_1.MatchingModule,
@@ -56,6 +60,8 @@ exports.AppModule = AppModule = __decorate([
             organization_module_1.OrganizationModule,
             security_module_1.SecurityModule,
             analytics_module_1.AnalyticsModule,
+            campaign_prompt_module_1.CampaignPromptModule,
+            re_engagement_module_1.ReEngagementModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

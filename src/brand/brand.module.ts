@@ -7,8 +7,10 @@ import { StorageModule } from '../storage/storage.module';
 import { BrandController } from './brand.controller';
 import { BrandService } from './brand.service';
 
+import { CampaignPromptModule } from '../campaign-prompt/campaign-prompt.module';
+
 @Module({
-  imports: [PrismaModule, MatchingModule, NotificationsModule, PaymentsModule, StorageModule],
+  imports: [PrismaModule, MatchingModule, NotificationsModule, PaymentsModule, StorageModule, CampaignPromptModule],
   controllers: [BrandController],
   providers: [BrandService],
 })

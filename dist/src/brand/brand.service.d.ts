@@ -6,6 +6,8 @@ import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
 import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
+import { CampaignPromptService } from '../campaign-prompt/campaign-prompt.service';
 import { BrandCampaignQueryDto, CampaignDto, CreatorDiscoveryQueryDto, FundsDto, NotificationQueryDto, SendMessageDto, TransactionQueryDto, UpdateBrandProfileDto } from './brand.dto';
 export declare class BrandService {
     private prisma;
@@ -16,7 +18,9 @@ export declare class BrandService {
     private deliverablesService;
     private razorpayService;
     private storageService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, deliverablesService: DeliverablesService, razorpayService: RazorpayService, storageService: StorageService);
+    private userActivity;
+    private campaignPrompt;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, escrowService: EscrowService, deliverablesService: DeliverablesService, razorpayService: RazorpayService, storageService: StorageService, userActivity: UserActivityService, campaignPrompt: CampaignPromptService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;

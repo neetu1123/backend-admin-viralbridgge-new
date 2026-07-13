@@ -6,6 +6,7 @@ import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
 import { ApplyCampaignDto, ApplicationQueryDto, CreatorCampaignQueryDto, NotificationQueryDto, SendMessageDto, SubmitDeliverableDto, TransactionQueryDto, UpdateCreatorProfileDto, UploadDto, WithdrawDto } from './creator.dto';
 export declare class CreatorService {
     private prisma;
@@ -16,7 +17,8 @@ export declare class CreatorService {
     private deliverablesService;
     private escrowService;
     private storageService;
-    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService, deliverablesService: DeliverablesService, escrowService: EscrowService, storageService: StorageService);
+    private userActivity;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService, walletService: WalletService, withdrawalService: WithdrawalService, deliverablesService: DeliverablesService, escrowService: EscrowService, storageService: StorageService, userActivity: UserActivityService);
     getProfile(userId: string): Promise<{
         user: {
             name: string;

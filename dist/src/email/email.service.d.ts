@@ -30,5 +30,11 @@ export declare class EmailService {
         ctaLabel?: string;
         ctaUrl?: string;
     }): Promise<void>;
+    sendReEngagementEmail(params: {
+        to: string;
+        subject: string;
+        html: string;
+    }): Promise<void>;
+    getAppUrl(): string;
     private send;
 }

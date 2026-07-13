@@ -34,6 +34,10 @@ export declare class MatchingService {
     getOrCreatePlatformSettings(): Promise<{
         id: string;
         ai_matching_enabled: boolean;
+        platform_fee_percent: number;
+        reengagement_enabled: boolean;
+        reengagement_inactive_period: string;
+        reengagement_email_frequency_days: number;
         updated_at: Date;
         updated_by: string | null;
     }>;

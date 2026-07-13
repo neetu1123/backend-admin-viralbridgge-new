@@ -1,6 +1,8 @@
 import { DynamicModule, Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { ESCROW_AUTO_RELEASE_QUEUE } from './escrow-auto-release.processor';
+import { RE_ENGAGEMENT_QUEUE, ReEngagementProcessor } from './re-engagement.processor';
+import { ReEngagementModule } from '../re-engagement/re-engagement.module';
 
 function redisConnection() {
   const redisUrl = process.env.REDIS_URL?.trim();
@@ -39,7 +41,10 @@ export class QueueModule {
       imports: [
         BullModule.forRoot({ connection }),
         BullModule.registerQueue({ name: ESCROW_AUTO_RELEASE_QUEUE }),
+        BullModule.registerQueue({ name: RE_ENGAGEMENT_QUEUE }),
+        ReEngagementModule,
       ],
+      providers: [ReEngagementProcessor],
       exports: [BullModule],
     };
   }

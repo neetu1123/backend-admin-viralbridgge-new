@@ -29,6 +29,10 @@ function isMissingTableError(error) {
 const DEFAULT_PLATFORM_SETTINGS = {
     id: 'default',
     ai_matching_enabled: true,
+    platform_fee_percent: 10,
+    reengagement_enabled: false,
+    reengagement_inactive_period: '7d',
+    reengagement_email_frequency_days: 7,
     updated_at: new Date(),
     updated_by: null,
 };

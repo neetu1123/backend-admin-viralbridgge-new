@@ -19,6 +19,8 @@ const escrow_service_1 = require("../payments/escrow.service");
 const deliverables_service_1 = require("../payments/deliverables.service");
 const razorpay_service_1 = require("../payments/razorpay.service");
 const storage_service_1 = require("../storage/storage.service");
+const user_activity_service_1 = require("../user-activity/user-activity.service");
+const campaign_prompt_service_1 = require("../campaign-prompt/campaign-prompt.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let BrandService = class BrandService {
     prisma;
@@ -29,7 +31,9 @@ let BrandService = class BrandService {
     deliverablesService;
     razorpayService;
     storageService;
-    constructor(prisma, matchingService, notifications, walletService, escrowService, deliverablesService, razorpayService, storageService) {
+    userActivity;
+    campaignPrompt;
+    constructor(prisma, matchingService, notifications, walletService, escrowService, deliverablesService, razorpayService, storageService, userActivity, campaignPrompt) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
@@ -38,6 +42,8 @@ let BrandService = class BrandService {
         this.deliverablesService = deliverablesService;
         this.razorpayService = razorpayService;
         this.storageService = storageService;
+        this.userActivity = userActivity;
+        this.campaignPrompt = campaignPrompt;
     }
     async getProfile(userId) {
         return this.ensureBrandProfile(userId);
@@ -70,7 +76,7 @@ let BrandService = class BrandService {
     }
     async createCampaign(userId, dto) {
         const profile = await this.ensureBrandProfile(userId);
-        return this.prisma.campaign.create({
+        const campaign = await this.prisma.campaign.create({
             data: {
                 brand_id: profile.id,
                 title: dto.title,
@@ -85,6 +91,9 @@ let BrandService = class BrandService {
                 status: dto.status ?? 'PENDING_APPROVAL',
             },
         });
+        await this.userActivity.recordCampaignActivity(userId).catch(() => undefined);
+        await this.campaignPrompt.recordEvent(userId, 'CAMPAIGN_CREATED', { campaignId: campaign.id }).catch(() => undefined);
+        return campaign;
     }
     async getCampaigns(userId, query) {
         const profile = await this.ensureBrandProfile(userId);
@@ -443,6 +452,7 @@ let BrandService = class BrandService {
                 where: { id: dto.conversationId },
                 data: { updated_at: new Date() },
             });
+            await this.userActivity.recordMessageActivity(userId).catch(() => undefined);
             return message;
         });
     }
@@ -565,6 +575,8 @@ exports.BrandService = BrandService = __decorate([
         escrow_service_1.EscrowService,
         deliverables_service_1.DeliverablesService,
         razorpay_service_1.RazorpayService,
-        storage_service_1.StorageService])
+        storage_service_1.StorageService,
+        user_activity_service_1.UserActivityService,
+        campaign_prompt_service_1.CampaignPromptService])
 ], BrandService);
 //# sourceMappingURL=brand.service.js.map

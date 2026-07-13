@@ -40,6 +40,9 @@ model User {
   user_sessions        UserSession[]
   security_activities  SecurityActivity[]
   notification_prefs   NotificationPreference?
+  user_activity        UserActivity?
+  campaign_prompt_events CampaignPromptEvent[]
+  re_engagement_emails ReEngagementEmailLog[]
 
   @@map("users")
 }
@@ -404,13 +407,61 @@ model AuditLog {
 }
 
 model PlatformSettings {
-  id                   String   @id @default("default")
-  ai_matching_enabled  Boolean  @default(true)
-  platform_fee_percent Float    @default(10)
-  updated_at           DateTime @updatedAt
-  updated_by           String?
+  id                              String   @id @default("default")
+  ai_matching_enabled             Boolean  @default(true)
+  platform_fee_percent            Float    @default(10)
+  reengagement_enabled            Boolean  @default(false)
+  reengagement_inactive_period    String   @default("7d")
+  reengagement_email_frequency_days Int    @default(7)
+  updated_at                      DateTime @updatedAt
+  updated_by                      String?
 
   @@map("platform_settings")
+}
+
+model UserActivity {
+  id                     String    @id @default(uuid())
+  user_id                String    @unique
+  user                   User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  last_login             DateTime?
+  last_active            DateTime?
+  last_campaign_activity DateTime?
+  last_wallet_activity   DateTime?
+  last_message_activity  DateTime?
+  updated_at             DateTime  @updatedAt
+
+  @@index([last_active])
+  @@map("user_activity")
+}
+
+model CampaignPromptEvent {
+  id         String   @id @default(uuid())
+  user_id    String
+  user       User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  event_type String
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  @@index([user_id, event_type])
+  @@index([user_id, created_at])
+  @@map("campaign_prompt_events")
+}
+
+model ReEngagementEmailLog {
+  id          String    @id @default(uuid())
+  user_id     String
+  user        User      @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  user_type   String
+  email       String
+  subject     String
+  resend_id   String?
+  sent_at     DateTime  @default(now())
+  opened_at   DateTime?
+  returned_at DateTime?
+
+  @@index([user_id, sent_at])
+  @@index([sent_at])
+  @@map("re_engagement_email_logs")
 }
 
 model AiMatch {

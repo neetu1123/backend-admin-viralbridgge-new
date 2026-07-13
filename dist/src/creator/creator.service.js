@@ -19,6 +19,7 @@ const wallet_service_1 = require("../payments/wallet.service");
 const escrow_service_1 = require("../payments/escrow.service");
 const deliverables_service_1 = require("../payments/deliverables.service");
 const storage_service_1 = require("../storage/storage.service");
+const user_activity_service_1 = require("../user-activity/user-activity.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 let CreatorService = class CreatorService {
     prisma;
@@ -29,7 +30,8 @@ let CreatorService = class CreatorService {
     deliverablesService;
     escrowService;
     storageService;
-    constructor(prisma, matchingService, notifications, walletService, withdrawalService, deliverablesService, escrowService, storageService) {
+    userActivity;
+    constructor(prisma, matchingService, notifications, walletService, withdrawalService, deliverablesService, escrowService, storageService, userActivity) {
         this.prisma = prisma;
         this.matchingService = matchingService;
         this.notifications = notifications;
@@ -38,6 +40,7 @@ let CreatorService = class CreatorService {
         this.deliverablesService = deliverablesService;
         this.escrowService = escrowService;
         this.storageService = storageService;
+        this.userActivity = userActivity;
     }
     async getProfile(userId) {
         return this.ensureCreatorProfile(userId);
@@ -192,6 +195,7 @@ let CreatorService = class CreatorService {
                 include: { campaign: true, creator: { include: { user: true } } },
             });
         await this.createNotification(campaign.brand.user_id, 'New campaign application', `${profile.full_name ?? profile.user.name} applied to ${campaign.title}.`, { campaignId, applicationId: application.id });
+        await this.userActivity.recordCampaignActivity(userId).catch(() => undefined);
         return application;
     }
     async getApplications(userId, query) {
@@ -326,6 +330,7 @@ let CreatorService = class CreatorService {
                 where: { id: dto.conversationId },
                 data: { updated_at: new Date() },
             });
+            await this.userActivity.recordMessageActivity(userId).catch(() => undefined);
             return message;
         });
     }
@@ -403,6 +408,7 @@ exports.CreatorService = CreatorService = __decorate([
         withdrawal_service_1.WithdrawalService,
         deliverables_service_1.DeliverablesService,
         escrow_service_1.EscrowService,
-        storage_service_1.StorageService])
+        storage_service_1.StorageService,
+        user_activity_service_1.UserActivityService])
 ], CreatorService);
 //# sourceMappingURL=creator.service.js.map

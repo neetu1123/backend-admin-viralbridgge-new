@@ -12,6 +12,8 @@ import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { RazorpayService } from '../payments/razorpay.service';
 import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
+import { CampaignPromptService } from '../campaign-prompt/campaign-prompt.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   BrandCampaignQueryDto,
@@ -35,6 +37,8 @@ export class BrandService {
     private deliverablesService: DeliverablesService,
     private razorpayService: RazorpayService,
     private storageService: StorageService,
+    private userActivity: UserActivityService,
+    private campaignPrompt: CampaignPromptService,
   ) {}
 
   async getProfile(userId: string) {
@@ -71,7 +75,7 @@ export class BrandService {
 
   async createCampaign(userId: string, dto: CampaignDto) {
     const profile = await this.ensureBrandProfile(userId);
-    return this.prisma.campaign.create({
+    const campaign = await this.prisma.campaign.create({
       data: {
         brand_id: profile.id,
         title: dto.title,
@@ -86,6 +90,9 @@ export class BrandService {
         status: dto.status ?? 'PENDING_APPROVAL',
       },
     });
+    await this.userActivity.recordCampaignActivity(userId).catch(() => undefined);
+    await this.campaignPrompt.recordEvent(userId, 'CAMPAIGN_CREATED', { campaignId: campaign.id }).catch(() => undefined);
+    return campaign;
   }
 
   async getCampaigns(userId: string, query: BrandCampaignQueryDto) {
@@ -494,6 +501,7 @@ export class BrandService {
         where: { id: dto.conversationId },
         data: { updated_at: new Date() },
       });
+      await this.userActivity.recordMessageActivity(userId).catch(() => undefined);
       return message;
     });
   }

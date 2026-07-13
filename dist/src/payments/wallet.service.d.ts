@@ -1,6 +1,7 @@
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
 import { AddFundsDto, TransactionQueryDto } from './dto/wallet.dto';
 import { RazorpayService } from './razorpay.service';
 type TxClient = Prisma.TransactionClient;
@@ -8,7 +9,9 @@ export declare class WalletService {
     private readonly prisma;
     private readonly notifications;
     private readonly razorpay;
-    constructor(prisma: PrismaService, notifications: NotificationsService, razorpay: RazorpayService);
+    private readonly userActivity;
+    constructor(prisma: PrismaService, notifications: NotificationsService, razorpay: RazorpayService, userActivity: UserActivityService);
+    private touchWalletActivity;
     formatWallet(wallet: {
         id: string;
         user_id: string;

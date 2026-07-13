@@ -12,6 +12,7 @@ import { WalletService } from '../payments/wallet.service';
 import { EscrowService } from '../payments/escrow.service';
 import { DeliverablesService } from '../payments/deliverables.service';
 import { StorageService, type UploadedFilePayload } from '../storage/storage.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
   ApplyCampaignDto,
@@ -37,6 +38,7 @@ export class CreatorService {
     private deliverablesService: DeliverablesService,
     private escrowService: EscrowService,
     private storageService: StorageService,
+    private userActivity: UserActivityService,
   ) {}
 
   async getProfile(userId: string) {
@@ -210,6 +212,8 @@ export class CreatorService {
       { campaignId, applicationId: application.id },
     );
 
+    await this.userActivity.recordCampaignActivity(userId).catch(() => undefined);
+
     return application;
   }
 
@@ -370,6 +374,7 @@ export class CreatorService {
         where: { id: dto.conversationId },
         data: { updated_at: new Date() },
       });
+      await this.userActivity.recordMessageActivity(userId).catch(() => undefined);
       return message;
     });
   }

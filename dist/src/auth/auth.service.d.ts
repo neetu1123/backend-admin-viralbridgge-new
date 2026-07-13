@@ -3,12 +3,16 @@ import { PrismaService } from '../prisma/prisma.service';
 import { SecurityService } from '../security/security.service';
 import { UserProvisioningService } from '../users/user-provisioning.service';
 import type { SessionMeta } from '../security/security-session.helper';
+import { UserActivityService } from '../user-activity/user-activity.service';
+import { ReEngagementService } from '../re-engagement/re-engagement.service';
 export declare class AuthService {
     private prisma;
     private jwtService;
     private userProvisioning;
     private securityService;
-    constructor(prisma: PrismaService, jwtService: JwtService, userProvisioning: UserProvisioningService, securityService: SecurityService);
+    private userActivity;
+    private reEngagement;
+    constructor(prisma: PrismaService, jwtService: JwtService, userProvisioning: UserProvisioningService, securityService: SecurityService, userActivity: UserActivityService, reEngagement: ReEngagementService);
     private signToken;
     register(data: any): Promise<{
         access_token: string;

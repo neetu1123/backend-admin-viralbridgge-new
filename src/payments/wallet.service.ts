@@ -6,6 +6,7 @@ import {
 import { Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { NotificationsService } from '../notifications/notifications.service';
+import { UserActivityService } from '../user-activity/user-activity.service';
 import { emitWalletEvent } from '../common/wallet-event-emitter';
 import { paginationMeta } from '../common/dto/pagination-query.dto';
 import {
@@ -24,7 +25,12 @@ export class WalletService {
     private readonly prisma: PrismaService,
     private readonly notifications: NotificationsService,
     private readonly razorpay: RazorpayService,
+    private readonly userActivity: UserActivityService,
   ) {}
+
+  private touchWalletActivity(userId: string) {
+    void this.userActivity.recordWalletActivity(userId).catch(() => undefined);
+  }
 
   formatWallet(wallet: {
     id: string;
@@ -172,6 +178,7 @@ export class WalletService {
       });
 
       emitWalletEvent(userId, 'wallet:updated', result.wallet);
+      this.touchWalletActivity(userId);
       return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
     });
   }
@@ -191,6 +198,7 @@ export class WalletService {
     });
 
     emitWalletEvent(userId, 'wallet:updated', this.formatWallet(result.wallet));
+    this.touchWalletActivity(userId);
     return { wallet: this.formatWallet(result.wallet), transaction: result.transaction };
   }
 

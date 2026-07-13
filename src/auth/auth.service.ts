@@ -7,6 +7,9 @@ import { SecurityService } from '../security/security.service';
 import { UserProvisioningService } from '../users/user-provisioning.service';
 import type { SessionMeta } from '../security/security-session.helper';
 
+import { UserActivityService } from '../user-activity/user-activity.service';
+import { ReEngagementService } from '../re-engagement/re-engagement.service';
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -15,6 +18,8 @@ export class AuthService {
     private userProvisioning: UserProvisioningService,
     @Inject(forwardRef(() => SecurityService))
     private securityService: SecurityService,
+    private userActivity: UserActivityService,
+    private reEngagement: ReEngagementService,
   ) {}
 
   private async signToken(user: { id: string; email: string; name?: string; role?: { name: string } | null }) {
@@ -106,6 +111,8 @@ export class AuthService {
         console.error('Failed to record login session:', error);
       });
     }
+    await this.userActivity.recordLogin(user.id).catch(() => undefined);
+    await this.reEngagement.markUserReturned(user.id).catch(() => undefined);
     return {
       access_token: token.access_token,
       user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },

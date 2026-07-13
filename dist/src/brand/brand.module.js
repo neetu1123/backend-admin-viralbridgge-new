@@ -15,12 +15,13 @@ const payments_module_1 = require("../payments/payments.module");
 const storage_module_1 = require("../storage/storage.module");
 const brand_controller_1 = require("./brand.controller");
 const brand_service_1 = require("./brand.service");
+const campaign_prompt_module_1 = require("../campaign-prompt/campaign-prompt.module");
 let BrandModule = class BrandModule {
 };
 exports.BrandModule = BrandModule;
 exports.BrandModule = BrandModule = __decorate([
     (0, common_1.Module)({
-        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule, payments_module_1.PaymentsModule, storage_module_1.StorageModule],
+        imports: [prisma_module_1.PrismaModule, matching_module_1.MatchingModule, notifications_module_1.NotificationsModule, payments_module_1.PaymentsModule, storage_module_1.StorageModule, campaign_prompt_module_1.CampaignPromptModule],
         controllers: [brand_controller_1.BrandController],
         providers: [brand_service_1.BrandService],
     })

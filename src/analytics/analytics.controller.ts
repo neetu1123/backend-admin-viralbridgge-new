@@ -1,7 +1,9 @@
-import { Controller, Get, Query, Request, UseGuards } from '@nestjs/common';
+import { Controller, Get, Param, Query, Request, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
+import { AdminUserAnalyticsQueryDto } from './admin-user-analytics.dto';
+import { AdminUserAnalyticsService } from './admin-user-analytics.service';
 import { AdminAnalyticsService } from './admin-analytics.service';
 import { AnalyticsQueryDto } from './analytics.dto';
 import { CreatorAnalyticsService } from './creator-analytics.service';
@@ -14,6 +16,7 @@ export class AnalyticsController {
   constructor(
     private readonly creatorAnalytics: CreatorAnalyticsService,
     private readonly adminAnalytics: AdminAnalyticsService,
+    private readonly adminUserAnalytics: AdminUserAnalyticsService,
   ) {}
 
   @Get('creator/dashboard')
@@ -84,5 +87,40 @@ export class AnalyticsController {
   @ApiOperation({ summary: 'Platform distribution and top categories' })
   adminPlatforms(@Request() req: { user: { id: string } }, @Query() query: AnalyticsQueryDto) {
     return this.adminAnalytics.getPlatforms(req.user.id, query);
+  }
+
+  @Get('admin/user-list')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Paginated user list for admin analytics' })
+  adminUserList(@Query() query: AdminUserAnalyticsQueryDto) {
+    return this.adminUserAnalytics.listUsers(query);
+  }
+
+  @Get('admin/user-analytics/:userId')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Detailed analytics for a single user' })
+  adminUserDetail(@Param('userId') userId: string) {
+    return this.adminUserAnalytics.getUserDetail(userId);
+  }
+
+  @Get('admin/user-analytics/:userId/wallet')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Wallet analytics for a user' })
+  adminUserWallet(@Param('userId') userId: string, @Query() query: AdminUserAnalyticsQueryDto) {
+    return this.adminUserAnalytics.getUserWallet(userId, query);
+  }
+
+  @Get('admin/user-analytics/:userId/activity')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Activity analytics for a user' })
+  adminUserActivity(@Param('userId') userId: string, @Query() query: AdminUserAnalyticsQueryDto) {
+    return this.adminUserAnalytics.getUserActivity(userId, query);
+  }
+
+  @Get('admin/user-analytics/:userId/campaigns')
+  @Roles('ADMIN', 'SUPER_ADMIN')
+  @ApiOperation({ summary: 'Campaign/application analytics for a user' })
+  adminUserCampaigns(@Param('userId') userId: string, @Query() query: AdminUserAnalyticsQueryDto) {
+    return this.adminUserAnalytics.getUserCampaigns(userId, query);
   }
 }

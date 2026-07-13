@@ -5,11 +5,13 @@ import { AuthService } from './auth.service';
 import { PrismaModule } from '../prisma/prisma.module';
 import { SecurityModule } from '../security/security.module';
 import { UsersModule } from '../users/users.module';
+import { ReEngagementModule } from '../re-engagement/re-engagement.module';
 
 @Module({
   imports: [
     PrismaModule,
     UsersModule,
+    ReEngagementModule,
     forwardRef(() => SecurityModule),
     JwtModule.register({
       global: true,
