@@ -1,7 +1,14 @@
 /**
- * Run prisma migrate deploy on Vercel using Neon's direct (non-pooler) connection.
- * P1002 advisory-lock timeouts are common on Neon during concurrent Vercel builds —
- * in that case we verify migrate status and allow the build to continue if DB is current.
+ * Optional: run `prisma migrate deploy` before a build.
+ *
+ * NOT run during normal Vercel deploys — Neon + Vercel builds often hit P1002
+ * (advisory lock timeout) when multiple builds or connections compete for the lock.
+ *
+ * Run migrations locally or in CI instead:
+ *   npm run prisma:migrate
+ *
+ * To force migrate during a Vercel build (not recommended):
+ *   set RUN_MIGRATE_ON_VERCEL=1 on Vercel
  */
 import { execSync } from 'child_process';
 import { existsSync, readFileSync } from 'fs';
@@ -30,7 +37,7 @@ function sleep(ms) {
   return new Promise((resolveSleep) => setTimeout(resolveSleep, ms));
 }
 
-/** Neon pooler host: ep-xxx-pooler.region.aws.neon.tech → ep-xxx.region.aws.neon.tech */
+/** Neon pooler host → direct host (no -pooler) */
 function toDirectUrl(url) {
   if (!url) return url;
   return url.replace(/-pooler(?=\.[a-z0-9-]+\.)/i, '');
@@ -42,17 +49,35 @@ function resolveDirectUrl() {
   return toDirectUrl(process.env.DATABASE_URL?.trim());
 }
 
-function runPrisma(command, env) {
-  return execSync(command, {
+function shouldSkip() {
+  if (process.env.SKIP_MIGRATE_ON_BUILD === '1' || process.env.SKIP_MIGRATE_ON_BUILD === 'true') {
+    return 'SKIP_MIGRATE_ON_BUILD';
+  }
+  if (process.env.VERCEL === '1' && process.env.RUN_MIGRATE_ON_VERCEL !== '1') {
+    return 'VERCEL (set RUN_MIGRATE_ON_VERCEL=1 to override — not recommended on Neon)';
+  }
+  return null;
+}
+
+function runMigrateDeploy(env) {
+  const result = execSync('npx prisma migrate deploy', {
     encoding: 'utf8',
     env,
     timeout: 120_000,
     stdio: ['ignore', 'pipe', 'pipe'],
   });
+  if (result) process.stdout.write(result);
 }
 
 function isAdvisoryLockError(error) {
-  const msg = String(error?.stderr || error?.stdout || error?.message || error);
+  const msg = [
+    error?.stderr,
+    error?.stdout,
+    error?.message,
+    String(error),
+  ]
+    .filter(Boolean)
+    .join('\n');
   return (
     msg.includes('P1002') ||
     msg.includes('advisory lock') ||
@@ -60,31 +85,11 @@ function isAdvisoryLockError(error) {
   );
 }
 
-function isDatabaseUpToDate(statusOutput) {
-  const text = String(statusOutput);
-  return (
-    text.includes('Database schema is up to date') ||
-    text.includes('No pending migrations') ||
-    (!text.includes('Following migrations have not yet been applied') &&
-      !text.includes('migration(s) have failed'))
-  );
-}
-
-function checkMigrationStatus(env) {
-  try {
-    const status = runPrisma('npx prisma migrate status', env);
-    process.stdout.write(status);
-    return isDatabaseUpToDate(status);
-  } catch (error) {
-    const output = String(error?.stdout || '') + String(error?.stderr || '');
-    process.stdout.write(output);
-    return isDatabaseUpToDate(output);
-  }
-}
-
 async function main() {
-  if (process.env.SKIP_MIGRATE_ON_BUILD === '1' || process.env.SKIP_MIGRATE_ON_BUILD === 'true') {
-    console.log('[vercel-migrate] SKIP_MIGRATE_ON_BUILD — skipping migrations');
+  const skipReason = shouldSkip();
+  if (skipReason) {
+    console.log(`[vercel-migrate] Skipping migrations (${skipReason})`);
+    console.log('[vercel-migrate] Apply pending migrations locally: npm run prisma:migrate');
     return;
   }
 
@@ -94,55 +99,43 @@ async function main() {
     return;
   }
 
-  const pooler = process.env.DATABASE_URL || '';
-  if (pooler.includes('-pooler') && !process.env.DIRECT_DATABASE_URL) {
-    console.log('[vercel-migrate] Derived direct Neon URL from pooler DATABASE_URL');
-  }
-
   const env = { ...process.env, DATABASE_URL: directUrl };
   const maxAttempts = 3;
   const retryDelayMs = 8000;
-  let lastError = null;
 
   for (let attempt = 1; attempt <= maxAttempts; attempt++) {
     try {
       console.log(`[vercel-migrate] prisma migrate deploy (attempt ${attempt}/${maxAttempts})`);
-      execSync('npx prisma migrate deploy', {
-        stdio: 'inherit',
-        env,
-        timeout: 120_000,
-      });
+      runMigrateDeploy(env);
       console.log('[vercel-migrate] Migrations OK');
       return;
     } catch (error) {
-      lastError = error;
+      const stderr = String(error?.stderr || '');
+      const stdout = String(error?.stdout || '');
+      if (stderr) process.stderr.write(stderr);
+      if (stdout) process.stdout.write(stdout);
+
       if (isAdvisoryLockError(error)) {
-        console.warn('[vercel-migrate] Advisory lock timeout (P1002) — checking migration status…');
-        if (checkMigrationStatus(env)) {
-          console.warn('[vercel-migrate] Database is already up to date — continuing build.');
-          return;
-        }
+        console.warn(
+          '[vercel-migrate] P1002 advisory lock timeout — another process holds the migration lock.',
+        );
+        console.warn(
+          '[vercel-migrate] Run migrations separately: npm run prisma:migrate (do not run during Vercel build).',
+        );
+        return;
       }
+
       if (attempt < maxAttempts) {
-        console.warn(`[vercel-migrate] migrate deploy failed — retrying in ${retryDelayMs}ms`);
+        console.warn(`[vercel-migrate] Failed — retrying in ${retryDelayMs}ms`);
         await sleep(retryDelayMs);
         continue;
       }
+      throw error;
     }
   }
-
-  if (lastError && isAdvisoryLockError(lastError) && checkMigrationStatus(env)) {
-    console.warn('[vercel-migrate] Migrate deploy timed out but DB is up to date — continuing build.');
-    return;
-  }
-
-  throw lastError;
 }
 
 main().catch((error) => {
   console.error('[vercel-migrate] Failed:', error?.message || error);
-  console.error(
-    '[vercel-migrate] Tip: set DIRECT_DATABASE_URL on Vercel (non-pooler Neon host), SKIP_MIGRATE_ON_BUILD=1, or run: npm run prisma:migrate locally.',
-  );
   process.exit(1);
 });
