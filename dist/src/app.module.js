@@ -31,6 +31,7 @@ const email_module_1 = require("./email/email.module");
 const user_activity_module_1 = require("./user-activity/user-activity.module");
 const campaign_prompt_module_1 = require("./campaign-prompt/campaign-prompt.module");
 const re_engagement_module_1 = require("./re-engagement/re-engagement.module");
+const public_module_1 = require("./public/public.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -62,6 +63,7 @@ exports.AppModule = AppModule = __decorate([
             analytics_module_1.AnalyticsModule,
             campaign_prompt_module_1.CampaignPromptModule,
             re_engagement_module_1.ReEngagementModule,
+            public_module_1.PublicModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

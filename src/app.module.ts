@@ -23,6 +23,7 @@ import { EmailModule } from './email/email.module';
 import { UserActivityModule } from './user-activity/user-activity.module';
 import { CampaignPromptModule } from './campaign-prompt/campaign-prompt.module';
 import { ReEngagementModule } from './re-engagement/re-engagement.module';
+import { PublicModule } from './public/public.module';
 
 @Module({
   imports: [
@@ -51,6 +52,7 @@ import { ReEngagementModule } from './re-engagement/re-engagement.module';
     AnalyticsModule,
     CampaignPromptModule,
     ReEngagementModule,
+    PublicModule,
   ],
   controllers: [AppController],
   providers: [
