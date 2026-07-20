@@ -5,7 +5,7 @@ export function parseListQuery(query: Record<string, unknown> = {}): Record<stri
 
   const parsed: Record<string, unknown> = { ...query, page, limit };
 
-  for (const key of ['budgetMin', 'budgetMax', 'followersMin', 'followersMax', 'engagementMin']) {
+  for (const key of ['budgetMin', 'budgetMax', 'followersMin', 'followersMax', 'engagementMin', 'deadlineDays']) {
     if (query[key] !== undefined && query[key] !== '') {
       const num = Number(query[key]);
       if (!Number.isNaN(num)) parsed[key] = num;

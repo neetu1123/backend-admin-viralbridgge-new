@@ -14,6 +14,7 @@ type DeliverablesServiceType = import('../../dist/src/payments/deliverables.serv
 type WithdrawalServiceType = import('../../dist/src/payments/withdrawal.service').WithdrawalService;
 type RazorpayServiceType = import('../../dist/src/payments/razorpay.service').RazorpayService;
 type StorageServiceType = import('../../dist/src/storage/storage.service').StorageService;
+type PublicServiceType = import('../../dist/src/public/public.service').PublicService;
 
 let brandService: BrandServiceType | undefined;
 let creatorService: CreatorServiceType | undefined;
@@ -31,6 +32,7 @@ let deliverablesService: DeliverablesServiceType | undefined;
 let withdrawalService: WithdrawalServiceType | undefined;
 let razorpayService: RazorpayServiceType | undefined;
 let storageService: StorageServiceType | undefined;
+let publicService: PublicServiceType | undefined;
 let configService: import('@nestjs/config').ConfigService | undefined;
 
 function getConfigService() {
@@ -211,6 +213,14 @@ export function getAdminAnalyticsService(): AdminAnalyticsServiceType {
     adminAnalyticsService = new AdminAnalyticsService(getPrisma() as never, getAnalyticsCacheService());
   }
   return adminAnalyticsService;
+}
+
+export function getPublicService(): PublicServiceType {
+  if (!publicService) {
+    const { PublicService } = require('../../dist/src/public/public.service') as typeof import('../../dist/src/public/public.service');
+    publicService = new PublicService(getPrisma() as never);
+  }
+  return publicService;
 }
 
 // Exported for payment routes and admin email/broadcast on Vercel express path

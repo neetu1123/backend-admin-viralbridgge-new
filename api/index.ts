@@ -10,6 +10,7 @@ import { organizationRouter } from './organization-routes';
 import { securityRouter } from './security-routes';
 import { analyticsRouter } from './analytics-routes';
 import { escrowRouter } from './escrow-routes';
+import { publicRouter } from './public-routes';
 import { handleAuthLogin } from './auth-login';
 import { handleAuthRegister } from './auth-register';
 
@@ -24,7 +25,7 @@ const server = express();
 const BOOTSTRAP_TIMEOUT_MS = 9000;
 
 const DEFAULT_ORIGINS =
-  'http://localhost:3000,http://localhost:3002,https://admin-viralbridgge-new.vercel.app';
+  'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://admin-viralbridgge-new.vercel.app';
 
 let cachedHandler: ReturnType<typeof serverless> | undefined;
 let bootstrapPromise: Promise<ReturnType<typeof serverless>> | undefined;
@@ -93,6 +94,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/security')) return true;
   if (path.startsWith('/analytics')) return true;
   if (path.startsWith('/escrow')) return true;
+  if (path.startsWith('/public')) return true;
   return false;
 }
 
@@ -142,6 +144,7 @@ server.use('/organization', organizationRouter);
 server.use('/security', securityRouter);
 server.use('/analytics', analyticsRouter);
 server.use('/escrow', escrowRouter);
+server.use('/public', publicRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {
