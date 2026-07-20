@@ -25,7 +25,7 @@ const server = express();
 const BOOTSTRAP_TIMEOUT_MS = 9000;
 
 const DEFAULT_ORIGINS =
-  'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://admin-viralbridgge-new.vercel.app';
+  'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://admin-viralbridgge-new.vercel.app,https://viralbridgge-new.vercel.app';
 
 let cachedHandler: ReturnType<typeof serverless> | undefined;
 let bootstrapPromise: Promise<ReturnType<typeof serverless>> | undefined;

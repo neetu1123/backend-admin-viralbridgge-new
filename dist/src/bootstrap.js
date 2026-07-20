@@ -18,7 +18,7 @@ async function configureApp(app) {
     }
     app.enableCors({
         origin: (process.env.CORS_ORIGINS ||
-            'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://admin-viralbridgge-new.vercel.app')
+            'http://localhost:3000,http://localhost:3001,http://localhost:3002,https://admin-viralbridgge-new.vercel.app,https://viralbridgge-new.vercel.app')
             .split(',')
             .map((origin) => origin.trim()),
         credentials: true,
