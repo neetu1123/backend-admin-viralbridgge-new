@@ -13,6 +13,7 @@ import { escrowRouter } from './escrow-routes';
 import { publicRouter } from './public-routes';
 import { handleAuthLogin } from './auth-login';
 import { handleAuthRegister } from './auth-register';
+import { handleAuthMe } from './auth-me';
 
 try {
   const { initializeFirebaseAdmin } = require('../dist/src/firebase/firebase-admin.config') as typeof import('../dist/src/firebase/firebase-admin.config');
@@ -86,6 +87,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (isFastPath(path)) return true;
   if (path === '/auth/login' && method === 'POST') return true;
   if (path === '/auth/register' && method === 'POST') return true;
+  if (path === '/auth/me' && method === 'GET') return true;
   if (path.startsWith('/admin')) return true;
   if (path.startsWith('/brand')) return true;
   if (path.startsWith('/creator')) return true;
@@ -163,6 +165,16 @@ server.post('/auth/register', async (req, res) => {
   } catch (error) {
     console.error('Fast register failed:', error);
     res.status(500).json({ success: false, message: 'Registration failed' });
+  }
+});
+
+server.get('/auth/me', async (req, res) => {
+  try {
+    const result = await handleAuthMe(req.headers as Record<string, string | string[] | undefined>);
+    res.status(result.status).json(result.body);
+  } catch (error) {
+    console.error('Fast auth/me failed:', error);
+    res.status(500).json({ success: false, message: 'Failed to load profile' });
   }
 });
 
