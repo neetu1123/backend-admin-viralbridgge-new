@@ -32,6 +32,8 @@ let deliverablesService: DeliverablesServiceType | undefined;
 let withdrawalService: WithdrawalServiceType | undefined;
 let razorpayService: RazorpayServiceType | undefined;
 let storageService: StorageServiceType | undefined;
+let userActivityService: import('../../dist/src/user-activity/user-activity.service').UserActivityService | undefined;
+let campaignPromptService: import('../../dist/src/campaign-prompt/campaign-prompt.service').CampaignPromptService | undefined;
 let publicService: PublicServiceType | undefined;
 let configService: import('@nestjs/config').ConfigService | undefined;
 
@@ -70,7 +72,12 @@ function getRazorpayService(): RazorpayServiceType {
 function getWalletService(): WalletServiceType {
   if (!walletService) {
     const { WalletService } = require('../../dist/src/payments/wallet.service') as typeof import('../../dist/src/payments/wallet.service');
-    walletService = new WalletService(getPrisma() as never, getNotificationsService(), getRazorpayService());
+    walletService = new WalletService(
+      getPrisma() as never,
+      getNotificationsService(),
+      getRazorpayService(),
+      getUserActivityService(),
+    );
   }
   return walletService;
 }
@@ -99,6 +106,22 @@ function getStorageService(): StorageServiceType {
     storageService = new StorageService();
   }
   return storageService;
+}
+
+function getUserActivityService() {
+  if (!userActivityService) {
+    const { UserActivityService } = require('../../dist/src/user-activity/user-activity.service') as typeof import('../../dist/src/user-activity/user-activity.service');
+    userActivityService = new UserActivityService(getPrisma() as never);
+  }
+  return userActivityService;
+}
+
+function getCampaignPromptService() {
+  if (!campaignPromptService) {
+    const { CampaignPromptService } = require('../../dist/src/campaign-prompt/campaign-prompt.service') as typeof import('../../dist/src/campaign-prompt/campaign-prompt.service');
+    campaignPromptService = new CampaignPromptService(getPrisma() as never);
+  }
+  return campaignPromptService;
 }
 
 function getDeliverablesService(): DeliverablesServiceType {
@@ -141,6 +164,9 @@ export function getBrandService(): BrandServiceType {
       getEscrowService(),
       getDeliverablesService(),
       getRazorpayService(),
+      getStorageService(),
+      getUserActivityService(),
+      getCampaignPromptService(),
     );
   }
   return brandService;
@@ -157,6 +183,8 @@ export function getCreatorService(): CreatorServiceType {
       getWithdrawalService(),
       getDeliverablesService(),
       getEscrowService(),
+      getStorageService(),
+      getUserActivityService(),
     );
   }
   return creatorService;

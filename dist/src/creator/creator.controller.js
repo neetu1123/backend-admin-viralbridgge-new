@@ -64,6 +64,9 @@ let CreatorController = class CreatorController {
     getApplication(req, id) {
         return this.creatorService.getApplication(req.user.id, id);
     }
+    withdrawApplication(req, id) {
+        return this.creatorService.withdrawApplication(req.user.id, id);
+    }
     getDashboard(req) {
         return this.creatorService.getDashboard(req.user.id);
     }
@@ -231,6 +234,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, String]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getApplication", null);
+__decorate([
+    (0, common_1.Delete)('applications/:id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "withdrawApplication", null);
 __decorate([
     (0, common_1.Get)('dashboard'),
     __param(0, (0, common_1.Request)()),

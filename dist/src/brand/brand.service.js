@@ -189,7 +189,17 @@ let BrandService = class BrandService {
             orderBy: { created_at: 'desc' },
         });
     }
-    async updateApplication(userId, applicationId, status) {
+    async getApplication(userId, applicationId) {
+        const application = await this.prisma.application.findUnique({
+            where: { id: applicationId },
+            include: { creator: { include: { user: true } }, campaign: { include: { brand: true } } },
+        });
+        if (!application)
+            throw new common_1.NotFoundException('Application not found');
+        await this.getOwnedCampaign(userId, application.campaign_id);
+        return application;
+    }
+    async updateApplication(userId, applicationId, status, rejectionReason) {
         const application = await this.prisma.application.findUnique({
             where: { id: applicationId },
             include: {
@@ -200,15 +210,24 @@ let BrandService = class BrandService {
         if (!application)
             throw new common_1.NotFoundException('Application not found');
         await this.getOwnedCampaign(userId, application.campaign_id);
+        if (status === 'REJECTED' && !rejectionReason?.trim()) {
+            throw new common_1.BadRequestException('Rejection reason is required');
+        }
         const updated = await this.prisma.application.update({
             where: { id: applicationId },
-            data: { status },
+            data: {
+                status,
+                ...(status === 'REJECTED' ? { rejection_reason: rejectionReason?.trim() } : {}),
+            },
             include: { creator: { include: { user: true } }, campaign: true },
         });
         if (status === 'ACCEPTED') {
             await this.ensureAcceptedApplicationResources(application);
         }
-        await this.createNotification(application.creator.user_id, 'Application updated', `Your application for ${application.campaign.title} is ${status.toLowerCase()}.`, { applicationId, campaignId: application.campaign_id, status });
+        const notificationMessage = status === 'REJECTED' && rejectionReason?.trim()
+            ? `Your application for ${application.campaign.title} was not selected. Reason: ${rejectionReason.trim()}`
+            : `Your application for ${application.campaign.title} is ${status.toLowerCase()}.`;
+        await this.createNotification(application.creator.user_id, status === 'REJECTED' ? 'Application not selected' : 'Application updated', notificationMessage, { applicationId, campaignId: application.campaign_id, status, rejectionReason: rejectionReason?.trim() });
         return updated;
     }
     async inviteCreator(userId, campaignId, creatorId) {

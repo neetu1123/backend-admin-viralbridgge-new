@@ -21,13 +21,26 @@ router.put('/profile', (req: AuthedRequest, res) =>
   }),
 );
 
-router.post('/upload-photo', (req: AuthedRequest, res) =>
-  runWithAudit(req, res, (id) => creator().uploadPhoto(id, req.body), {
-    action: 'CREATOR_UPLOAD_PHOTO',
-    entity: 'Creator',
-    entityId: (r) => String((r as { id?: string })?.id ?? req.user!.id),
-  }),
-);
+router.post('/upload-photo', (req: AuthedRequest, res) => {
+  const { profileUploadMiddleware, toProfileUploadPayload } = require('./lib/multer-profile') as typeof import('./lib/multer-profile');
+  profileUploadMiddleware(req, res, async (err: unknown) => {
+    if (err) return fail(res, err instanceof Error ? err.message : 'Upload failed', 400);
+    try {
+      const file = req.file;
+      if (file) {
+        const result = await creator().uploadPhotoFile(req.user!.id, toProfileUploadPayload(file));
+        return ok(res, result);
+      }
+      if (req.body?.url) {
+        const result = await creator().uploadPhoto(req.user!.id, req.body);
+        return ok(res, result);
+      }
+      return fail(res, 'image file or url is required', 400);
+    } catch (error) {
+      return fail(res, error instanceof Error ? error.message : 'Upload failed', 500);
+    }
+  });
+});
 router.post('/upload-media-kit', (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => creator().uploadMediaKit(id, req.body), {
     action: 'CREATOR_UPLOAD_MEDIA_KIT',
@@ -58,6 +71,13 @@ router.get('/applications', (req: AuthedRequest, res) =>
 );
 router.get('/applications/:id', (req: AuthedRequest, res) =>
   run(req, res, (id) => creator().getApplication(id, paramId(req))),
+);
+router.delete('/applications/:id', (req: AuthedRequest, res) =>
+  runWithAudit(req, res, (id) => creator().withdrawApplication(id, paramId(req)), {
+    action: 'WITHDRAW_APPLICATION',
+    entity: 'Application',
+    entityId: () => paramId(req),
+  }),
 );
 
 router.get('/dashboard', (req: AuthedRequest, res) => run(req, res, (id) => creator().getDashboard(id)));

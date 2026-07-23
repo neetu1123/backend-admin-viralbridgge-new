@@ -1,6 +1,7 @@
 import {
   Body,
   Controller,
+  Delete,
   Get,
   Param,
   Patch,
@@ -102,6 +103,11 @@ export class CreatorController {
   @Get('applications/:id')
   getApplication(@Request() req: any, @Param('id') id: string) {
     return this.creatorService.getApplication(req.user.id, id);
+  }
+
+  @Delete('applications/:id')
+  withdrawApplication(@Request() req: any, @Param('id') id: string) {
+    return this.creatorService.withdrawApplication(req.user.id, id);
   }
 
   @Get('dashboard')

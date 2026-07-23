@@ -47,21 +47,29 @@ export class CreatorService {
 
   async updateProfile(userId: string, dto: UpdateCreatorProfileDto) {
     const profile = await this.ensureCreatorProfile(userId);
+    const existingSocial = (profile.social_links as Record<string, unknown> | null) ?? {};
+    const niches = dto.niches?.length ? dto.niches : dto.niche ? [dto.niche] : undefined;
+    const socialLinks = {
+      ...existingSocial,
+      ...(dto.instagram !== undefined ? { instagram: dto.instagram } : {}),
+      ...(dto.youtube !== undefined ? { youtube: dto.youtube } : {}),
+      ...(dto.tiktok !== undefined ? { tiktok: dto.tiktok } : {}),
+      ...(dto.twitter !== undefined ? { twitter: dto.twitter } : {}),
+      ...(dto.website !== undefined ? { website: dto.website } : {}),
+      ...(dto.handle !== undefined ? { handle: dto.handle } : {}),
+      ...(niches ? { niches } : {}),
+    };
     return this.prisma.creatorProfile.update({
       where: { id: profile.id },
       data: {
         full_name: dto.fullName,
         bio: dto.bio,
-        niche: dto.niche,
+        niche: niches?.[0] ?? dto.niche,
         followers: dto.followers,
         engagement_rate: dto.engagementRate,
         languages: dto.languages,
         locality: dto.locality,
-        social_links: {
-          instagram: dto.instagram,
-          youtube: dto.youtube,
-          tiktok: dto.tiktok,
-        },
+        social_links: socialLinks as object,
         media_kit: dto.mediaKit,
         portfolio: dto.portfolio,
         contact_email: dto.contactEmail,
@@ -212,9 +220,25 @@ export class CreatorService {
       { campaignId, applicationId: application.id },
     );
 
-    await this.userActivity.recordCampaignActivity(userId).catch(() => undefined);
+    await this.userActivity?.recordCampaignActivity(userId).catch(() => undefined);
 
     return application;
+  }
+
+  async withdrawApplication(userId: string, applicationId: string) {
+    const profile = await this.ensureCreatorProfile(userId);
+    const application = await this.prisma.application.findUnique({
+      where: { id: applicationId },
+      include: { campaign: { include: { brand: true } } },
+    });
+    if (!application) throw new NotFoundException('Application not found');
+    if (application.creator_id !== profile.id) throw new ForbiddenException('Forbidden');
+    if (!['PENDING', 'SHORTLISTED'].includes(application.status)) {
+      throw new BadRequestException('Only pending or shortlisted applications can be withdrawn');
+    }
+
+    await this.prisma.application.delete({ where: { id: applicationId } });
+    return { success: true, campaignId: application.campaign_id };
   }
 
   async getApplications(userId: string, query: ApplicationQueryDto) {

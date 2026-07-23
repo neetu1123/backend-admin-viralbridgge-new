@@ -106,14 +106,19 @@ export class BrandController {
     return this.brandService.getCampaignRecommendations(req.user.id, id);
   }
 
+  @Get('applications/:id')
+  getApplication(@Request() req: any, @Param('id') id: string) {
+    return this.brandService.getApplication(req.user.id, id);
+  }
+
   @Post('applications/:id/approve')
   approveApplication(@Request() req: any, @Param('id') id: string) {
     return this.brandService.updateApplication(req.user.id, id, 'ACCEPTED');
   }
 
   @Post('applications/:id/reject')
-  rejectApplication(@Request() req: any, @Param('id') id: string) {
-    return this.brandService.updateApplication(req.user.id, id, 'REJECTED');
+  rejectApplication(@Request() req: any, @Param('id') id: string, @Body() body: { reason?: string }) {
+    return this.brandService.updateApplication(req.user.id, id, 'REJECTED', body?.reason);
   }
 
   @Post('applications/:id/shortlist')

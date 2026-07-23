@@ -57,6 +57,23 @@ export class UpdateCreatorProfileDto {
 
   @IsOptional()
   @IsString()
+  twitter?: string;
+
+  @IsOptional()
+  @IsString()
+  website?: string;
+
+  @IsOptional()
+  @IsString()
+  handle?: string;
+
+  @ApiPropertyOptional({ type: [String] })
+  @IsOptional()
+  @IsArray()
+  niches?: string[];
+
+  @IsOptional()
+  @IsString()
   mediaKit?: string;
 
   @IsOptional()

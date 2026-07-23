@@ -25,6 +25,10 @@ class UpdateCreatorProfileDto {
     instagram;
     youtube;
     tiktok;
+    twitter;
+    website;
+    handle;
+    niches;
     mediaKit;
     portfolio;
     contactEmail;
@@ -84,6 +88,27 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateCreatorProfileDto.prototype, "tiktok", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "twitter", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "website", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "handle", void 0);
+__decorate([
+    (0, swagger_1.ApiPropertyOptional)({ type: [String] }),
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], UpdateCreatorProfileDto.prototype, "niches", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

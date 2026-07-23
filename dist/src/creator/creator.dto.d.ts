@@ -10,6 +10,10 @@ export declare class UpdateCreatorProfileDto {
     instagram?: string;
     youtube?: string;
     tiktok?: string;
+    twitter?: string;
+    website?: string;
+    handle?: string;
+    niches?: string[];
     mediaKit?: string;
     portfolio?: string;
     contactEmail?: string;

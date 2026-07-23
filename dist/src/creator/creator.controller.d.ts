@@ -216,6 +216,7 @@ export declare class CreatorController {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         }[];
     } & {
         id: string;
@@ -299,6 +300,7 @@ export declare class CreatorController {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
     }>;
     getApplications(req: any, query: ApplicationQueryDto): Promise<{
         data: ({
@@ -344,6 +346,7 @@ export declare class CreatorController {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
         meta: {
             page: number;
@@ -395,6 +398,11 @@ export declare class CreatorController {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
+    }>;
+    withdrawApplication(req: any, id: string): Promise<{
+        success: boolean;
+        campaignId: string;
     }>;
     getDashboard(req: any): Promise<{
         totalApplications: number;

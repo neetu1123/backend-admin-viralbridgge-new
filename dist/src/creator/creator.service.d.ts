@@ -268,6 +268,7 @@ export declare class CreatorService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         }[];
     } & {
         id: string;
@@ -351,6 +352,11 @@ export declare class CreatorService {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
+    }>;
+    withdrawApplication(userId: string, applicationId: string): Promise<{
+        success: boolean;
+        campaignId: string;
     }>;
     getApplications(userId: string, query: ApplicationQueryDto): Promise<{
         data: ({
@@ -396,6 +402,7 @@ export declare class CreatorService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
         meta: {
             page: number;
@@ -447,6 +454,7 @@ export declare class CreatorService {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
     }>;
     getDashboard(userId: string): Promise<{
         totalApplications: number;

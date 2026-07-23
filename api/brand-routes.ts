@@ -85,6 +85,10 @@ router.delete('/campaigns/:id', (req: AuthedRequest, res) =>
   }),
 );
 
+router.get('/applications/:id', (req: AuthedRequest, res) =>
+  run(req, res, (id) => brand().getApplication(id, paramId(req))),
+);
+
 router.post('/applications/:id/approve', (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'ACCEPTED'), {
     action: 'APPROVE_APPLICATION',
@@ -94,11 +98,11 @@ router.post('/applications/:id/approve', (req: AuthedRequest, res) =>
   }),
 );
 router.post('/applications/:id/reject', (req: AuthedRequest, res) =>
-  runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'REJECTED'), {
+  runWithAudit(req, res, (id) => brand().updateApplication(id, paramId(req), 'REJECTED', req.body?.reason), {
     action: 'REJECT_APPLICATION',
     entity: 'Application',
     entityId: (r) => String((r as { id?: string })?.id ?? paramId(req)),
-    metadata: () => ({ status: 'REJECTED' }),
+    metadata: () => ({ status: 'REJECTED', reason: req.body?.reason }),
   }),
 );
 router.post('/applications/:id/shortlist', (req: AuthedRequest, res) =>

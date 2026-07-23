@@ -168,6 +168,7 @@ model Application {
   campaign         Campaign       @relation(fields: [campaign_id], references: [id])
   message          String?
   proposed_price   Float?
+  rejection_reason String?
   status           String         @default("PENDING") // PENDING, SHORTLISTED, ACCEPTED, REJECTED, COMPLETED
   created_at       DateTime       @default(now())
   updated_at       DateTime       @updatedAt

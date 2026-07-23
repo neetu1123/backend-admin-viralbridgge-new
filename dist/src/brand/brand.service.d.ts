@@ -180,6 +180,7 @@ export declare class BrandService {
                 updated_at: Date;
                 created_at: Date;
                 proposed_price: number | null;
+                rejection_reason: string | null;
             })[];
         } & {
             id: string;
@@ -267,6 +268,7 @@ export declare class BrandService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
     } & {
         id: string;
@@ -369,6 +371,7 @@ export declare class BrandService {
                 updated_at: Date;
                 created_at: Date;
                 proposed_price: number | null;
+                rejection_reason: string | null;
             })[];
             escrows: ({
                 creator: {
@@ -437,6 +440,7 @@ export declare class BrandService {
                     updated_at: Date;
                     created_at: Date;
                     proposed_price: number | null;
+                    rejection_reason: string | null;
                 } | null;
                 creator: {
                     user: {
@@ -580,6 +584,7 @@ export declare class BrandService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
         approvedCreators: ({
             creator: {
@@ -648,6 +653,7 @@ export declare class BrandService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
         deliverables: ({
             application: {
@@ -659,6 +665,7 @@ export declare class BrandService {
                 updated_at: Date;
                 created_at: Date;
                 proposed_price: number | null;
+                rejection_reason: string | null;
             } | null;
             creator: {
                 user: {
@@ -875,8 +882,90 @@ export declare class BrandService {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
     })[]>;
-    updateApplication(userId: string, applicationId: string, status: string): Promise<{
+    getApplication(userId: string, applicationId: string): Promise<{
+        campaign: {
+            brand: {
+                id: string;
+                updated_at: Date;
+                description: string | null;
+                created_at: Date;
+                user_id: string;
+                contact_email: string | null;
+                phone: string | null;
+                company_name: string;
+                industry: string | null;
+                website: string | null;
+                logo: string | null;
+                location: string | null;
+            };
+        } & {
+            id: string;
+            status: string;
+            updated_at: Date;
+            brand_id: string;
+            title: string;
+            description: string;
+            platform: string;
+            budget: number;
+            remaining_budget: number;
+            deadline: Date;
+            deliverables: string[];
+            locality: string | null;
+            languages: string[];
+            created_by_admin_id: string | null;
+            metadata: import("@prisma/client/runtime/library").JsonValue | null;
+            created_at: Date;
+        };
+        creator: {
+            user: {
+                name: string;
+                id: string;
+                status: string;
+                updated_at: Date;
+                created_at: Date;
+                firebase_uid: string | null;
+                password: string | null;
+                email: string;
+                avatar: string | null;
+                role_id: string | null;
+                is_verified: boolean;
+                is_banned: boolean;
+                is_deleted: boolean;
+                settings: import("@prisma/client/runtime/library").JsonValue | null;
+            };
+        } & {
+            id: string;
+            updated_at: Date;
+            locality: string | null;
+            languages: string[];
+            created_at: Date;
+            user_id: string;
+            full_name: string | null;
+            bio: string | null;
+            niche: string | null;
+            followers: number;
+            engagement_rate: number;
+            social_links: import("@prisma/client/runtime/library").JsonValue | null;
+            media_kit: string | null;
+            portfolio: string | null;
+            contact_email: string | null;
+            phone: string | null;
+            photo: string | null;
+        };
+    } & {
+        message: string | null;
+        id: string;
+        campaign_id: string;
+        creator_id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        proposed_price: number | null;
+        rejection_reason: string | null;
+    }>;
+    updateApplication(userId: string, applicationId: string, status: string, rejectionReason?: string): Promise<{
         campaign: {
             id: string;
             status: string;
@@ -940,6 +1029,7 @@ export declare class BrandService {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
     }>;
     inviteCreator(userId: string, campaignId: string, creatorId: string): Promise<{
         success: boolean;
@@ -990,6 +1080,7 @@ export declare class BrandService {
                 updated_at: Date;
                 created_at: Date;
                 proposed_price: number | null;
+                rejection_reason: string | null;
             })[];
         } & {
             id: string;
@@ -1086,6 +1177,7 @@ export declare class BrandService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         })[];
         meta: {
             page: number;
@@ -1104,6 +1196,7 @@ export declare class BrandService {
             updated_at: Date;
             created_at: Date;
             proposed_price: number | null;
+            rejection_reason: string | null;
         } | null;
         creator: {
             user: {
@@ -1541,6 +1634,7 @@ export declare class BrandService {
         updated_at: Date;
         created_at: Date;
         proposed_price: number | null;
+        rejection_reason: string | null;
     })[]>;
     getConversations(userId: string): Promise<({
         creator: {

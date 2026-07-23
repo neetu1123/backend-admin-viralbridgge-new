@@ -66,11 +66,14 @@ let BrandController = class BrandController {
     getCampaignRecommendations(req, id) {
         return this.brandService.getCampaignRecommendations(req.user.id, id);
     }
+    getApplication(req, id) {
+        return this.brandService.getApplication(req.user.id, id);
+    }
     approveApplication(req, id) {
         return this.brandService.updateApplication(req.user.id, id, 'ACCEPTED');
     }
-    rejectApplication(req, id) {
-        return this.brandService.updateApplication(req.user.id, id, 'REJECTED');
+    rejectApplication(req, id, body) {
+        return this.brandService.updateApplication(req.user.id, id, 'REJECTED', body?.reason);
     }
     shortlistApplication(req, id) {
         return this.brandService.updateApplication(req.user.id, id, 'SHORTLISTED');
@@ -256,6 +259,14 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getCampaignRecommendations", null);
 __decorate([
+    (0, common_1.Get)('applications/:id'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "getApplication", null);
+__decorate([
     (0, common_1.Post)('applications/:id/approve'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -267,8 +278,9 @@ __decorate([
     (0, common_1.Post)('applications/:id/reject'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
+    __param(2, (0, common_1.Body)()),
     __metadata("design:type", Function),
-    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:paramtypes", [Object, String, Object]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "rejectApplication", null);
 __decorate([
