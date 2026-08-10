@@ -24,6 +24,7 @@ import { UserActivityModule } from './user-activity/user-activity.module';
 import { CampaignPromptModule } from './campaign-prompt/campaign-prompt.module';
 import { ReEngagementModule } from './re-engagement/re-engagement.module';
 import { PublicModule } from './public/public.module';
+import { CrmModule } from './crm/crm.module';
 
 @Module({
   imports: [
@@ -53,6 +54,7 @@ import { PublicModule } from './public/public.module';
     CampaignPromptModule,
     ReEngagementModule,
     PublicModule,
+    CrmModule,
   ],
   controllers: [AppController],
   providers: [

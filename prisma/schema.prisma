@@ -43,6 +43,8 @@ model User {
   user_activity        UserActivity?
   campaign_prompt_events CampaignPromptEvent[]
   re_engagement_emails ReEngagementEmailLog[]
+  crm_leads_assigned    CrmLead[] @relation("CrmLeadAssignee")
+  crm_leads_created     CrmLead[] @relation("CrmLeadCreator")
 
   @@map("users")
 }
@@ -658,4 +660,107 @@ model SecurityActivity {
 
   @@index([user_id, created_at])
   @@map("security_activities")
+}
+
+model CrmLead {
+  id                  String   @id @default(uuid())
+  first_name          String
+  last_name           String
+  profile_photo       String?
+  gender              String?
+  date_of_birth       String?
+  email               String
+  phone               String
+  alternate_phone     String?
+  whatsapp            String?
+  website             String?
+  company             String
+  job_title           String?
+  industry            String?
+  company_size        String?
+  gst_number          String?
+  country             String?
+  state               String?
+  city                String?
+  postal_code         String?
+  address             String?
+  lead_type           String
+  lead_source         String
+  priority            String
+  lead_status         String   @default("New")
+  assigned_to_id      String?
+  assigned_to         User?    @relation("CrmLeadAssignee", fields: [assigned_to_id], references: [id])
+  created_by_id       String?
+  created_by          User?    @relation("CrmLeadCreator", fields: [created_by_id], references: [id])
+  deal_currency       String   @default("INR")
+  deal_value          Float?
+  next_follow_up_date String?
+  next_follow_up_time String?
+  description         String?
+  internal_notes      String?
+  tags                String[]
+  is_deleted          Boolean  @default(false)
+  created_at          DateTime @default(now())
+  updated_at          DateTime @updatedAt
+
+  notes               CrmNote[]
+  follow_ups          CrmFollowUp[]
+  timeline_events     CrmTimelineEvent[]
+  attachments         CrmAttachment[]
+
+  @@index([lead_status])
+  @@index([assigned_to_id])
+  @@index([created_at])
+  @@map("crm_leads")
+}
+
+model CrmNote {
+  id         String   @id @default(uuid())
+  lead_id    String
+  lead       CrmLead  @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  content    String
+  created_by String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("crm_notes")
+}
+
+model CrmFollowUp {
+  id         String   @id @default(uuid())
+  lead_id    String
+  lead       CrmLead  @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  title      String
+  date       String
+  time       String
+  status     String   @default("upcoming")
+  notes      String?
+  created_at DateTime @default(now())
+
+  @@map("crm_follow_ups")
+}
+
+model CrmTimelineEvent {
+  id          String   @id @default(uuid())
+  lead_id     String
+  lead        CrmLead  @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  type        String
+  title       String
+  description String?
+  created_by  String?
+  created_at  DateTime @default(now())
+
+  @@map("crm_timeline_events")
+}
+
+model CrmAttachment {
+  id          String   @id @default(uuid())
+  lead_id     String
+  lead        CrmLead  @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  name        String
+  type        String
+  size        String?
+  uploaded_at DateTime @default(now())
+
+  @@map("crm_attachments")
 }
