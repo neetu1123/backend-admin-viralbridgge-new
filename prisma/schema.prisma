@@ -45,6 +45,10 @@ model User {
   re_engagement_emails ReEngagementEmailLog[]
   crm_leads_assigned    CrmLead[] @relation("CrmLeadAssignee")
   crm_leads_created     CrmLead[] @relation("CrmLeadCreator")
+  support_cases         SupportCase[] @relation("SupportCaseUser")
+  support_cases_assigned SupportCase[] @relation("SupportCaseAssignee")
+  support_messages      SupportCaseMessage[]
+  support_notes         SupportCaseNote[]
 
   @@map("users")
 }
@@ -763,4 +767,154 @@ model CrmAttachment {
   uploaded_at DateTime @default(now())
 
   @@map("crm_attachments")
+}
+
+model SupportCategory {
+  id            String   @id @default(uuid())
+  role          String
+  name          String
+  slug          String
+  description   String?
+  icon          String?
+  sort_order    Int      @default(0)
+  is_active     Boolean  @default(true)
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  subcategories SupportSubcategory[]
+
+  @@unique([role, slug])
+  @@map("support_categories")
+}
+
+model SupportSubcategory {
+  id          String   @id @default(uuid())
+  category_id String
+  category    SupportCategory @relation(fields: [category_id], references: [id], onDelete: Cascade)
+  name        String
+  slug        String
+  description String?
+  sort_order  Int      @default(0)
+  is_active   Boolean  @default(true)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  issues SupportIssue[]
+
+  @@unique([category_id, slug])
+  @@map("support_subcategories")
+}
+
+model SupportIssue {
+  id              String   @id @default(uuid())
+  subcategory_id  String
+  subcategory     SupportSubcategory @relation(fields: [subcategory_id], references: [id], onDelete: Cascade)
+  title           String
+  slug            String
+  description     String?
+  keywords        String[]
+  solution        String?
+  action_type     String?
+  action_url      String?
+  requires_admin  Boolean  @default(false)
+  priority        String   @default("MEDIUM")
+  case_type       String   @default("GENERAL_SUPPORT")
+  is_active       Boolean  @default(true)
+  created_at      DateTime @default(now())
+  updated_at      DateTime @updatedAt
+
+  @@unique([subcategory_id, slug])
+  @@map("support_issues")
+}
+
+model SupportCase {
+  id                String   @id @default(uuid())
+  case_number       String   @unique
+  user_id           String
+  user              User     @relation("SupportCaseUser", fields: [user_id], references: [id])
+  user_role         String
+  category_id       String?
+  subcategory_id    String?
+  issue_id          String?
+  case_type         String   @default("GENERAL_SUPPORT")
+  priority          String   @default("MEDIUM")
+  status            String   @default("OPEN")
+  subject           String
+  description       String
+  campaign_id       String?
+  payment_id        String?
+  transaction_id    String?
+  context_json      Json?
+  assigned_admin_id String?
+  assigned_admin    User?    @relation("SupportCaseAssignee", fields: [assigned_admin_id], references: [id])
+  created_at        DateTime @default(now())
+  updated_at        DateTime @updatedAt
+  resolved_at       DateTime?
+
+  messages    SupportCaseMessage[]
+  attachments SupportCaseAttachment[]
+  notes       SupportCaseNote[]
+  events      SupportCaseEvent[]
+
+  @@index([user_id])
+  @@index([status])
+  @@index([assigned_admin_id])
+  @@map("support_cases")
+}
+
+model SupportCaseMessage {
+  id          String   @id @default(uuid())
+  case_id     String
+  case        SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  sender_id   String
+  sender      User     @relation(fields: [sender_id], references: [id])
+  sender_role String
+  message     String
+  created_at  DateTime @default(now())
+  read_at     DateTime?
+
+  @@index([case_id])
+  @@map("support_case_messages")
+}
+
+model SupportCaseAttachment {
+  id          String   @id @default(uuid())
+  case_id     String
+  case        SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  uploaded_by String
+  file_name   String
+  file_url    String
+  mime_type   String?
+  file_size   Int?
+  created_at  DateTime @default(now())
+
+  @@map("support_case_attachments")
+}
+
+model SupportCaseNote {
+  id         String   @id @default(uuid())
+  case_id    String
+  case       SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  admin_id   String
+  admin      User     @relation(fields: [admin_id], references: [id])
+  note       String
+  created_at DateTime @default(now())
+  updated_at DateTime @updatedAt
+
+  @@map("support_case_notes")
+}
+
+model SupportCaseEvent {
+  id         String   @id @default(uuid())
+  case_id    String
+  case       SupportCase @relation(fields: [case_id], references: [id], onDelete: Cascade)
+  actor_id   String?
+  event_type String
+  old_value  String?
+  new_value  String?
+  metadata   Json?
+  created_at DateTime @default(now())
+
+  @@index([case_id])
+  @@map("support_case_events")
 }

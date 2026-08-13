@@ -25,6 +25,7 @@ import { CampaignPromptModule } from './campaign-prompt/campaign-prompt.module';
 import { ReEngagementModule } from './re-engagement/re-engagement.module';
 import { PublicModule } from './public/public.module';
 import { CrmModule } from './crm/crm.module';
+import { SupportModule } from './support/support.module';
 
 @Module({
   imports: [
@@ -55,6 +56,7 @@ import { CrmModule } from './crm/crm.module';
     ReEngagementModule,
     PublicModule,
     CrmModule,
+    SupportModule,
   ],
   controllers: [AppController],
   providers: [
