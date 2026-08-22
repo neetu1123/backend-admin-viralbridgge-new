@@ -65,3 +65,40 @@ export class CrmLeadQueryDto {
   @IsOptional() @IsString() page?: string;
   @IsOptional() @IsString() limit?: string;
 }
+
+export class BulkAssignDto {
+  @IsArray() leadIds: string[];
+  @IsString() agentId: string;
+}
+
+export class ReassignLeadDto {
+  @IsString() agentId: string;
+  @IsOptional() @IsString() reason?: string;
+}
+
+export class BulkUpdateDto {
+  @IsArray() leadIds: string[];
+  @IsOptional() @IsString() leadStatus?: string;
+  @IsOptional() @IsString() priority?: string;
+  @IsOptional() @IsArray() tags?: string[];
+}
+
+export class BulkLeadIdsDto {
+  @IsArray() leadIds: string[];
+}
+
+export class ImportPreviewDto {
+  @IsString() fileName: string;
+  rows: Record<string, string>[];
+}
+
+export class ImportConfirmDto {
+  @IsString() importJobId: string;
+  @IsOptional() @IsString() duplicateStrategy?: 'SKIP' | 'UPDATE' | 'IMPORT_AS_NEW';
+}
+
+export class ExportLeadsDto {
+  @IsOptional() @IsArray() leadIds?: string[];
+  @IsOptional() filters?: CrmLeadQueryDto;
+  @IsOptional() @IsArray() fields?: string[];
+}

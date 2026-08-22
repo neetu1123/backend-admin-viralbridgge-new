@@ -1,8 +1,10 @@
-import { CreateCrmFollowUpDto, CreateCrmLeadDto, CreateCrmNoteDto, CrmLeadQueryDto, UpdateCrmLeadDto, UpdateCrmNoteDto } from './crm.dto';
+import { BulkAssignDto, BulkLeadIdsDto, BulkUpdateDto, CreateCrmFollowUpDto, CreateCrmLeadDto, CreateCrmNoteDto, CrmLeadQueryDto, ExportLeadsDto, ImportConfirmDto, ImportPreviewDto, ReassignLeadDto, UpdateCrmLeadDto, UpdateCrmNoteDto } from './crm.dto';
 import { CrmService } from './crm.service';
+import { CrmEnhancementService } from './crm-enhancement.service';
 export declare class CrmController {
     private readonly crm;
-    constructor(crm: CrmService);
+    private readonly crmEnhancement;
+    constructor(crm: CrmService, crmEnhancement: CrmEnhancementService);
     getSummary(): Promise<{
         totalLeads: number;
         newLeads: number;
@@ -411,4 +413,173 @@ export declare class CrmController {
     completeFollowUp(leadId: string, followUpId: string): Promise<{
         success: boolean;
     }>;
+    getAgents(activeOnly?: string): Promise<{
+        id: string;
+        userId: string;
+        name: string;
+        email: string;
+        avatar: string | undefined;
+        phone: string | undefined;
+        status: string;
+        assignedLeads: number;
+        todaysFollowUps: number;
+        lastActivity: string | undefined;
+    }[]>;
+    getAgentWorkload(userId: string): Promise<{
+        userId: string;
+        name: string;
+        email: string;
+        status: string;
+        assignedLeads: number;
+        todaysFollowUps: number;
+    }>;
+    bulkAssign(body: BulkAssignDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        success: boolean;
+        count: number;
+        assignedTo: string;
+    }>;
+    bulkAutoAssign(body: BulkLeadIdsDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        success: boolean;
+        count: number;
+        strategy: string;
+    }>;
+    bulkUpdate(body: BulkUpdateDto): Promise<{
+        success: boolean;
+        count: number;
+    }>;
+    bulkDelete(body: BulkLeadIdsDto): Promise<{
+        success: boolean;
+        count: number;
+    }>;
+    assignLead(leadId: string, body: {
+        agentId: string;
+    }, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        success: boolean;
+        assignedTo: string;
+    }>;
+    reassignLead(leadId: string, body: ReassignLeadDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        success: boolean;
+        assignedTo: string;
+    }>;
+    getAssignmentHistory(leadId: string): Promise<{
+        id: string;
+        previousAgentId: string | null;
+        previousAgentName: string | undefined;
+        newAgentId: string | null;
+        newAgentName: string | undefined;
+        assignedByName: string | undefined;
+        reason: string | null;
+        assignmentType: string;
+        createdAt: string;
+    }[]>;
+    importPreview(body: ImportPreviewDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        importJobId: string;
+        totalRows: number;
+        valid: number;
+        warnings: number;
+        duplicates: number;
+        errors: number;
+        preview: {
+            status: string;
+            rowNumber: number;
+            firstName: string;
+            lastName: string;
+            email: string;
+            phone: string;
+            company: string;
+            leadType: string;
+            leadSource: string;
+            priority: string;
+            leadStatus: string;
+            assignedAgentEmail: string;
+            dealValue: number | undefined;
+            nextFollowUpDate: string | undefined;
+            description: string | undefined;
+            tags: string[];
+            errors: string[];
+            warnings: string[];
+        }[];
+    }>;
+    importConfirm(body: ImportConfirmDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        importJobId: string;
+        imported: number;
+        duplicates: number;
+        failed: number;
+        status: string;
+    }>;
+    getImportHistory(): Promise<{
+        id: string;
+        fileName: string;
+        importedBy: string;
+        date: string;
+        totalRows: number;
+        imported: number;
+        duplicates: number;
+        failed: number;
+        status: string;
+    }[]>;
+    getImportJob(importId: string): Promise<{
+        id: string;
+        fileName: string;
+        uploadedBy: string;
+        uploadedDate: string;
+        completedAt: string | undefined;
+        totalRecords: number;
+        successfulRecords: number;
+        duplicateRecords: number;
+        failedRecords: number;
+        status: string;
+        errors: {
+            rowNumber: number;
+            error: string;
+            suggestedFix: string | null;
+        }[];
+    }>;
+    getImportErrors(importId: string): Promise<string>;
+    exportLeads(body: ExportLeadsDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        exportJobId: string;
+        recordCount: any;
+        csv: string;
+    }>;
+    getExportHistory(): Promise<{
+        id: string;
+        fileName: string;
+        requestedBy: string;
+        date: string;
+        recordCount: number;
+        status: string;
+    }[]>;
+    getExportDownload(exportId: string): Promise<{
+        fileName: string;
+        csv: string;
+    }>;
+    getLeadIdsByFilters(body: CrmLeadQueryDto): Promise<string[]>;
 }

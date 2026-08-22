@@ -14,14 +14,22 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { Roles } from '../auth/roles.decorator';
 import {
+  BulkAssignDto,
+  BulkLeadIdsDto,
+  BulkUpdateDto,
   CreateCrmFollowUpDto,
   CreateCrmLeadDto,
   CreateCrmNoteDto,
   CrmLeadQueryDto,
+  ExportLeadsDto,
+  ImportConfirmDto,
+  ImportPreviewDto,
+  ReassignLeadDto,
   UpdateCrmLeadDto,
   UpdateCrmNoteDto,
 } from './crm.dto';
 import { CrmService } from './crm.service';
+import { CrmEnhancementService } from './crm-enhancement.service';
 
 @ApiTags('CRM')
 @ApiBearerAuth()
@@ -29,7 +37,10 @@ import { CrmService } from './crm.service';
 @Roles('SUPER_ADMIN', 'ADMIN')
 @Controller('admin/crm')
 export class CrmController {
-  constructor(private readonly crm: CrmService) {}
+  constructor(
+    private readonly crm: CrmService,
+    private readonly crmEnhancement: CrmEnhancementService,
+  ) {}
 
   @Get('summary')
   @ApiOperation({ summary: 'CRM dashboard summary stats' })
@@ -122,5 +133,111 @@ export class CrmController {
     @Param('followUpId') followUpId: string,
   ) {
     return this.crm.completeFollowUp(leadId, followUpId);
+  }
+
+  @Get('agents')
+  getAgents(@Query('activeOnly') activeOnly?: string) {
+    return this.crmEnhancement.getAgents(activeOnly === 'true');
+  }
+
+  @Get('agents/:userId/workload')
+  getAgentWorkload(@Param('userId') userId: string) {
+    return this.crmEnhancement.getAgentWorkload(userId);
+  }
+
+  @Post('leads/bulk-assign')
+  bulkAssign(@Body() body: BulkAssignDto, @Request() req: { user?: { id: string } }) {
+    return this.crmEnhancement.bulkAssign(body.leadIds, body.agentId, req.user!.id);
+  }
+
+  @Post('leads/bulk-auto-assign')
+  bulkAutoAssign(@Body() body: BulkLeadIdsDto, @Request() req: { user?: { id: string } }) {
+    return this.crmEnhancement.bulkAutoAssign(body.leadIds, req.user!.id);
+  }
+
+  @Post('leads/bulk-update')
+  bulkUpdate(@Body() body: BulkUpdateDto) {
+    return this.crmEnhancement.bulkUpdate(body.leadIds, {
+      leadStatus: body.leadStatus,
+      priority: body.priority,
+      tags: body.tags,
+    });
+  }
+
+  @Post('leads/bulk-delete')
+  bulkDelete(@Body() body: BulkLeadIdsDto) {
+    return this.crmEnhancement.bulkDelete(body.leadIds);
+  }
+
+  @Post('leads/:leadId/assign')
+  assignLead(
+    @Param('leadId') leadId: string,
+    @Body() body: { agentId: string },
+    @Request() req: { user?: { id: string } },
+  ) {
+    return this.crmEnhancement.assignLead(leadId, body.agentId, req.user!.id);
+  }
+
+  @Post('leads/:leadId/reassign')
+  reassignLead(
+    @Param('leadId') leadId: string,
+    @Body() body: ReassignLeadDto,
+    @Request() req: { user?: { id: string } },
+  ) {
+    return this.crmEnhancement.reassignLead(leadId, body.agentId, req.user!.id, body.reason);
+  }
+
+  @Get('leads/:leadId/assignment-history')
+  getAssignmentHistory(@Param('leadId') leadId: string) {
+    return this.crmEnhancement.getAssignmentHistory(leadId);
+  }
+
+  @Post('leads/import/preview')
+  importPreview(@Body() body: ImportPreviewDto, @Request() req: { user?: { id: string } }) {
+    return this.crmEnhancement.importPreview(body.fileName, body.rows, req.user!.id);
+  }
+
+  @Post('leads/import/confirm')
+  importConfirm(@Body() body: ImportConfirmDto, @Request() req: { user?: { id: string } }) {
+    return this.crmEnhancement.importConfirm(
+      body.importJobId,
+      req.user!.id,
+      body.duplicateStrategy ?? 'SKIP',
+    );
+  }
+
+  @Get('import-history')
+  getImportHistory() {
+    return this.crmEnhancement.getImportHistory();
+  }
+
+  @Get('import/:importId')
+  getImportJob(@Param('importId') importId: string) {
+    return this.crmEnhancement.getImportJob(importId);
+  }
+
+  @Get('import/:importId/errors')
+  getImportErrors(@Param('importId') importId: string) {
+    return this.crmEnhancement.getImportErrorsCsv(importId);
+  }
+
+  @Post('leads/export')
+  exportLeads(@Body() body: ExportLeadsDto, @Request() req: { user?: { id: string } }) {
+    return this.crmEnhancement.exportLeads(req.user!.id, body);
+  }
+
+  @Get('export-history')
+  getExportHistory() {
+    return this.crmEnhancement.getExportHistory();
+  }
+
+  @Get('export/:exportId/download')
+  getExportDownload(@Param('exportId') exportId: string) {
+    return this.crmEnhancement.getExportDownload(exportId);
+  }
+
+  @Post('leads/filter-ids')
+  getLeadIdsByFilters(@Body() body: CrmLeadQueryDto) {
+    return this.crmEnhancement.getLeadIdsByFilters(body);
   }
 }

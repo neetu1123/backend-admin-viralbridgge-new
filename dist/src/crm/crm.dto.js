@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.CrmLeadQueryDto = exports.CreateCrmFollowUpDto = exports.UpdateCrmNoteDto = exports.CreateCrmNoteDto = exports.UpdateCrmLeadDto = exports.CreateCrmLeadDto = void 0;
+exports.ExportLeadsDto = exports.ImportConfirmDto = exports.ImportPreviewDto = exports.BulkLeadIdsDto = exports.BulkUpdateDto = exports.ReassignLeadDto = exports.BulkAssignDto = exports.CrmLeadQueryDto = exports.CreateCrmFollowUpDto = exports.UpdateCrmNoteDto = exports.CreateCrmNoteDto = exports.UpdateCrmLeadDto = exports.CreateCrmLeadDto = void 0;
 const class_validator_1 = require("class-validator");
 class CreateCrmLeadDto {
     firstName;
@@ -310,4 +310,108 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], CrmLeadQueryDto.prototype, "limit", void 0);
+class BulkAssignDto {
+    leadIds;
+    agentId;
+}
+exports.BulkAssignDto = BulkAssignDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], BulkAssignDto.prototype, "leadIds", void 0);
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkAssignDto.prototype, "agentId", void 0);
+class ReassignLeadDto {
+    agentId;
+    reason;
+}
+exports.ReassignLeadDto = ReassignLeadDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ReassignLeadDto.prototype, "agentId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ReassignLeadDto.prototype, "reason", void 0);
+class BulkUpdateDto {
+    leadIds;
+    leadStatus;
+    priority;
+    tags;
+}
+exports.BulkUpdateDto = BulkUpdateDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], BulkUpdateDto.prototype, "leadIds", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkUpdateDto.prototype, "leadStatus", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], BulkUpdateDto.prototype, "priority", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], BulkUpdateDto.prototype, "tags", void 0);
+class BulkLeadIdsDto {
+    leadIds;
+}
+exports.BulkLeadIdsDto = BulkLeadIdsDto;
+__decorate([
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], BulkLeadIdsDto.prototype, "leadIds", void 0);
+class ImportPreviewDto {
+    fileName;
+    rows;
+}
+exports.ImportPreviewDto = ImportPreviewDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ImportPreviewDto.prototype, "fileName", void 0);
+class ImportConfirmDto {
+    importJobId;
+    duplicateStrategy;
+}
+exports.ImportConfirmDto = ImportConfirmDto;
+__decorate([
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ImportConfirmDto.prototype, "importJobId", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ImportConfirmDto.prototype, "duplicateStrategy", void 0);
+class ExportLeadsDto {
+    leadIds;
+    filters;
+    fields;
+}
+exports.ExportLeadsDto = ExportLeadsDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], ExportLeadsDto.prototype, "leadIds", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    __metadata("design:type", CrmLeadQueryDto)
+], ExportLeadsDto.prototype, "filters", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsArray)(),
+    __metadata("design:type", Array)
+], ExportLeadsDto.prototype, "fields", void 0);
 //# sourceMappingURL=crm.dto.js.map

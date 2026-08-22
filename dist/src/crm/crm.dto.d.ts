@@ -59,3 +59,33 @@ export declare class CrmLeadQueryDto {
     page?: string;
     limit?: string;
 }
+export declare class BulkAssignDto {
+    leadIds: string[];
+    agentId: string;
+}
+export declare class ReassignLeadDto {
+    agentId: string;
+    reason?: string;
+}
+export declare class BulkUpdateDto {
+    leadIds: string[];
+    leadStatus?: string;
+    priority?: string;
+    tags?: string[];
+}
+export declare class BulkLeadIdsDto {
+    leadIds: string[];
+}
+export declare class ImportPreviewDto {
+    fileName: string;
+    rows: Record<string, string>[];
+}
+export declare class ImportConfirmDto {
+    importJobId: string;
+    duplicateStrategy?: 'SKIP' | 'UPDATE' | 'IMPORT_AS_NEW';
+}
+export declare class ExportLeadsDto {
+    leadIds?: string[];
+    filters?: CrmLeadQueryDto;
+    fields?: string[];
+}

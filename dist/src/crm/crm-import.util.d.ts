@@ -1,0 +1,24 @@
+export declare function normalizeHeader(h: string): string;
+export declare function normalizeImportRow(raw: Record<string, string>): Record<string, string>;
+export declare function validateImportRow(row: Record<string, string>, rowNumber: number): {
+    rowNumber: number;
+    firstName: string;
+    lastName: string;
+    email: string;
+    phone: string;
+    company: string;
+    leadType: string;
+    leadSource: string;
+    priority: string;
+    leadStatus: string;
+    assignedAgentEmail: string;
+    dealValue: number | undefined;
+    nextFollowUpDate: string | undefined;
+    description: string | undefined;
+    tags: string[];
+    errors: string[];
+    warnings: string[];
+    status: string;
+};
+export declare function leadsToCsv(leads: Array<Record<string, unknown>>, fields: string[]): string;
+export declare const EXPORT_FIELD_MAP: Record<string, (l: Record<string, unknown>) => string>;

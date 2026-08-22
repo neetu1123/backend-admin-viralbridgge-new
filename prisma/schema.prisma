@@ -45,6 +45,10 @@ model User {
   re_engagement_emails ReEngagementEmailLog[]
   crm_leads_assigned    CrmLead[] @relation("CrmLeadAssignee")
   crm_leads_created     CrmLead[] @relation("CrmLeadCreator")
+  crm_agent_profile     CrmAgent?
+  crm_assignments_made  CrmLeadAssignment[] @relation("CrmAssignmentBy")
+  crm_import_jobs       CrmImportJob[]
+  crm_export_jobs       CrmExportJob[]
   support_cases         SupportCase[] @relation("SupportCaseUser")
   support_cases_assigned SupportCase[] @relation("SupportCaseAssignee")
   support_messages      SupportCaseMessage[]
@@ -711,6 +715,7 @@ model CrmLead {
   follow_ups          CrmFollowUp[]
   timeline_events     CrmTimelineEvent[]
   attachments         CrmAttachment[]
+  assignments         CrmLeadAssignment[]
 
   @@index([lead_status])
   @@index([assigned_to_id])
@@ -767,6 +772,89 @@ model CrmAttachment {
   uploaded_at DateTime @default(now())
 
   @@map("crm_attachments")
+}
+
+model CrmAgent {
+  id            String   @id @default(uuid())
+  user_id       String   @unique
+  user          User     @relation(fields: [user_id], references: [id], onDelete: Cascade)
+  phone         String?
+  status        String   @default("ACTIVE")
+  last_activity DateTime?
+  created_at    DateTime @default(now())
+  updated_at    DateTime @updatedAt
+
+  @@map("crm_agents")
+}
+
+model CrmLeadAssignment {
+  id                String   @id @default(uuid())
+  lead_id           String
+  lead              CrmLead  @relation(fields: [lead_id], references: [id], onDelete: Cascade)
+  previous_agent_id String?
+  new_agent_id      String?
+  assigned_by_id    String?
+  assigned_by       User?    @relation("CrmAssignmentBy", fields: [assigned_by_id], references: [id])
+  reason            String?
+  assignment_type   String
+  created_at        DateTime @default(now())
+
+  @@index([lead_id])
+  @@map("crm_lead_assignments")
+}
+
+model CrmImportJob {
+  id              String   @id @default(uuid())
+  file_name       String
+  uploaded_by_id  String
+  uploaded_by     User     @relation(fields: [uploaded_by_id], references: [id])
+  status          String   @default("UPLOADED")
+  total_rows      Int      @default(0)
+  successful_rows Int      @default(0)
+  duplicate_rows  Int      @default(0)
+  failed_rows     Int      @default(0)
+  warning_rows    Int      @default(0)
+  duplicate_strategy String @default("SKIP")
+  preview_json    Json?
+  file_url        String?
+  error_file_url  String?
+  started_at      DateTime?
+  completed_at    DateTime?
+  created_at      DateTime @default(now())
+
+  errors          CrmImportError[]
+
+  @@index([uploaded_by_id])
+  @@map("crm_import_jobs")
+}
+
+model CrmImportError {
+  id             String       @id @default(uuid())
+  import_job_id  String
+  import_job     CrmImportJob @relation(fields: [import_job_id], references: [id], onDelete: Cascade)
+  row_number     Int
+  row_data       Json?
+  error          String
+  suggested_fix  String?
+
+  @@map("crm_import_errors")
+}
+
+model CrmExportJob {
+  id              String   @id @default(uuid())
+  file_name       String
+  requested_by_id String
+  requested_by    User     @relation(fields: [requested_by_id], references: [id])
+  filters_json    Json?
+  selected_fields Json?
+  record_count    Int      @default(0)
+  status          String   @default("PENDING")
+  file_content    String?
+  created_at      DateTime @default(now())
+  completed_at    DateTime?
+
+  @@index([requested_by_id])
+  @@map("crm_export_jobs")
 }
 
 model SupportCategory {
