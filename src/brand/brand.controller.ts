@@ -253,6 +253,11 @@ export class BrandController {
     return this.brandService.getUnreadNotificationCount(req.user.id);
   }
 
+  @Get('notifications/banner')
+  getBannerNotifications(@Request() req: any) {
+    return this.brandService.getBannerNotifications(req.user.id);
+  }
+
   @Patch('notifications/read-all')
   markAllNotificationsRead(@Request() req: any) {
     return this.brandService.markAllNotificationsRead(req.user.id);
@@ -261,6 +266,11 @@ export class BrandController {
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.brandService.getNotifications(req.user.id, query);
+  }
+
+  @Patch('notifications/:id/dismiss')
+  dismissNotification(@Request() req: any, @Param('id') id: string) {
+    return this.brandService.dismissNotification(req.user.id, id);
   }
 
   @Patch('notifications/:id/read')

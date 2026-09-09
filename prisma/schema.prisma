@@ -358,9 +358,11 @@ model Notification {
   entity_id        String?
   metadata         Json?
   is_read          Boolean        @default(false)
+  is_dismissed     Boolean        @default(false)
   created_at       DateTime       @default(now())
 
   @@index([user_id, is_read])
+  @@index([user_id, is_dismissed])
   @@index([user_id, created_at])
   @@map("notifications")
 }

@@ -4,11 +4,15 @@ export type NotificationType =
   | 'SYSTEM'
   | 'KYC'
   | 'CAMPAIGN'
+  | 'CAMPAIGN_INVITE'
+  | 'CAMPAIGN_APPLICATION'
   | 'APPLICATION'
   | 'PAYMENT'
   | 'WITHDRAWAL'
   | 'DISPUTE'
   | 'MESSAGE';
+
+const APPROACH_TYPES = new Set(['CAMPAIGN_INVITE', 'CAMPAIGN_APPLICATION']);
 
 export function formatNotification(row: {
   id: string;
@@ -19,6 +23,7 @@ export function formatNotification(row: {
   entity_type: string | null;
   entity_id: string | null;
   is_read: boolean;
+  is_dismissed?: boolean;
   created_at: Date;
   metadata?: unknown;
 }) {
@@ -31,9 +36,22 @@ export function formatNotification(row: {
     entity_type: row.entity_type,
     entity_id: row.entity_id,
     is_read: row.is_read,
+    is_dismissed: Boolean(row.is_dismissed),
     created_at: row.created_at,
     metadata: row.metadata ?? null,
   };
+}
+
+export function isApproachNotification(row: { type: string; title: string; body: string }) {
+  if (APPROACH_TYPES.has(row.type)) return true;
+  const title = row.title.toLowerCase();
+  const body = row.body.toLowerCase();
+  return (
+    title.includes('campaign invitation') ||
+    title.includes('new campaign application') ||
+    body.includes('invited to apply') ||
+    /\bapplied to\b/.test(body)
+  );
 }
 
 export async function createNotification(
@@ -118,12 +136,34 @@ export async function listNotifications(
   };
 }
 
+export async function listBannerNotifications(prisma: PrismaClient, userId: string, limit = 5) {
+  const take = Math.min(8, Math.max(1, limit));
+  const rows = await prisma.notification.findMany({
+    where: { user_id: userId, is_read: false, is_dismissed: false },
+    orderBy: { created_at: 'desc' },
+    take: 40,
+  });
+  return {
+    data: rows.filter(isApproachNotification).slice(0, take).map(formatNotification),
+  };
+}
+
 export async function markNotificationRead(prisma: PrismaClient, userId: string, id: string) {
   const row = await prisma.notification.findUnique({ where: { id } });
   if (!row || row.user_id !== userId) return null;
   const updated = await prisma.notification.update({
     where: { id },
-    data: { is_read: true },
+    data: { is_read: true, is_dismissed: true },
+  });
+  return formatNotification(updated);
+}
+
+export async function dismissNotification(prisma: PrismaClient, userId: string, id: string) {
+  const row = await prisma.notification.findUnique({ where: { id } });
+  if (!row || row.user_id !== userId) return null;
+  const updated = await prisma.notification.update({
+    where: { id },
+    data: { is_dismissed: true },
   });
   return formatNotification(updated);
 }
@@ -131,7 +171,7 @@ export async function markNotificationRead(prisma: PrismaClient, userId: string,
 export async function markAllNotificationsRead(prisma: PrismaClient, userId: string) {
   await prisma.notification.updateMany({
     where: { user_id: userId, is_read: false },
-    data: { is_read: true },
+    data: { is_read: true, is_dismissed: true },
   });
   return { success: true };
 }

@@ -252,6 +252,11 @@ export class CreatorController {
     return this.creatorService.getUnreadNotificationCount(req.user.id);
   }
 
+  @Get('notifications/banner')
+  getBannerNotifications(@Request() req: any) {
+    return this.creatorService.getBannerNotifications(req.user.id);
+  }
+
   @Patch('notifications/read-all')
   markAllNotificationsRead(@Request() req: any) {
     return this.creatorService.markAllNotificationsRead(req.user.id);
@@ -260,6 +265,11 @@ export class CreatorController {
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.creatorService.getNotifications(req.user.id, query);
+  }
+
+  @Patch('notifications/:id/dismiss')
+  dismissNotification(@Request() req: any, @Param('id') id: string) {
+    return this.creatorService.dismissNotification(req.user.id, id);
   }
 
   @Patch('notifications/:id/read')

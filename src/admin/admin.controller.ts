@@ -240,6 +240,11 @@ export class AdminController {
     return this.notifications.unreadCount(req.user.id);
   }
 
+  @Get('notifications/banner')
+  getBannerNotifications(@Request() req: any) {
+    return this.notifications.listBanner(req.user.id);
+  }
+
   @Get('notifications')
   getNotifications(
     @Request() req: any,
@@ -259,6 +264,11 @@ export class AdminController {
   @Patch('notifications/read-all')
   markAllNotificationsRead(@Request() req: any) {
     return this.notifications.markAllRead(req.user.id);
+  }
+
+  @Patch('notifications/:id/dismiss')
+  dismissNotification(@Param('id') id: string, @Request() req: any) {
+    return this.notifications.dismiss(req.user.id, id);
   }
 
   @Patch('notifications/:id/read')

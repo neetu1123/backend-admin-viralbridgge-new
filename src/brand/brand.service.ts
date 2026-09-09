@@ -246,6 +246,9 @@ export class BrandService {
       status === 'REJECTED' ? 'Application not selected' : 'Application updated',
       notificationMessage,
       { applicationId, campaignId: application.campaign_id, status, rejectionReason: rejectionReason?.trim() },
+      'APPLICATION',
+      'APPLICATION',
+      applicationId,
     );
 
     return updated;
@@ -259,14 +262,35 @@ export class BrandService {
     });
     if (!creator) throw new NotFoundException('Creator not found');
 
+    const allowed = await this.notifications.shouldNotify(creator.user_id, 'notifInvites');
+    if (!allowed) {
+      return { success: true, notified: false };
+    }
+
+    const existing = await this.prisma.notification.findFirst({
+      where: {
+        user_id: creator.user_id,
+        is_read: false,
+        type: 'CAMPAIGN_INVITE',
+        entity_id: campaignId,
+      },
+    });
+    if (existing) {
+      return { success: true, alreadyInvited: true };
+    }
+
+    const brandName = campaign.brand.company_name || 'A brand';
     await this.createNotification(
       creator.user_id,
       'Campaign invitation',
-      `You were invited to apply for ${campaign.title}.`,
-      { campaignId, creatorId },
+      `${brandName} invited you to apply for ${campaign.title}.`,
+      { campaignId, creatorId, brandName, campaignTitle: campaign.title },
+      'CAMPAIGN_INVITE',
+      'CAMPAIGN',
+      campaignId,
     );
 
-    return { success: true };
+    return { success: true, notified: true };
   }
 
   async getCreators(query: CreatorDiscoveryQueryDto) {
@@ -550,6 +574,16 @@ export class BrandService {
     return this.notifications.markAllRead(userId);
   }
 
+  async getBannerNotifications(userId: string) {
+    return this.notifications.listBanner(userId);
+  }
+
+  async dismissNotification(userId: string, id: string) {
+    const result = await this.notifications.dismiss(userId, id);
+    if (!result) throw new NotFoundException('Notification not found');
+    return result;
+  }
+
   async getSettings(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     return user?.settings ?? {};
@@ -646,9 +680,18 @@ export class BrandService {
     title: string,
     body: string,
     metadata?: Record<string, any>,
+    type = 'SYSTEM',
+    entityType?: string,
+    entityId?: string,
   ) {
-    return this.prisma.notification.create({
-      data: { user_id: userId, title, body, type: 'SYSTEM', metadata: metadata ?? {} },
+    return this.notifications.create({
+      userId,
+      title,
+      message: body,
+      type,
+      entityType,
+      entityId,
+      metadata,
     });
   }
 }

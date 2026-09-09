@@ -515,6 +515,11 @@ router.get('/notifications/unread-count', async (req: AuthedRequest, res) => {
   return ok(res, await getUnreadCount(prisma(), req.user!.id));
 });
 
+router.get('/notifications/banner', async (req: AuthedRequest, res) => {
+  const { listBannerNotifications } = require('./lib/notifications') as typeof import('./lib/notifications');
+  return ok(res, await listBannerNotifications(prisma(), req.user!.id));
+});
+
 router.get('/notifications', async (req: AuthedRequest, res) => {
   const { listNotifications } = require('./lib/notifications') as typeof import('./lib/notifications');
   const result = await listNotifications(prisma(), req.user!.id, {
@@ -529,6 +534,13 @@ router.get('/notifications', async (req: AuthedRequest, res) => {
 router.patch('/notifications/read-all', async (req: AuthedRequest, res) => {
   const { markAllNotificationsRead } = require('./lib/notifications') as typeof import('./lib/notifications');
   return ok(res, await markAllNotificationsRead(prisma(), req.user!.id));
+});
+
+router.patch('/notifications/:id/dismiss', async (req: AuthedRequest, res) => {
+  const { dismissNotification } = require('./lib/notifications') as typeof import('./lib/notifications');
+  const result = await dismissNotification(prisma(), req.user!.id, paramId(req));
+  if (!result) return fail(res, 'Notification not found', 404);
+  return ok(res, result);
 });
 
 router.patch('/notifications/:id/read', async (req: AuthedRequest, res) => {

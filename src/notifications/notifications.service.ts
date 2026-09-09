@@ -2,22 +2,27 @@ import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { emitNotificationEvent } from '../common/notification-emitter';
 
+export const APPROACH_NOTIFICATION_TYPES = ['CAMPAIGN_INVITE', 'CAMPAIGN_APPLICATION'] as const;
+
+type NotificationRow = {
+  id: string;
+  user_id: string;
+  title: string;
+  body: string;
+  type: string;
+  entity_type: string | null;
+  entity_id: string | null;
+  is_read: boolean;
+  is_dismissed?: boolean;
+  created_at: Date;
+  metadata?: unknown;
+};
+
 @Injectable()
 export class NotificationsService {
   constructor(private prisma: PrismaService) {}
 
-  format(row: {
-    id: string;
-    user_id: string;
-    title: string;
-    body: string;
-    type: string;
-    entity_type: string | null;
-    entity_id: string | null;
-    is_read: boolean;
-    created_at: Date;
-    metadata?: unknown;
-  }) {
+  format(row: NotificationRow) {
     return {
       id: row.id,
       user_id: row.user_id,
@@ -27,9 +32,33 @@ export class NotificationsService {
       entity_type: row.entity_type,
       entity_id: row.entity_id,
       is_read: row.is_read,
+      is_dismissed: Boolean(row.is_dismissed),
       created_at: row.created_at,
       metadata: row.metadata ?? null,
     };
+  }
+
+  isApproachNotification(row: Pick<NotificationRow, 'type' | 'title' | 'body'>) {
+    if (APPROACH_NOTIFICATION_TYPES.includes(row.type as (typeof APPROACH_NOTIFICATION_TYPES)[number])) {
+      return true;
+    }
+    const title = row.title.toLowerCase();
+    const body = row.body.toLowerCase();
+    return (
+      title.includes('campaign invitation') ||
+      title.includes('new campaign application') ||
+      body.includes('invited to apply') ||
+      /\bapplied to\b/.test(body)
+    );
+  }
+
+  async shouldNotify(userId: string, settingKey: string) {
+    const user = await this.prisma.user.findUnique({
+      where: { id: userId },
+      select: { settings: true },
+    });
+    const settings = (user?.settings as Record<string, unknown> | null) ?? {};
+    return settings[settingKey] !== false;
   }
 
   async create(params: {
@@ -87,17 +116,41 @@ export class NotificationsService {
     };
   }
 
+  async listBanner(userId: string, limit = 5) {
+    const take = Math.min(8, Math.max(1, limit));
+    const rows = await this.prisma.notification.findMany({
+      where: { user_id: userId, is_read: false, is_dismissed: false },
+      orderBy: { created_at: 'desc' },
+      take: 40,
+    });
+    const data = rows.filter((row) => this.isApproachNotification(row)).slice(0, take).map((row) => this.format(row));
+    return { data };
+  }
+
   async markRead(userId: string, id: string) {
     const row = await this.prisma.notification.findUnique({ where: { id } });
     if (!row || row.user_id !== userId) return null;
-    const updated = await this.prisma.notification.update({ where: { id }, data: { is_read: true } });
+    const updated = await this.prisma.notification.update({
+      where: { id },
+      data: { is_read: true, is_dismissed: true },
+    });
+    return this.format(updated);
+  }
+
+  async dismiss(userId: string, id: string) {
+    const row = await this.prisma.notification.findUnique({ where: { id } });
+    if (!row || row.user_id !== userId) return null;
+    const updated = await this.prisma.notification.update({
+      where: { id },
+      data: { is_dismissed: true },
+    });
     return this.format(updated);
   }
 
   async markAllRead(userId: string) {
     await this.prisma.notification.updateMany({
       where: { user_id: userId, is_read: false },
-      data: { is_read: true },
+      data: { is_read: true, is_dismissed: true },
     });
     return { success: true };
   }

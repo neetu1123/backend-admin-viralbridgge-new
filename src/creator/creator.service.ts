@@ -213,12 +213,35 @@ export class CreatorService {
           include: { campaign: true, creator: { include: { user: true } } },
         });
 
-    await this.createNotification(
-      campaign.brand.user_id,
-      'New campaign application',
-      `${profile.full_name ?? profile.user.name} applied to ${campaign.title}.`,
-      { campaignId, applicationId: application.id },
-    );
+    const creatorName = profile.full_name ?? profile.user.name ?? 'A creator';
+    const allowed = await this.notifications.shouldNotify(campaign.brand.user_id, 'notifApplicants');
+    if (allowed) {
+      const existingNotice = await this.prisma.notification.findFirst({
+        where: {
+          user_id: campaign.brand.user_id,
+          is_read: false,
+          type: 'CAMPAIGN_APPLICATION',
+          entity_id: application.id,
+        },
+      });
+      if (!existingNotice) {
+        await this.createNotification(
+          campaign.brand.user_id,
+          'New campaign application',
+          `${creatorName} applied to ${campaign.title}.`,
+          {
+            campaignId,
+            applicationId: application.id,
+            creatorId: profile.id,
+            creatorName,
+            campaignTitle: campaign.title,
+          },
+          'CAMPAIGN_APPLICATION',
+          'APPLICATION',
+          application.id,
+        );
+      }
+    }
 
     await this.userActivity?.recordCampaignActivity(userId).catch(() => undefined);
 
@@ -425,6 +448,16 @@ export class CreatorService {
     return this.notifications.markAllRead(userId);
   }
 
+  async getBannerNotifications(userId: string) {
+    return this.notifications.listBanner(userId);
+  }
+
+  async dismissNotification(userId: string, id: string) {
+    const result = await this.notifications.dismiss(userId, id);
+    if (!result) throw new NotFoundException('Notification not found');
+    return result;
+  }
+
   async getSettings(userId: string) {
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
     return user?.settings ?? {};
@@ -471,9 +504,18 @@ export class CreatorService {
     title: string,
     body: string,
     metadata?: Record<string, any>,
+    type = 'SYSTEM',
+    entityType?: string,
+    entityId?: string,
   ) {
-    return this.prisma.notification.create({
-      data: { user_id: userId, title, body, type: 'SYSTEM', metadata: metadata ?? {} },
+    return this.notifications.create({
+      userId,
+      title,
+      message: body,
+      type,
+      entityType,
+      entityId,
+      metadata,
     });
   }
 }
