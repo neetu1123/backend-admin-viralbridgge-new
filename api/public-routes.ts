@@ -45,6 +45,10 @@ router.get('/campaigns/:id', (req, res) =>
   runPublic(res, () => publicService().getCampaignById(paramId(req))),
 );
 
+router.get('/brands/:id', (req, res) =>
+  runPublic(res, () => publicService().getPublicBrand(paramId(req))),
+);
+
 router.get('/stats', (req, res) => runPublic(res, () => publicService().getPlatformStats()));
 
 export { router as publicRouter };

@@ -32,6 +32,12 @@ export class PublicController {
     return this.publicService.getCampaignById(id);
   }
 
+  @Get('brands/:id')
+  @ApiOperation({ summary: 'Get public brand profile by id or company slug (no auth required)' })
+  getBrand(@Param('id') id: string) {
+    return this.publicService.getPublicBrand(id);
+  }
+
   @Get('stats')
   @ApiOperation({ summary: 'Get platform statistics (no auth required)' })
   getStats() {
