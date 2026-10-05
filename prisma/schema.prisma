@@ -53,6 +53,7 @@ model User {
   support_cases_assigned SupportCase[] @relation("SupportCaseAssignee")
   support_messages      SupportCaseMessage[]
   support_notes         SupportCaseNote[]
+  discovery_enquiries   DiscoveryEnquiry[]
 
   @@map("users")
 }
@@ -103,6 +104,22 @@ model CreatorProfile {
   contact_email    String?
   phone            String?
   photo            String?
+  slug             String?      @unique
+  cover_image      String?
+  category         String?
+  subcategory      String?
+  city             String?
+  state            String?
+  area             String?
+  gallery          String[]     @default([])
+  rating           Float        @default(0)
+  review_count     Int          @default(0)
+  featured         Boolean      @default(false)
+  discovery_status String       @default("ACTIVE")
+  is_phone_public  Boolean      @default(false)
+  is_email_public  Boolean      @default(false)
+  whatsapp         String?
+  is_whatsapp_public Boolean    @default(false)
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 
@@ -114,7 +131,13 @@ model CreatorProfile {
   withdrawals      Withdrawal[]
   ai_matches       AiMatch[]
   organization     Organization?
+  discovery_enquiries DiscoveryEnquiry[]
 
+  @@index([city])
+  @@index([area])
+  @@index([full_name])
+  @@index([state])
+  @@index([discovery_status, featured])
   @@map("creator_profiles")
 }
 
@@ -130,6 +153,31 @@ model BrandProfile {
   contact_email    String?
   phone            String?
   location         String?
+  slug             String?      @unique
+  cover_image      String?
+  short_description String?
+  category         String?
+  subcategory      String?
+  services         String[]     @default([])
+  whatsapp         String?
+  address          String?
+  city             String?
+  state            String?
+  area             String?
+  latitude         Float?
+  longitude        Float?
+  business_hours   Json?
+  gallery          String[]     @default([])
+  established_year Int?
+  rating           Float        @default(0)
+  review_count     Int          @default(0)
+  featured         Boolean      @default(false)
+  discovery_status String       @default("ACTIVE")
+  is_phone_public  Boolean      @default(false)
+  is_email_public  Boolean      @default(false)
+  is_whatsapp_public Boolean    @default(false)
+  is_address_public Boolean     @default(false)
+  social_links     Json?
   created_at       DateTime     @default(now())
   updated_at       DateTime     @updatedAt
 
@@ -138,7 +186,14 @@ model BrandProfile {
   disputes         Dispute[]
   escrows          Escrow[]
   organization     Organization?
+  discovery_enquiries DiscoveryEnquiry[]
 
+  @@index([city])
+  @@index([area])
+  @@index([state])
+  @@index([company_name])
+  @@index([category])
+  @@index([discovery_status, featured])
   @@map("brand_profiles")
 }
 
@@ -1007,4 +1062,57 @@ model SupportCaseEvent {
 
   @@index([case_id])
   @@map("support_case_events")
+}
+
+model DiscoveryCategory {
+  id          String   @id @default(uuid())
+  name        String
+  slug        String   @unique
+  description String?
+  icon        String?
+  type        String   @default("BOTH") // BUSINESS, CREATOR, BOTH
+  status      String   @default("ACTIVE")
+  sort_order  Int      @default(0)
+  created_at  DateTime @default(now())
+  updated_at  DateTime @updatedAt
+
+  @@index([status, type])
+  @@map("discovery_categories")
+}
+
+model DiscoveryEnquiry {
+  id          String          @id @default(uuid())
+  listing_type String
+  brand_id    String?
+  brand       BrandProfile?   @relation(fields: [brand_id], references: [id])
+  creator_id  String?
+  creator     CreatorProfile? @relation(fields: [creator_id], references: [id])
+  sender_user_id String?
+  sender      User?           @relation(fields: [sender_user_id], references: [id])
+  name        String
+  email       String
+  phone       String?
+  message     String
+  status      String          @default("NEW")
+  created_at  DateTime        @default(now())
+
+  @@index([brand_id, created_at])
+  @@index([creator_id, created_at])
+  @@index([email, created_at])
+  @@map("discovery_enquiries")
+}
+
+model DiscoveryEvent {
+  id           String   @id @default(uuid())
+  event_type   String
+  listing_type String?
+  listing_id   String?
+  category     String?
+  city         String?
+  query        String?
+  created_at   DateTime @default(now())
+
+  @@index([event_type, created_at])
+  @@index([listing_id, event_type])
+  @@map("discovery_events")
 }

@@ -687,4 +687,44 @@ router.post('/invite-admin', async (req: AuthedRequest, res) => {
   return ok(res, user, 201);
 });
 
+router.get('/discovery/listings', async (req: AuthedRequest, res) => {
+  try {
+    const { parseListQuery } = require('./lib/query') as typeof import('./lib/query');
+    const { getDiscoveryService } = require('./lib/services') as typeof import('./lib/services');
+    const data = await getDiscoveryService().adminList(parseListQuery(req.query as Record<string, unknown>) as never);
+    return ok(res, data);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load listings', 500);
+  }
+});
+
+router.get('/discovery/analytics', async (_req: AuthedRequest, res) => {
+  try {
+    const { getDiscoveryService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getDiscoveryService().adminAnalytics());
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load analytics', 500);
+  }
+});
+
+router.get('/discovery/categories', async (_req: AuthedRequest, res) => {
+  try {
+    const { getDiscoveryService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getDiscoveryService().getCategories());
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load categories', 500);
+  }
+});
+
+router.patch('/discovery/listings/:type/:id', async (req: AuthedRequest, res) => {
+  try {
+    const { getDiscoveryService } = require('./lib/services') as typeof import('./lib/services');
+    const data = await getDiscoveryService().adminUpdate(paramId(req), paramId(req, 'type'), req.body, req.user!.id);
+    await audit(req.user?.id, 'UPDATE_DISCOVERY_LISTING', String(req.params.type), paramId(req), req.body);
+    return ok(res, data);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to update listing', 500);
+  }
+});
+
 export const adminRouter = router;

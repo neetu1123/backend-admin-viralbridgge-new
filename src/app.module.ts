@@ -26,6 +26,7 @@ import { ReEngagementModule } from './re-engagement/re-engagement.module';
 import { PublicModule } from './public/public.module';
 import { CrmModule } from './crm/crm.module';
 import { SupportModule } from './support/support.module';
+import { DiscoveryModule } from './discovery/discovery.module';
 
 @Module({
   imports: [
@@ -57,6 +58,7 @@ import { SupportModule } from './support/support.module';
     PublicModule,
     CrmModule,
     SupportModule,
+    DiscoveryModule,
   ],
   controllers: [AppController],
   providers: [

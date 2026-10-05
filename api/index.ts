@@ -11,6 +11,7 @@ import { securityRouter } from './security-routes';
 import { analyticsRouter } from './analytics-routes';
 import { escrowRouter } from './escrow-routes';
 import { publicRouter } from './public-routes';
+import { discoveryRouter } from './discovery-routes';
 import { handleAuthLogin } from './auth-login';
 import { handleAuthRegister } from './auth-register';
 import { handleAuthMe } from './auth-me';
@@ -97,6 +98,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/analytics')) return true;
   if (path.startsWith('/escrow')) return true;
   if (path.startsWith('/public')) return true;
+  if (path.startsWith('/business')) return true;
   return false;
 }
 
@@ -147,6 +149,7 @@ server.use('/security', securityRouter);
 server.use('/analytics', analyticsRouter);
 server.use('/escrow', escrowRouter);
 server.use('/public', publicRouter);
+server.use('/business', discoveryRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {
