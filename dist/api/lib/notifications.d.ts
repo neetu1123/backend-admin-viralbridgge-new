@@ -1,5 +1,5 @@
 import type { PrismaClient } from '@prisma/client';
-export type NotificationType = 'SYSTEM' | 'KYC' | 'CAMPAIGN' | 'APPLICATION' | 'PAYMENT' | 'WITHDRAWAL' | 'DISPUTE' | 'MESSAGE';
+export type NotificationType = 'SYSTEM' | 'KYC' | 'CAMPAIGN' | 'CAMPAIGN_INVITE' | 'CAMPAIGN_APPLICATION' | 'APPLICATION' | 'PAYMENT' | 'WITHDRAWAL' | 'DISPUTE' | 'MESSAGE';
 export declare function formatNotification(row: {
     id: string;
     user_id: string;
@@ -9,6 +9,7 @@ export declare function formatNotification(row: {
     entity_type: string | null;
     entity_id: string | null;
     is_read: boolean;
+    is_dismissed?: boolean;
     created_at: Date;
     metadata?: unknown;
 }): {
@@ -20,9 +21,15 @@ export declare function formatNotification(row: {
     entity_type: string | null;
     entity_id: string | null;
     is_read: boolean;
+    is_dismissed: boolean;
     created_at: Date;
     metadata: {} | null;
 };
+export declare function isApproachNotification(row: {
+    type: string;
+    title: string;
+    body: string;
+}): boolean;
 export declare function createNotification(prisma: PrismaClient, params: {
     userId: string;
     title: string;
@@ -40,6 +47,7 @@ export declare function createNotification(prisma: PrismaClient, params: {
     entity_type: string | null;
     entity_id: string | null;
     is_read: boolean;
+    is_dismissed: boolean;
     created_at: Date;
     metadata: {} | null;
 }>;
@@ -52,6 +60,7 @@ export declare function notifyAdmins(prisma: PrismaClient, params: Omit<Paramete
     entity_type: string | null;
     entity_id: string | null;
     is_read: boolean;
+    is_dismissed: boolean;
     created_at: Date;
     metadata: {} | null;
 }[]>;
@@ -70,6 +79,7 @@ export declare function listNotifications(prisma: PrismaClient, userId: string, 
         entity_type: string | null;
         entity_id: string | null;
         is_read: boolean;
+        is_dismissed: boolean;
         created_at: Date;
         metadata: {} | null;
     }[];
@@ -78,6 +88,21 @@ export declare function listNotifications(prisma: PrismaClient, userId: string, 
     page: number;
     limit: number;
     totalPages: number;
+}>;
+export declare function listBannerNotifications(prisma: PrismaClient, userId: string, limit?: number): Promise<{
+    data: {
+        id: string;
+        user_id: string;
+        type: string;
+        title: string;
+        message: string;
+        entity_type: string | null;
+        entity_id: string | null;
+        is_read: boolean;
+        is_dismissed: boolean;
+        created_at: Date;
+        metadata: {} | null;
+    }[];
 }>;
 export declare function markNotificationRead(prisma: PrismaClient, userId: string, id: string): Promise<{
     id: string;
@@ -88,6 +113,20 @@ export declare function markNotificationRead(prisma: PrismaClient, userId: strin
     entity_type: string | null;
     entity_id: string | null;
     is_read: boolean;
+    is_dismissed: boolean;
+    created_at: Date;
+    metadata: {} | null;
+} | null>;
+export declare function dismissNotification(prisma: PrismaClient, userId: string, id: string): Promise<{
+    id: string;
+    user_id: string;
+    type: string;
+    title: string;
+    message: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    is_read: boolean;
+    is_dismissed: boolean;
     created_at: Date;
     metadata: {} | null;
 } | null>;

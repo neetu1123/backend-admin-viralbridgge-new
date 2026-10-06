@@ -202,7 +202,27 @@ let CreatorService = class CreatorService {
                 },
                 include: { campaign: true, creator: { include: { user: true } } },
             });
-        await this.createNotification(campaign.brand.user_id, 'New campaign application', `${profile.full_name ?? profile.user.name} applied to ${campaign.title}.`, { campaignId, applicationId: application.id });
+        const creatorName = profile.full_name ?? profile.user.name ?? 'A creator';
+        const allowed = await this.notifications.shouldNotify(campaign.brand.user_id, 'notifApplicants');
+        if (allowed) {
+            const existingNotice = await this.prisma.notification.findFirst({
+                where: {
+                    user_id: campaign.brand.user_id,
+                    is_read: false,
+                    type: 'CAMPAIGN_APPLICATION',
+                    entity_id: application.id,
+                },
+            });
+            if (!existingNotice) {
+                await this.createNotification(campaign.brand.user_id, 'New campaign application', `${creatorName} applied to ${campaign.title}.`, {
+                    campaignId,
+                    applicationId: application.id,
+                    creatorId: profile.id,
+                    creatorName,
+                    campaignTitle: campaign.title,
+                }, 'CAMPAIGN_APPLICATION', 'APPLICATION', application.id);
+            }
+        }
         await this.userActivity?.recordCampaignActivity(userId).catch(() => undefined);
         return application;
     }
@@ -377,6 +397,15 @@ let CreatorService = class CreatorService {
     async markAllNotificationsRead(userId) {
         return this.notifications.markAllRead(userId);
     }
+    async getBannerNotifications(userId) {
+        return this.notifications.listBanner(userId);
+    }
+    async dismissNotification(userId, id) {
+        const result = await this.notifications.dismiss(userId, id);
+        if (!result)
+            throw new common_1.NotFoundException('Notification not found');
+        return result;
+    }
     async getSettings(userId) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         return user?.settings ?? {};
@@ -416,9 +445,15 @@ let CreatorService = class CreatorService {
             throw new common_1.ForbiddenException('Forbidden');
         return conversation;
     }
-    async createNotification(userId, title, body, metadata) {
-        return this.prisma.notification.create({
-            data: { user_id: userId, title, body, type: 'SYSTEM', metadata: metadata ?? {} },
+    async createNotification(userId, title, body, metadata, type = 'SYSTEM', entityType, entityId) {
+        return this.notifications.create({
+            userId,
+            title,
+            message: body,
+            type,
+            entityType,
+            entityId,
+            metadata,
         });
     }
 };

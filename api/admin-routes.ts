@@ -727,4 +727,44 @@ router.patch('/discovery/listings/:type/:id', async (req: AuthedRequest, res) =>
   }
 });
 
+router.get('/listings', async (req: AuthedRequest, res) => {
+  try {
+    const { parseListQuery } = require('./lib/query') as typeof import('./lib/query');
+    const { getListingService } = require('./lib/services') as typeof import('./lib/services');
+    const data = await getListingService().adminList(parseListQuery(req.query as Record<string, unknown>) as never);
+    return ok(res, data);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load free listings', 500);
+  }
+});
+
+router.get('/listings/reports', async (_req: AuthedRequest, res) => {
+  try {
+    const { getListingService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getListingService().adminReports());
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load reports', 500);
+  }
+});
+
+router.get('/listings/analytics', async (_req: AuthedRequest, res) => {
+  try {
+    const { getListingService } = require('./lib/services') as typeof import('./lib/services');
+    return ok(res, await getListingService().adminAnalytics());
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to load listing analytics', 500);
+  }
+});
+
+router.patch('/listings/:id', async (req: AuthedRequest, res) => {
+  try {
+    const { getListingService } = require('./lib/services') as typeof import('./lib/services');
+    const data = await getListingService().adminUpdate(paramId(req), req.body, req.user!.id);
+    await audit(req.user?.id, 'UPDATE_FREE_LISTING', 'FreeListing', paramId(req), req.body);
+    return ok(res, data);
+  } catch (error) {
+    return fail(res, error instanceof Error ? error.message : 'Failed to update free listing', 500);
+  }
+});
+
 export const adminRouter = router;

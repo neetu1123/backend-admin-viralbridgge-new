@@ -34,6 +34,9 @@ let PublicController = class PublicController {
     getCampaign(id) {
         return this.publicService.getCampaignById(id);
     }
+    getBrand(id) {
+        return this.publicService.getPublicBrand(id);
+    }
     getStats() {
         return this.publicService.getPlatformStats();
     }
@@ -71,6 +74,14 @@ __decorate([
     __metadata("design:paramtypes", [String]),
     __metadata("design:returntype", void 0)
 ], PublicController.prototype, "getCampaign", null);
+__decorate([
+    (0, common_1.Get)('brands/:id'),
+    (0, swagger_1.ApiOperation)({ summary: 'Get public brand profile by id or company slug (no auth required)' }),
+    __param(0, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String]),
+    __metadata("design:returntype", void 0)
+], PublicController.prototype, "getBrand", null);
 __decorate([
     (0, common_1.Get)('stats'),
     (0, swagger_1.ApiOperation)({ summary: 'Get platform statistics (no auth required)' }),

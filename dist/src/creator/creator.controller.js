@@ -142,11 +142,17 @@ let CreatorController = class CreatorController {
     getUnreadNotificationCount(req) {
         return this.creatorService.getUnreadNotificationCount(req.user.id);
     }
+    getBannerNotifications(req) {
+        return this.creatorService.getBannerNotifications(req.user.id);
+    }
     markAllNotificationsRead(req) {
         return this.creatorService.markAllNotificationsRead(req.user.id);
     }
     getNotifications(req, query) {
         return this.creatorService.getNotifications(req.user.id, query);
+    }
+    dismissNotification(req, id) {
+        return this.creatorService.dismissNotification(req.user.id, id);
     }
     markNotificationRead(req, id) {
         return this.creatorService.markNotificationRead(req.user.id, id);
@@ -364,6 +370,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getUnreadNotificationCount", null);
 __decorate([
+    (0, common_1.Get)('notifications/banner'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "getBannerNotifications", null);
+__decorate([
     (0, common_1.Patch)('notifications/read-all'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -378,6 +391,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, creator_dto_1.NotificationQueryDto]),
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getNotifications", null);
+__decorate([
+    (0, common_1.Patch)('notifications/:id/dismiss'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], CreatorController.prototype, "dismissNotification", null);
 __decorate([
     (0, common_1.Patch)('notifications/:id/read'),
     __param(0, (0, common_1.Request)()),

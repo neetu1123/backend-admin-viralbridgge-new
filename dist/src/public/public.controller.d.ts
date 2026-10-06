@@ -77,6 +77,7 @@ export declare class PublicController {
     listCampaigns(query: PublicCampaignsQueryDto): Promise<{
         data: {
             id: any;
+            brandId: any;
             brand: any;
             brandInitial: string;
             brandColor: string;
@@ -113,6 +114,7 @@ export declare class PublicController {
         creatorRequirements: {};
         skills: {};
         id: any;
+        brandId: any;
         brand: any;
         brandInitial: string;
         brandColor: string;
@@ -137,6 +139,25 @@ export declare class PublicController {
         status: string;
         statusColor: string;
         statusBg: string;
+    }>;
+    getBrand(id: string): Promise<{
+        id: any;
+        name: any;
+        slug: string;
+        initial: string;
+        industry: any;
+        industryColor: string;
+        industryBg: string;
+        logo: any;
+        description: any;
+        website: string;
+        location: any;
+        verified: boolean;
+        memberSince: string;
+        activeCampaigns: number;
+        completedCampaigns: number;
+        totalApplicants: number;
+        campaigns: any;
     }>;
     getStats(): Promise<{
         verifiedCreators: number;

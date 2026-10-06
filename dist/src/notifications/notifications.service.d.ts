@@ -1,19 +1,22 @@
 import { PrismaService } from '../prisma/prisma.service';
+export declare const APPROACH_NOTIFICATION_TYPES: readonly ["CAMPAIGN_INVITE", "CAMPAIGN_APPLICATION"];
+type NotificationRow = {
+    id: string;
+    user_id: string;
+    title: string;
+    body: string;
+    type: string;
+    entity_type: string | null;
+    entity_id: string | null;
+    is_read: boolean;
+    is_dismissed?: boolean;
+    created_at: Date;
+    metadata?: unknown;
+};
 export declare class NotificationsService {
     private prisma;
     constructor(prisma: PrismaService);
-    format(row: {
-        id: string;
-        user_id: string;
-        title: string;
-        body: string;
-        type: string;
-        entity_type: string | null;
-        entity_id: string | null;
-        is_read: boolean;
-        created_at: Date;
-        metadata?: unknown;
-    }): {
+    format(row: NotificationRow): {
         id: string;
         user_id: string;
         type: string;
@@ -22,9 +25,12 @@ export declare class NotificationsService {
         entity_type: string | null;
         entity_id: string | null;
         is_read: boolean;
+        is_dismissed: boolean;
         created_at: Date;
         metadata: {} | null;
     };
+    isApproachNotification(row: Pick<NotificationRow, 'type' | 'title' | 'body'>): boolean;
+    shouldNotify(userId: string, settingKey: string): Promise<boolean>;
     create(params: {
         userId: string;
         title: string;
@@ -42,6 +48,7 @@ export declare class NotificationsService {
         entity_type: string | null;
         entity_id: string | null;
         is_read: boolean;
+        is_dismissed: boolean;
         created_at: Date;
         metadata: {} | null;
     }>;
@@ -54,6 +61,7 @@ export declare class NotificationsService {
         entity_type: string | null;
         entity_id: string | null;
         is_read: boolean;
+        is_dismissed: boolean;
         created_at: Date;
         metadata: {} | null;
     }[]>;
@@ -72,6 +80,7 @@ export declare class NotificationsService {
             entity_type: string | null;
             entity_id: string | null;
             is_read: boolean;
+            is_dismissed: boolean;
             created_at: Date;
             metadata: {} | null;
         }[];
@@ -80,6 +89,21 @@ export declare class NotificationsService {
         page: number;
         limit: number;
         totalPages: number;
+    }>;
+    listBanner(userId: string, limit?: number): Promise<{
+        data: {
+            id: string;
+            user_id: string;
+            type: string;
+            title: string;
+            message: string;
+            entity_type: string | null;
+            entity_id: string | null;
+            is_read: boolean;
+            is_dismissed: boolean;
+            created_at: Date;
+            metadata: {} | null;
+        }[];
     }>;
     markRead(userId: string, id: string): Promise<{
         id: string;
@@ -90,6 +114,20 @@ export declare class NotificationsService {
         entity_type: string | null;
         entity_id: string | null;
         is_read: boolean;
+        is_dismissed: boolean;
+        created_at: Date;
+        metadata: {} | null;
+    } | null>;
+    dismiss(userId: string, id: string): Promise<{
+        id: string;
+        user_id: string;
+        type: string;
+        title: string;
+        message: string;
+        entity_type: string | null;
+        entity_id: string | null;
+        is_read: boolean;
+        is_dismissed: boolean;
         created_at: Date;
         metadata: {} | null;
     } | null>;
@@ -100,3 +138,4 @@ export declare class NotificationsService {
         count: number;
     }>;
 }
+export {};

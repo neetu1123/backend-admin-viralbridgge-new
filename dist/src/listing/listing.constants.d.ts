@@ -1,0 +1,35 @@
+export declare const LISTING_STATUSES: readonly ["DRAFT", "PENDING_REVIEW", "PUBLISHED", "REJECTED", "SUSPENDED", "ARCHIVED"];
+export type ListingStatus = (typeof LISTING_STATUSES)[number];
+export type ListingType = 'BUSINESS' | 'CREATOR';
+export type AccountKind = 'FREE_LISTING' | 'BRAND' | 'CREATOR';
+export declare const FREE_LISTING_LIMITS: {
+    gallery: number;
+    services: number;
+    languages: number;
+    name: number;
+    shortDescription: number;
+    description: number;
+    logo: number;
+    cover: number;
+};
+export declare const REPORT_REASONS: readonly ["spam", "fake_listing", "incorrect_information", "inappropriate_content", "impersonation", "other"];
+export declare function listingPermissions(account: AccountKind): {
+    publicDiscoverProfile: boolean;
+    searchVisibility: boolean;
+    basicProfile: boolean;
+    basicGallery: boolean;
+    basicEnquiries: boolean;
+    basicProfileViews: boolean;
+    createCampaign: boolean;
+    discoverCreators: boolean;
+    applyCampaign: boolean;
+    campaignManagement: boolean;
+    advancedAnalytics: boolean;
+    teamManagement: boolean;
+    advancedMessaging: boolean;
+    payments: boolean;
+    advancedLeads: boolean;
+    featuredListing: boolean;
+    priorityPlacement: boolean;
+};
+export declare function isSafeHttpUrl(value?: string | null): boolean;

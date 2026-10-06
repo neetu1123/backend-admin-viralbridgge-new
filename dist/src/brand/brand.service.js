@@ -227,7 +227,7 @@ let BrandService = class BrandService {
         const notificationMessage = status === 'REJECTED' && rejectionReason?.trim()
             ? `Your application for ${application.campaign.title} was not selected. Reason: ${rejectionReason.trim()}`
             : `Your application for ${application.campaign.title} is ${status.toLowerCase()}.`;
-        await this.createNotification(application.creator.user_id, status === 'REJECTED' ? 'Application not selected' : 'Application updated', notificationMessage, { applicationId, campaignId: application.campaign_id, status, rejectionReason: rejectionReason?.trim() });
+        await this.createNotification(application.creator.user_id, status === 'REJECTED' ? 'Application not selected' : 'Application updated', notificationMessage, { applicationId, campaignId: application.campaign_id, status, rejectionReason: rejectionReason?.trim() }, 'APPLICATION', 'APPLICATION', applicationId);
         return updated;
     }
     async inviteCreator(userId, campaignId, creatorId) {
@@ -238,8 +238,24 @@ let BrandService = class BrandService {
         });
         if (!creator)
             throw new common_1.NotFoundException('Creator not found');
-        await this.createNotification(creator.user_id, 'Campaign invitation', `You were invited to apply for ${campaign.title}.`, { campaignId, creatorId });
-        return { success: true };
+        const allowed = await this.notifications.shouldNotify(creator.user_id, 'notifInvites');
+        if (!allowed) {
+            return { success: true, notified: false };
+        }
+        const existing = await this.prisma.notification.findFirst({
+            where: {
+                user_id: creator.user_id,
+                is_read: false,
+                type: 'CAMPAIGN_INVITE',
+                entity_id: campaignId,
+            },
+        });
+        if (existing) {
+            return { success: true, alreadyInvited: true };
+        }
+        const brandName = campaign.brand.company_name || 'A brand';
+        await this.createNotification(creator.user_id, 'Campaign invitation', `${brandName} invited you to apply for ${campaign.title}.`, { campaignId, creatorId, brandName, campaignTitle: campaign.title }, 'CAMPAIGN_INVITE', 'CAMPAIGN', campaignId);
+        return { success: true, notified: true };
     }
     async getCreators(query) {
         const page = query.page ?? 1;
@@ -494,6 +510,15 @@ let BrandService = class BrandService {
     async markAllNotificationsRead(userId) {
         return this.notifications.markAllRead(userId);
     }
+    async getBannerNotifications(userId) {
+        return this.notifications.listBanner(userId);
+    }
+    async dismissNotification(userId, id) {
+        const result = await this.notifications.dismiss(userId, id);
+        if (!result)
+            throw new common_1.NotFoundException('Notification not found');
+        return result;
+    }
     async getSettings(userId) {
         const user = await this.prisma.user.findUnique({ where: { id: userId } });
         return user?.settings ?? {};
@@ -578,9 +603,15 @@ let BrandService = class BrandService {
             });
         }
     }
-    async createNotification(userId, title, body, metadata) {
-        return this.prisma.notification.create({
-            data: { user_id: userId, title, body, type: 'SYSTEM', metadata: metadata ?? {} },
+    async createNotification(userId, title, body, metadata, type = 'SYSTEM', entityType, entityId) {
+        return this.notifications.create({
+            userId,
+            title,
+            message: body,
+            type,
+            entityType,
+            entityId,
+            metadata,
         });
     }
 };

@@ -136,6 +136,9 @@ let AdminController = class AdminController {
     getUnreadCount(req) {
         return this.notifications.unreadCount(req.user.id);
     }
+    getBannerNotifications(req) {
+        return this.notifications.listBanner(req.user.id);
+    }
     getNotifications(req, page, limit, type, unread) {
         return this.notifications.list(req.user.id, {
             page: page ? parseInt(page) : 1,
@@ -146,6 +149,9 @@ let AdminController = class AdminController {
     }
     markAllNotificationsRead(req) {
         return this.notifications.markAllRead(req.user.id);
+    }
+    dismissNotification(id, req) {
+        return this.notifications.dismiss(req.user.id, id);
     }
     markNotificationRead(id, req) {
         return this.notifications.markRead(req.user.id, id);
@@ -458,6 +464,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "getUnreadCount", null);
 __decorate([
+    (0, common_1.Get)('notifications/banner'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "getBannerNotifications", null);
+__decorate([
     (0, common_1.Get)('notifications'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)('page')),
@@ -475,6 +488,14 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "markAllNotificationsRead", null);
+__decorate([
+    (0, common_1.Patch)('notifications/:id/dismiss'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "dismissNotification", null);
 __decorate([
     (0, common_1.Patch)('notifications/:id/read'),
     __param(0, (0, common_1.Param)('id')),

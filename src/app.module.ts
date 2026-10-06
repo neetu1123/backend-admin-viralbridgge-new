@@ -27,6 +27,7 @@ import { PublicModule } from './public/public.module';
 import { CrmModule } from './crm/crm.module';
 import { SupportModule } from './support/support.module';
 import { DiscoveryModule } from './discovery/discovery.module';
+import { ListingModule } from './listing/listing.module';
 
 @Module({
   imports: [
@@ -59,6 +60,7 @@ import { DiscoveryModule } from './discovery/discovery.module';
     CrmModule,
     SupportModule,
     DiscoveryModule,
+    ListingModule,
   ],
   controllers: [AppController],
   providers: [

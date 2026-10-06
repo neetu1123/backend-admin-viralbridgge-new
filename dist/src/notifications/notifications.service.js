@@ -9,10 +9,11 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.NotificationsService = void 0;
+exports.NotificationsService = exports.APPROACH_NOTIFICATION_TYPES = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const notification_emitter_1 = require("../common/notification-emitter");
+exports.APPROACH_NOTIFICATION_TYPES = ['CAMPAIGN_INVITE', 'CAMPAIGN_APPLICATION'];
 let NotificationsService = class NotificationsService {
     prisma;
     constructor(prisma) {
@@ -28,9 +29,29 @@ let NotificationsService = class NotificationsService {
             entity_type: row.entity_type,
             entity_id: row.entity_id,
             is_read: row.is_read,
+            is_dismissed: Boolean(row.is_dismissed),
             created_at: row.created_at,
             metadata: row.metadata ?? null,
         };
+    }
+    isApproachNotification(row) {
+        if (exports.APPROACH_NOTIFICATION_TYPES.includes(row.type)) {
+            return true;
+        }
+        const title = row.title.toLowerCase();
+        const body = row.body.toLowerCase();
+        return (title.includes('campaign invitation') ||
+            title.includes('new campaign application') ||
+            body.includes('invited to apply') ||
+            /\bapplied to\b/.test(body));
+    }
+    async shouldNotify(userId, settingKey) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            select: { settings: true },
+        });
+        const settings = user?.settings ?? {};
+        return settings[settingKey] !== false;
     }
     async create(params) {
         const row = await this.prisma.notification.create({
@@ -78,17 +99,40 @@ let NotificationsService = class NotificationsService {
             totalPages: Math.ceil(total / limit),
         };
     }
+    async listBanner(userId, limit = 5) {
+        const take = Math.min(8, Math.max(1, limit));
+        const rows = await this.prisma.notification.findMany({
+            where: { user_id: userId, is_read: false, is_dismissed: false },
+            orderBy: { created_at: 'desc' },
+            take: 40,
+        });
+        const data = rows.filter((row) => this.isApproachNotification(row)).slice(0, take).map((row) => this.format(row));
+        return { data };
+    }
     async markRead(userId, id) {
         const row = await this.prisma.notification.findUnique({ where: { id } });
         if (!row || row.user_id !== userId)
             return null;
-        const updated = await this.prisma.notification.update({ where: { id }, data: { is_read: true } });
+        const updated = await this.prisma.notification.update({
+            where: { id },
+            data: { is_read: true, is_dismissed: true },
+        });
+        return this.format(updated);
+    }
+    async dismiss(userId, id) {
+        const row = await this.prisma.notification.findUnique({ where: { id } });
+        if (!row || row.user_id !== userId)
+            return null;
+        const updated = await this.prisma.notification.update({
+            where: { id },
+            data: { is_dismissed: true },
+        });
         return this.format(updated);
     }
     async markAllRead(userId) {
         await this.prisma.notification.updateMany({
             where: { user_id: userId, is_read: false },
-            data: { is_read: true },
+            data: { is_read: true, is_dismissed: true },
         });
         return { success: true };
     }

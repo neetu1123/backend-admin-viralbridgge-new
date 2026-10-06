@@ -1,0 +1,137 @@
+import { ListingService } from './listing.service';
+import { AdminListingUpdateDto, ListingSearchQueryDto } from './listing.dto';
+export declare class AdminListingController {
+    private readonly listings;
+    constructor(listings: ListingService);
+    list(query: ListingSearchQueryDto): Promise<{
+        data: {
+            ownerEmail: string;
+            ownerName: string;
+            enquiryCount: number;
+            reportCount: number;
+            id: string;
+            type: import("./listing.constants").ListingType;
+            name: string;
+            slug: string;
+            logo_url: string | null;
+            cover_image_url: string | null;
+            short_description: string | null;
+            description: string | null;
+            category: string | null;
+            subcategory: string | null;
+            phone: string | null;
+            email: string | null;
+            whatsapp: string | null;
+            website: string | null;
+            city: string | null;
+            state: string | null;
+            area: string | null;
+            address: string | null;
+            latitude: number | null;
+            longitude: number | null;
+            business_hours: import("@prisma/client/runtime/library").JsonValue;
+            languages: string[];
+            services: string[];
+            social_links: import("@prisma/client/runtime/library").JsonValue;
+            gallery: string[];
+            portfolio: import("@prisma/client/runtime/library").JsonValue;
+            status: string;
+            verified: boolean;
+            is_featured: boolean;
+            is_visible: boolean;
+            is_phone_public: boolean;
+            is_email_public: boolean;
+            is_whatsapp_public: boolean;
+            is_address_public: boolean;
+            is_website_public: boolean;
+            profile_views: number;
+            rejection_reason: string | null;
+            published_at: Date | null;
+            brand_profile_id: string | null;
+            creator_profile_id: string | null;
+            publicPath: string;
+            created_at: Date;
+            updated_at: Date;
+        }[];
+        pagination: {
+            page: number;
+            limit: number;
+            total: number;
+            totalPages: number;
+        };
+    }>;
+    reports(): Promise<({
+        listing: {
+            name: string;
+            id: string;
+            status: string;
+            slug: string;
+            type: string;
+        } | null;
+    } & {
+        id: string;
+        status: string;
+        created_at: Date;
+        reason: string;
+        listing_id: string | null;
+        details: string | null;
+        target_id: string;
+        target_type: string;
+    })[]>;
+    analytics(): Promise<{
+        published: number;
+        drafts: number;
+        suspended: number;
+        enquiries: number;
+        openReports: number;
+    }>;
+    update(id: string, body: AdminListingUpdateDto, req: {
+        user?: {
+            id: string;
+        };
+    }): Promise<{
+        id: string;
+        type: import("./listing.constants").ListingType;
+        name: string;
+        slug: string;
+        logo_url: string | null;
+        cover_image_url: string | null;
+        short_description: string | null;
+        description: string | null;
+        category: string | null;
+        subcategory: string | null;
+        phone: string | null;
+        email: string | null;
+        whatsapp: string | null;
+        website: string | null;
+        city: string | null;
+        state: string | null;
+        area: string | null;
+        address: string | null;
+        latitude: number | null;
+        longitude: number | null;
+        business_hours: import("@prisma/client/runtime/library").JsonValue;
+        languages: string[];
+        services: string[];
+        social_links: import("@prisma/client/runtime/library").JsonValue;
+        gallery: string[];
+        portfolio: import("@prisma/client/runtime/library").JsonValue;
+        status: string;
+        verified: boolean;
+        is_featured: boolean;
+        is_visible: boolean;
+        is_phone_public: boolean;
+        is_email_public: boolean;
+        is_whatsapp_public: boolean;
+        is_address_public: boolean;
+        is_website_public: boolean;
+        profile_views: number;
+        rejection_reason: string | null;
+        published_at: Date | null;
+        brand_profile_id: string | null;
+        creator_profile_id: string | null;
+        publicPath: string;
+        created_at: Date;
+        updated_at: Date;
+    }>;
+}

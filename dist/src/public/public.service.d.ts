@@ -77,6 +77,7 @@ export declare class PublicService {
     listCampaigns(query: PublicCampaignsQueryDto): Promise<{
         data: {
             id: any;
+            brandId: any;
             brand: any;
             brandInitial: string;
             brandColor: string;
@@ -109,10 +110,30 @@ export declare class PublicService {
             totalPages: number;
         };
     }>;
+    getPublicBrand(idOrSlug: string): Promise<{
+        id: any;
+        name: any;
+        slug: string;
+        initial: string;
+        industry: any;
+        industryColor: string;
+        industryBg: string;
+        logo: any;
+        description: any;
+        website: string;
+        location: any;
+        verified: boolean;
+        memberSince: string;
+        activeCampaigns: number;
+        completedCampaigns: number;
+        totalApplicants: number;
+        campaigns: any;
+    }>;
     getCampaignById(id: string): Promise<{
         creatorRequirements: {};
         skills: {};
         id: any;
+        brandId: any;
         brand: any;
         brandInitial: string;
         brandColor: string;
@@ -152,5 +173,6 @@ export declare class PublicService {
     private formatCreatorListItem;
     private formatCreatorDetail;
     private formatCampaignListItem;
+    private formatBrandProfile;
     private formatCampaignDetail;
 }

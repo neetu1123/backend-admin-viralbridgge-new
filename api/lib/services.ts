@@ -16,6 +16,7 @@ type RazorpayServiceType = import('../../dist/src/payments/razorpay.service').Ra
 type StorageServiceType = import('../../dist/src/storage/storage.service').StorageService;
 type PublicServiceType = import('../../dist/src/public/public.service').PublicService;
 type DiscoveryServiceType = import('../../src/discovery/discovery.service').DiscoveryService;
+type ListingServiceType = import('../../src/listing/listing.service').ListingService;
 
 let brandService: BrandServiceType | undefined;
 let creatorService: CreatorServiceType | undefined;
@@ -37,6 +38,7 @@ let userActivityService: import('../../dist/src/user-activity/user-activity.serv
 let campaignPromptService: import('../../dist/src/campaign-prompt/campaign-prompt.service').CampaignPromptService | undefined;
 let publicService: PublicServiceType | undefined;
 let discoveryService: DiscoveryServiceType | undefined;
+let listingService: ListingServiceType | undefined;
 let configService: import('@nestjs/config').ConfigService | undefined;
 
 function getConfigService() {
@@ -270,6 +272,31 @@ export function getDiscoveryService(): DiscoveryServiceType {
     discoveryService = new DiscoveryService(getPrisma() as never, getNotificationsService(), jwt);
   }
   return discoveryService;
+}
+
+export function getListingService(): ListingServiceType {
+  if (!listingService) {
+    const load = () => {
+      try {
+        return require('../../dist/src/listing/listing.service') as typeof import('../../src/listing/listing.service');
+      } catch {
+        return require('../../src/listing/listing.service') as typeof import('../../src/listing/listing.service');
+      }
+    };
+    const { ListingService } = load();
+    const { JwtService } = require('@nestjs/jwt') as typeof import('@nestjs/jwt');
+    const jwt = new JwtService({
+      secret: process.env.JWT_SECRET || 'viralbridgge-super-secret-jwt-key-2026',
+    });
+    listingService = new ListingService(
+      getPrisma() as never,
+      getNotificationsService(),
+      getDiscoveryService(),
+      getStorageService(),
+      jwt,
+    );
+  }
+  return listingService;
 }
 
 // Exported for payment routes and admin email/broadcast on Vercel express path

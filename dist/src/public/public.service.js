@@ -77,6 +77,19 @@ function getBrandInitial(name) {
         return `${parts[0][0]}${parts[1][0]}`.toUpperCase();
     return name.slice(0, 2).toUpperCase();
 }
+function brandSlug(name) {
+    return name.toLowerCase().trim().replace(/[^a-z0-9]+/g, '-').replace(/^-+|-+$/g, '');
+}
+function safeWebsite(value) {
+    const raw = (value || '').trim();
+    if (!raw || /^javascript:/i.test(raw))
+        return '';
+    if (/^https?:\/\//i.test(raw))
+        return raw;
+    if (/^[\w.-]+\.[a-z]{2,}/i.test(raw))
+        return `https://${raw}`;
+    return '';
+}
 function getCampaignStatus(applicants, deadline) {
     const daysLeft = Math.ceil((deadline.getTime() - Date.now()) / (1000 * 60 * 60 * 24));
     if (daysLeft <= 7)
@@ -250,6 +263,48 @@ let PublicService = class PublicService {
             meta: (0, pagination_query_dto_1.paginationMeta)(page, limit, total),
         };
     }
+    async getPublicBrand(idOrSlug) {
+        const key = decodeURIComponent(idOrSlug).trim();
+        const activeUser = { status: 'ACTIVE', is_deleted: false, is_banned: false };
+        let brandId = null;
+        if (isUuid(key)) {
+            const row = await this.prisma.brandProfile.findFirst({
+                where: { id: key, user: activeUser },
+                select: { id: true },
+            });
+            brandId = row?.id ?? null;
+        }
+        if (!brandId) {
+            const rows = await this.prisma.brandProfile.findMany({
+                where: { user: activeUser },
+                select: { id: true, company_name: true },
+            });
+            const slug = brandSlug(key);
+            brandId = rows.find((row) => brandSlug(row.company_name) === slug)?.id ?? null;
+        }
+        if (!brandId)
+            throw new common_1.NotFoundException('Brand not found');
+        const brand = await this.prisma.brandProfile.findUnique({
+            where: { id: brandId },
+            include: {
+                user: { select: { is_verified: true } },
+                campaigns: {
+                    where: { status: { in: ['ACTIVE', 'COMPLETED'] } },
+                    include: { _count: { select: { applications: true } } },
+                    orderBy: { created_at: 'desc' },
+                    take: 12,
+                },
+            },
+        });
+        if (!brand)
+            throw new common_1.NotFoundException('Brand not found');
+        const [activeCampaigns, completedCampaigns, totalApplicants] = await Promise.all([
+            this.prisma.campaign.count({ where: { brand_id: brandId, status: 'ACTIVE' } }),
+            this.prisma.campaign.count({ where: { brand_id: brandId, status: 'COMPLETED' } }),
+            this.prisma.application.count({ where: { campaign: { brand_id: brandId } } }),
+        ]);
+        return this.formatBrandProfile(brand, { activeCampaigns, completedCampaigns, totalApplicants });
+    }
     async getCampaignById(id) {
         const campaign = await this.prisma.campaign.findFirst({
             where: { id, status: { in: ['ACTIVE', 'COMPLETED'] } },
@@ -376,6 +431,7 @@ let PublicService = class PublicService {
         const daysLeft = Math.max(0, Math.ceil((new Date(row.deadline).getTime() - Date.now()) / (1000 * 60 * 60 * 24)));
         return {
             id: row.id,
+            brandId: row.brand.id,
             brand: brandName,
             brandInitial: getBrandInitial(brandName),
             brandColor: brandStyle.color,
@@ -404,6 +460,39 @@ let PublicService = class PublicService {
             status: statusInfo.status,
             statusColor: statusInfo.color,
             statusBg: statusInfo.bg,
+        };
+    }
+    formatBrandProfile(brand, counts) {
+        const industry = brand.industry || 'General';
+        const style = getNicheStyle(industry);
+        const campaigns = (brand.campaigns ?? []).map((row) => {
+            const item = this.formatCampaignListItem({ ...row, brand });
+            if (row.status === 'COMPLETED') {
+                return { ...item, status: 'Completed', statusColor: '#16A34A', statusBg: '#F0FDF4' };
+            }
+            return item;
+        });
+        return {
+            id: brand.id,
+            name: brand.company_name,
+            slug: brandSlug(brand.company_name),
+            initial: getBrandInitial(brand.company_name),
+            industry,
+            industryColor: style.color,
+            industryBg: style.bg,
+            logo: brand.logo || '',
+            description: brand.description || '',
+            website: safeWebsite(brand.website),
+            location: brand.location || '',
+            verified: Boolean(brand.user?.is_verified),
+            memberSince: new Date(brand.created_at).toLocaleDateString('en-IN', {
+                month: 'short',
+                year: 'numeric',
+            }),
+            activeCampaigns: counts.activeCampaigns,
+            completedCampaigns: counts.completedCampaigns,
+            totalApplicants: counts.totalApplicants,
+            campaigns,
         };
     }
     formatCampaignDetail(row) {

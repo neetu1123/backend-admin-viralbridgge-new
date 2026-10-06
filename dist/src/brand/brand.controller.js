@@ -150,11 +150,17 @@ let BrandController = class BrandController {
     getUnreadNotificationCount(req) {
         return this.brandService.getUnreadNotificationCount(req.user.id);
     }
+    getBannerNotifications(req) {
+        return this.brandService.getBannerNotifications(req.user.id);
+    }
     markAllNotificationsRead(req) {
         return this.brandService.markAllNotificationsRead(req.user.id);
     }
     getNotifications(req, query) {
         return this.brandService.getNotifications(req.user.id, query);
+    }
+    dismissNotification(req, id) {
+        return this.brandService.dismissNotification(req.user.id, id);
     }
     markNotificationRead(req, id) {
         return this.brandService.markNotificationRead(req.user.id, id);
@@ -476,6 +482,13 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getUnreadNotificationCount", null);
 __decorate([
+    (0, common_1.Get)('notifications/banner'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "getBannerNotifications", null);
+__decorate([
     (0, common_1.Patch)('notifications/read-all'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -490,6 +503,14 @@ __decorate([
     __metadata("design:paramtypes", [Object, brand_dto_1.NotificationQueryDto]),
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getNotifications", null);
+__decorate([
+    (0, common_1.Patch)('notifications/:id/dismiss'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Param)('id')),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, String]),
+    __metadata("design:returntype", void 0)
+], BrandController.prototype, "dismissNotification", null);
 __decorate([
     (0, common_1.Patch)('notifications/:id/read'),
     __param(0, (0, common_1.Request)()),

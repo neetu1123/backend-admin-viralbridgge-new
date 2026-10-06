@@ -54,6 +54,8 @@ model User {
   support_messages      SupportCaseMessage[]
   support_notes         SupportCaseNote[]
   discovery_enquiries   DiscoveryEnquiry[]
+  free_listings         FreeListing[]
+  free_listing_enquiries FreeListingEnquiry[]
 
   @@map("users")
 }
@@ -1115,4 +1117,94 @@ model DiscoveryEvent {
   @@index([event_type, created_at])
   @@index([listing_id, event_type])
   @@map("discovery_events")
+}
+
+model FreeListing {
+  id                 String   @id @default(uuid())
+  owner_user_id      String
+  owner              User     @relation(fields: [owner_user_id], references: [id])
+  type               String
+  name               String
+  slug               String   @unique
+  logo_url           String?
+  cover_image_url    String?
+  short_description  String?
+  description        String?
+  category           String?
+  subcategory        String?
+  phone              String?
+  email              String?
+  whatsapp           String?
+  website            String?
+  city               String?
+  state              String?
+  area               String?
+  address            String?
+  latitude           Float?
+  longitude          Float?
+  business_hours     Json?
+  languages          String[] @default([])
+  services           String[] @default([])
+  social_links       Json?
+  gallery            String[] @default([])
+  portfolio          Json?
+  status             String   @default("DRAFT")
+  verified           Boolean  @default(false)
+  is_featured        Boolean  @default(false)
+  is_visible         Boolean  @default(true)
+  is_phone_public    Boolean  @default(false)
+  is_email_public    Boolean  @default(false)
+  is_whatsapp_public Boolean  @default(true)
+  is_address_public  Boolean  @default(false)
+  is_website_public  Boolean  @default(true)
+  profile_views      Int      @default(0)
+  rejection_reason   String?
+  published_at       DateTime?
+  brand_profile_id   String?
+  creator_profile_id String?
+  created_at         DateTime @default(now())
+  updated_at         DateTime @updatedAt
+
+  enquiries FreeListingEnquiry[]
+  reports   FreeListingReport[]
+
+  @@unique([owner_user_id])
+  @@index([status, is_visible, type])
+  @@index([city, category])
+  @@index([slug])
+  @@map("free_listings")
+}
+
+model FreeListingEnquiry {
+  id             String      @id @default(uuid())
+  listing_id     String
+  listing        FreeListing @relation(fields: [listing_id], references: [id], onDelete: Cascade)
+  sender_user_id String?
+  sender         User?       @relation(fields: [sender_user_id], references: [id])
+  name           String
+  email          String
+  phone          String?
+  message        String
+  status         String      @default("NEW")
+  created_at     DateTime    @default(now())
+
+  @@index([listing_id, created_at])
+  @@index([email, created_at])
+  @@map("free_listing_enquiries")
+}
+
+model FreeListingReport {
+  id         String       @id @default(uuid())
+  listing_id String?
+  listing    FreeListing? @relation(fields: [listing_id], references: [id], onDelete: SetNull)
+  target_id  String
+  target_type String
+  reason     String
+  details    String?
+  status     String       @default("OPEN")
+  created_at DateTime     @default(now())
+
+  @@index([status, created_at])
+  @@index([target_id])
+  @@map("free_listing_reports")
 }

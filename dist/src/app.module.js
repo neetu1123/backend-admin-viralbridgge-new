@@ -34,6 +34,8 @@ const re_engagement_module_1 = require("./re-engagement/re-engagement.module");
 const public_module_1 = require("./public/public.module");
 const crm_module_1 = require("./crm/crm.module");
 const support_module_1 = require("./support/support.module");
+const discovery_module_1 = require("./discovery/discovery.module");
+const listing_module_1 = require("./listing/listing.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -68,6 +70,8 @@ exports.AppModule = AppModule = __decorate([
             public_module_1.PublicModule,
             crm_module_1.CrmModule,
             support_module_1.SupportModule,
+            discovery_module_1.DiscoveryModule,
+            listing_module_1.ListingModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

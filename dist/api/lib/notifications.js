@@ -1,12 +1,16 @@
 "use strict";
 Object.defineProperty(exports, "__esModule", { value: true });
 exports.formatNotification = formatNotification;
+exports.isApproachNotification = isApproachNotification;
 exports.createNotification = createNotification;
 exports.notifyAdmins = notifyAdmins;
 exports.listNotifications = listNotifications;
+exports.listBannerNotifications = listBannerNotifications;
 exports.markNotificationRead = markNotificationRead;
+exports.dismissNotification = dismissNotification;
 exports.markAllNotificationsRead = markAllNotificationsRead;
 exports.getUnreadCount = getUnreadCount;
+const APPROACH_TYPES = new Set(['CAMPAIGN_INVITE', 'CAMPAIGN_APPLICATION']);
 function formatNotification(row) {
     return {
         id: row.id,
@@ -17,9 +21,20 @@ function formatNotification(row) {
         entity_type: row.entity_type,
         entity_id: row.entity_id,
         is_read: row.is_read,
+        is_dismissed: Boolean(row.is_dismissed),
         created_at: row.created_at,
         metadata: row.metadata ?? null,
     };
+}
+function isApproachNotification(row) {
+    if (APPROACH_TYPES.has(row.type))
+        return true;
+    const title = row.title.toLowerCase();
+    const body = row.body.toLowerCase();
+    return (title.includes('campaign invitation') ||
+        title.includes('new campaign application') ||
+        body.includes('invited to apply') ||
+        /\bapplied to\b/.test(body));
 }
 async function createNotification(prisma, params) {
     const notification = await prisma.notification.create({
@@ -78,20 +93,41 @@ async function listNotifications(prisma, userId, query = {}) {
         totalPages: Math.ceil(total / limit),
     };
 }
+async function listBannerNotifications(prisma, userId, limit = 5) {
+    const take = Math.min(8, Math.max(1, limit));
+    const rows = await prisma.notification.findMany({
+        where: { user_id: userId, is_read: false, is_dismissed: false },
+        orderBy: { created_at: 'desc' },
+        take: 40,
+    });
+    return {
+        data: rows.filter(isApproachNotification).slice(0, take).map(formatNotification),
+    };
+}
 async function markNotificationRead(prisma, userId, id) {
     const row = await prisma.notification.findUnique({ where: { id } });
     if (!row || row.user_id !== userId)
         return null;
     const updated = await prisma.notification.update({
         where: { id },
-        data: { is_read: true },
+        data: { is_read: true, is_dismissed: true },
+    });
+    return formatNotification(updated);
+}
+async function dismissNotification(prisma, userId, id) {
+    const row = await prisma.notification.findUnique({ where: { id } });
+    if (!row || row.user_id !== userId)
+        return null;
+    const updated = await prisma.notification.update({
+        where: { id },
+        data: { is_dismissed: true },
     });
     return formatNotification(updated);
 }
 async function markAllNotificationsRead(prisma, userId) {
     await prisma.notification.updateMany({
         where: { user_id: userId, is_read: false },
-        data: { is_read: true },
+        data: { is_read: true, is_dismissed: true },
     });
     return { success: true };
 }
