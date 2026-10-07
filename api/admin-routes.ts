@@ -94,6 +94,43 @@ router.patch('/users/:id/unban', async (req: AuthedRequest, res) => {
   return ok(res, result);
 });
 
+router.patch('/users/:id/feature-access', async (req: AuthedRequest, res) => {
+  const access = String(req.body?.feature_access ?? 'LIMITED').toUpperCase() === 'FULL' ? 'FULL' : 'LIMITED';
+  const id = paramId(req);
+  const user = await prisma().user.findUnique({ where: { id }, include: { role: true } });
+  if (!user) return fail(res, 'User not found', 404);
+  const roleName = String(user.role?.name ?? '').toUpperCase();
+  if (roleName !== 'BRAND' && roleName !== 'CREATOR') {
+    return fail(res, 'Feature access can only be changed for Brand or Creator accounts', 400);
+  }
+  const result = await prisma().user.update({
+    where: { id },
+    data: {
+      feature_access: access,
+      access_granted_at: access === 'FULL' ? new Date() : null,
+      access_granted_by: access === 'FULL' ? req.user?.id ?? null : null,
+      access_requested_at: access === 'FULL' ? null : user.access_requested_at,
+    },
+  });
+  await audit(req.user?.id, access === 'FULL' ? 'GRANT_FEATURE_ACCESS' : 'REVOKE_FEATURE_ACCESS', 'User', id, {
+    feature_access: access,
+  });
+  await prisma().notification.create({
+    data: {
+      user_id: id,
+      type: 'FEATURE_ACCESS',
+      title: access === 'FULL' ? 'Full access approved' : 'Full access revoked',
+      body:
+        access === 'FULL'
+          ? 'An admin unlocked campaigns, wallet, and discovery tools on your account.'
+          : 'Your account is back on listing, Grow my business, profile, settings, and subscription only.',
+      entity_type: 'User',
+      entity_id: id,
+    },
+  });
+  return ok(res, result);
+});
+
 router.get('/campaigns', async (_req, res) => {
   try {
     const campaigns = await prisma().campaign.findMany({

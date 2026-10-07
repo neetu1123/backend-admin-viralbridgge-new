@@ -1,11 +1,12 @@
 import { Router } from 'express';
-import { requireBrand, type AuthedRequest } from './lib/auth-middleware';
+import { requireBrand, requireFullAccess, type AuthedRequest } from './lib/auth-middleware';
 import { fail, ok } from './lib/http';
 import { getEscrowService } from './lib/services';
 
 const router = Router();
 
 router.use(requireBrand);
+router.use(requireFullAccess);
 
 router.post('/create', async (req: AuthedRequest, res) => {
   try {

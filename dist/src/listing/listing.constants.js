@@ -29,8 +29,8 @@ exports.REPORT_REASONS = [
     'impersonation',
     'other',
 ];
-function listingPermissions(account) {
-    const paid = account === 'BRAND' || account === 'CREATOR';
+function listingPermissions(account, featureAccess = 'FULL') {
+    const unlocked = featureAccess === 'FULL' && (account === 'BRAND' || account === 'CREATOR');
     return {
         publicDiscoverProfile: true,
         searchVisibility: true,
@@ -38,17 +38,17 @@ function listingPermissions(account) {
         basicGallery: true,
         basicEnquiries: true,
         basicProfileViews: true,
-        createCampaign: account === 'BRAND',
-        discoverCreators: account === 'BRAND',
-        applyCampaign: account === 'CREATOR',
-        campaignManagement: paid,
-        advancedAnalytics: paid,
-        teamManagement: paid,
-        advancedMessaging: paid,
-        payments: paid,
-        advancedLeads: paid,
-        featuredListing: paid,
-        priorityPlacement: paid,
+        createCampaign: unlocked && account === 'BRAND',
+        discoverCreators: unlocked && account === 'BRAND',
+        applyCampaign: unlocked && account === 'CREATOR',
+        campaignManagement: unlocked,
+        advancedAnalytics: unlocked,
+        teamManagement: unlocked,
+        advancedMessaging: unlocked,
+        payments: unlocked,
+        advancedLeads: unlocked,
+        featuredListing: unlocked,
+        priorityPlacement: unlocked,
     };
 }
 function isSafeHttpUrl(value) {

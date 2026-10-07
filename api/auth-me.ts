@@ -14,6 +14,8 @@ function mapUser(user: {
   email: string;
   avatar?: string | null;
   role?: { name: string } | null;
+  feature_access?: string | null;
+  access_requested_at?: Date | null;
 }) {
   return {
     id: user.id,
@@ -21,6 +23,8 @@ function mapUser(user: {
     email: user.email,
     avatar: user.avatar ?? undefined,
     role: user.role?.name ?? undefined,
+    feature_access: String(user.feature_access ?? 'LIMITED').toUpperCase() === 'FULL' ? 'FULL' : 'LIMITED',
+    access_requested_at: user.access_requested_at ?? null,
   };
 }
 

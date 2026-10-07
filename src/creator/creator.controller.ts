@@ -18,6 +18,8 @@ import {
 import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { AllowLimited } from '../auth/allow-limited.decorator';
+import { FeatureAccessGuard } from '../auth/feature-access.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DELIVERABLE_MAX_UPLOAD_BYTES, PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { CreatorService } from './creator.service';
@@ -36,22 +38,25 @@ import {
 
 @ApiTags('Creator')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, FeatureAccessGuard)
 @Roles('CREATOR', 'ADMIN', 'SUPER_ADMIN')
 @Controller('creator')
 export class CreatorController {
   constructor(private readonly creatorService: CreatorService) {}
 
+  @AllowLimited()
   @Get('profile')
   getProfile(@Request() req: any) {
     return this.creatorService.getProfile(req.user.id);
   }
 
+  @AllowLimited()
   @Put('profile')
   updateProfile(@Request() req: any, @Body() body: UpdateCreatorProfileDto) {
     return this.creatorService.updateProfile(req.user.id, body);
   }
 
+  @AllowLimited()
   @Post('upload-photo')
   @ApiConsumes('multipart/form-data', 'application/json')
   @ApiOperation({ summary: 'Upload creator profile photo (multipart image or JSON url)' })
@@ -75,6 +80,7 @@ export class CreatorController {
     throw new BadRequestException('image file or url is required');
   }
 
+  @AllowLimited()
   @Post('upload-media-kit')
   uploadMediaKit(@Request() req: any, @Body() body: UploadDto) {
     return this.creatorService.uploadMediaKit(req.user.id, body);
@@ -247,41 +253,49 @@ export class CreatorController {
     return this.creatorService.sendMessage(req.user.id, body);
   }
 
+  @AllowLimited()
   @Get('notifications/unread-count')
   getUnreadNotificationCount(@Request() req: any) {
     return this.creatorService.getUnreadNotificationCount(req.user.id);
   }
 
+  @AllowLimited()
   @Get('notifications/banner')
   getBannerNotifications(@Request() req: any) {
     return this.creatorService.getBannerNotifications(req.user.id);
   }
 
+  @AllowLimited()
   @Patch('notifications/read-all')
   markAllNotificationsRead(@Request() req: any) {
     return this.creatorService.markAllNotificationsRead(req.user.id);
   }
 
+  @AllowLimited()
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.creatorService.getNotifications(req.user.id, query);
   }
 
+  @AllowLimited()
   @Patch('notifications/:id/dismiss')
   dismissNotification(@Request() req: any, @Param('id') id: string) {
     return this.creatorService.dismissNotification(req.user.id, id);
   }
 
+  @AllowLimited()
   @Patch('notifications/:id/read')
   markNotificationRead(@Request() req: any, @Param('id') id: string) {
     return this.creatorService.markNotificationRead(req.user.id, id);
   }
 
+  @AllowLimited()
   @Get('settings')
   getSettings(@Request() req: any) {
     return this.creatorService.getSettings(req.user.id);
   }
 
+  @AllowLimited()
   @Put('settings')
   updateSettings(@Request() req: any, @Body() body: Record<string, any>) {
     return this.creatorService.updateSettings(req.user.id, body);

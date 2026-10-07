@@ -2,6 +2,7 @@ import { Controller, Get, Post, UseGuards, Request, Body } from '@nestjs/common'
 import { ApiTags, ApiBearerAuth, ApiOperation } from '@nestjs/swagger';
 import { AuthGuard } from './auth.guard';
 import { AuthService } from './auth.service';
+import { publicAuthUser } from './feature-access';
 import { extractClientIp } from '../security/security-session.helper';
 
 @ApiTags('Auth')
@@ -31,7 +32,7 @@ export class AuthController {
   @Get('me')
   @ApiOperation({ summary: 'Get current user profile' })
   getMe(@Request() req) {
-    return req.user;
+    return publicAuthUser(req.user);
   }
 
   @ApiBearerAuth()

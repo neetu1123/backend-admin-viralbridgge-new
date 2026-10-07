@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from 'express';
 import * as jwt from 'jsonwebtoken';
+import { isFullAccessUser } from '../../src/auth/feature-access';
 import { getPrisma } from './prisma';
 
 export type AuthedRequest = Request & {
@@ -8,6 +9,7 @@ export type AuthedRequest = Request & {
     name: string;
     email: string;
     role?: { name: string } | null;
+    feature_access?: string | null;
   };
   jwtPayload?: { jti?: string; sub?: string; exp?: number };
 };
@@ -91,3 +93,39 @@ export async function requireAdmin(req: AuthedRequest, res: Response, next: Next
 export const requireBrand = requireRoles('BRAND');
 export const requireCreator = requireRoles('CREATOR');
 export const requireBrandOrCreator = requireRoles('BRAND', 'CREATOR');
+
+const LIMITED_BRAND_PATHS = ['/profile', '/upload-logo', '/settings', '/notifications'];
+const LIMITED_CREATOR_PATHS = [
+  '/profile',
+  '/upload-photo',
+  '/upload-media-kit',
+  '/settings',
+  '/notifications',
+];
+
+function pathAllowed(path: string, prefixes: string[]) {
+  return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
+}
+
+export function requireFullAccess(req: AuthedRequest, res: Response, next: NextFunction) {
+  if (isFullAccessUser(req.user)) return next();
+  return res.status(403).json({
+    success: false,
+    message: 'Campaigns, wallet, and discovery tools require a subscription or admin approval.',
+  });
+}
+
+export function requireFullAccessUnless(allowedPrefixes: string[]) {
+  return (req: AuthedRequest, res: Response, next: NextFunction) => {
+    if (pathAllowed(req.path, allowedPrefixes) || isFullAccessUser(req.user)) {
+      return next();
+    }
+    return res.status(403).json({
+      success: false,
+      message: 'Campaigns, wallet, and discovery tools require a subscription or admin approval.',
+    });
+  };
+}
+
+export const requireBrandFullAccess = requireFullAccessUnless(LIMITED_BRAND_PATHS);
+export const requireCreatorFullAccess = requireFullAccessUnless(LIMITED_CREATOR_PATHS);

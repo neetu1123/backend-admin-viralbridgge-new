@@ -70,6 +70,9 @@ let AdminController = class AdminController {
     unbanUser(id, req) {
         return this.adminService.unbanUser(id, req.user?.id);
     }
+    setFeatureAccess(id, body, req) {
+        return this.adminService.setFeatureAccess(id, body.feature_access || 'LIMITED', req.user?.id);
+    }
     getCampaigns() { return this.adminService.getCampaigns(); }
     getFlaggedCampaigns() { return this.adminService.getFlaggedCampaigns(); }
     approveCampaign(id, req) {
@@ -306,6 +309,15 @@ __decorate([
     __metadata("design:paramtypes", [String, Object]),
     __metadata("design:returntype", void 0)
 ], AdminController.prototype, "unbanUser", null);
+__decorate([
+    (0, common_1.Patch)('users/:id/feature-access'),
+    __param(0, (0, common_1.Param)('id')),
+    __param(1, (0, common_1.Body)()),
+    __param(2, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [String, Object, Object]),
+    __metadata("design:returntype", void 0)
+], AdminController.prototype, "setFeatureAccess", null);
 __decorate([
     (0, common_1.Get)('campaigns'),
     __metadata("design:type", Function),

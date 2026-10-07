@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireBrand, type AuthedRequest } from './lib/auth-middleware';
+import { requireBrand, requireBrandFullAccess, type AuthedRequest } from './lib/auth-middleware';
 import { fail, ok, paramId, run, runWithAudit } from './lib/http';
 import { getPrisma } from './lib/prisma';
 import { parseListQuery } from './lib/query';
@@ -12,6 +12,7 @@ const prisma = () => getPrisma();
 const campaignId = (r: unknown) => String((r as { id?: string })?.id ?? '');
 
 router.use(requireBrand);
+router.use(requireBrandFullAccess);
 
 router.get('/profile', (req: AuthedRequest, res) => run(req, res, (id) => brand().getProfile(id)));
 router.put('/profile', (req: AuthedRequest, res) =>

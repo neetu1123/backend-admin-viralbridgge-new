@@ -2,6 +2,7 @@ export declare const LISTING_STATUSES: readonly ["DRAFT", "PENDING_REVIEW", "PUB
 export type ListingStatus = (typeof LISTING_STATUSES)[number];
 export type ListingType = 'BUSINESS' | 'CREATOR';
 export type AccountKind = 'FREE_LISTING' | 'BRAND' | 'CREATOR';
+export type FeatureAccess = 'LIMITED' | 'FULL';
 export declare const FREE_LISTING_LIMITS: {
     gallery: number;
     services: number;
@@ -13,7 +14,7 @@ export declare const FREE_LISTING_LIMITS: {
     cover: number;
 };
 export declare const REPORT_REASONS: readonly ["spam", "fake_listing", "incorrect_information", "inappropriate_content", "impersonation", "other"];
-export declare function listingPermissions(account: AccountKind): {
+export declare function listingPermissions(account: AccountKind, featureAccess?: FeatureAccess): {
     publicDiscoverProfile: boolean;
     searchVisibility: boolean;
     basicProfile: boolean;

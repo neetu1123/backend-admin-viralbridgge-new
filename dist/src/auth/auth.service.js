@@ -55,6 +55,7 @@ const security_service_1 = require("../security/security.service");
 const user_provisioning_service_1 = require("../users/user-provisioning.service");
 const user_activity_service_1 = require("../user-activity/user-activity.service");
 const re_engagement_service_1 = require("../re-engagement/re-engagement.service");
+const feature_access_1 = require("./feature-access");
 let AuthService = class AuthService {
     prisma;
     jwtService;
@@ -81,12 +82,7 @@ let AuthService = class AuthService {
         return {
             access_token: await this.jwtService.signAsync(payload),
             jti,
-            user: {
-                id: user.id,
-                name: user.name,
-                email: user.email,
-                role: user.role?.name,
-            },
+            user: (0, feature_access_1.publicAuthUser)(user),
         };
     }
     async register(data) {
@@ -126,7 +122,7 @@ let AuthService = class AuthService {
         const token = await this.signToken(user);
         return {
             access_token: token.access_token,
-            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
+            user: token.user,
         };
     }
     async login(data, meta) {
@@ -151,7 +147,7 @@ let AuthService = class AuthService {
         await this.reEngagement.markUserReturned(user.id).catch(() => undefined);
         return {
             access_token: token.access_token,
-            user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
+            user: token.user,
         };
     }
     async logout(userId, jti, exp) {

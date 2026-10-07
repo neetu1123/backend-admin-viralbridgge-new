@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAuth, requireBrandOrCreator, type AuthedRequest } from './lib/auth-middleware';
+import { requireAuth, requireBrandOrCreator, requireFullAccess, type AuthedRequest } from './lib/auth-middleware';
 import { fail, ok, paramId, run, runWithAudit } from './lib/http';
 import { getOrganizationService } from './lib/services';
 
@@ -17,7 +17,7 @@ router.get('/team/invitation/:token', async (req, res) => {
   }
 });
 
-router.post('/team/accept', requireAuth, (req: AuthedRequest, res) =>
+router.post('/team/accept', requireAuth, requireFullAccess, (req: AuthedRequest, res) =>
   runWithAudit(req, res, (id) => org().acceptInvitation(id, req.body), {
     action: 'ORG_INVITATION_ACCEPTED',
     entity: 'OrganizationMember',
@@ -25,11 +25,12 @@ router.post('/team/accept', requireAuth, (req: AuthedRequest, res) =>
   }),
 );
 
-router.get('/team/invitations/mine', requireAuth, (req: AuthedRequest, res) =>
+router.get('/team/invitations/mine', requireAuth, requireFullAccess, (req: AuthedRequest, res) =>
   run(req, res, (id) => org().getMyInvitations(id)),
 );
 
 router.use(requireBrandOrCreator);
+router.use(requireFullAccess);
 
 router.get('/team', (req: AuthedRequest, res) => run(req, res, (id) => org().getTeam(id)));
 

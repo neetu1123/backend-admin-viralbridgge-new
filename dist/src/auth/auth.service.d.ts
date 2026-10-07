@@ -21,6 +21,8 @@ export declare class AuthService {
             name: string;
             email: string;
             role: string | undefined;
+            feature_access: import("./feature-access").FeatureAccess;
+            access_requested_at: Date | null;
         };
     }>;
     login(data: any, meta?: SessionMeta): Promise<{
@@ -30,6 +32,8 @@ export declare class AuthService {
             name: string;
             email: string;
             role: string | undefined;
+            feature_access: import("./feature-access").FeatureAccess;
+            access_requested_at: Date | null;
         };
     }>;
     logout(userId: string, jti?: string, exp?: number): Promise<{

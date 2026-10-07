@@ -17,6 +17,7 @@ const common_1 = require("@nestjs/common");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("./auth.guard");
 const auth_service_1 = require("./auth.service");
+const feature_access_1 = require("./feature-access");
 const security_session_helper_1 = require("../security/security-session.helper");
 let AuthController = class AuthController {
     authService;
@@ -35,7 +36,7 @@ let AuthController = class AuthController {
         });
     }
     getMe(req) {
-        return req.user;
+        return (0, feature_access_1.publicAuthUser)(req.user);
     }
     logout(req) {
         const payload = req.jwtPayload || {};

@@ -17,6 +17,8 @@ import {
 import { FileInterceptor } from '@nestjs/platform-express';
 import { ApiBearerAuth, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
+import { AllowLimited } from '../auth/allow-limited.decorator';
+import { FeatureAccessGuard } from '../auth/feature-access.guard';
 import { Roles } from '../auth/roles.decorator';
 import { PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { BrandService } from './brand.service';
@@ -36,22 +38,25 @@ import {
 
 @ApiTags('Brand')
 @ApiBearerAuth()
-@UseGuards(AuthGuard)
+@UseGuards(AuthGuard, FeatureAccessGuard)
 @Roles('BRAND', 'ADMIN', 'SUPER_ADMIN')
 @Controller('brand')
 export class BrandController {
   constructor(private readonly brandService: BrandService) {}
 
+  @AllowLimited()
   @Get('profile')
   getProfile(@Request() req: any) {
     return this.brandService.getProfile(req.user.id);
   }
 
+  @AllowLimited()
   @Put('profile')
   updateProfile(@Request() req: any, @Body() body: UpdateBrandProfileDto) {
     return this.brandService.updateProfile(req.user.id, body);
   }
 
+  @AllowLimited()
   @Post('upload-logo')
   @ApiConsumes('multipart/form-data')
   @ApiOperation({ summary: 'Upload brand logo image' })
@@ -248,41 +253,49 @@ export class BrandController {
     return this.brandService.sendMessage(req.user.id, body);
   }
 
+  @AllowLimited()
   @Get('notifications/unread-count')
   getUnreadNotificationCount(@Request() req: any) {
     return this.brandService.getUnreadNotificationCount(req.user.id);
   }
 
+  @AllowLimited()
   @Get('notifications/banner')
   getBannerNotifications(@Request() req: any) {
     return this.brandService.getBannerNotifications(req.user.id);
   }
 
+  @AllowLimited()
   @Patch('notifications/read-all')
   markAllNotificationsRead(@Request() req: any) {
     return this.brandService.markAllNotificationsRead(req.user.id);
   }
 
+  @AllowLimited()
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.brandService.getNotifications(req.user.id, query);
   }
 
+  @AllowLimited()
   @Patch('notifications/:id/dismiss')
   dismissNotification(@Request() req: any, @Param('id') id: string) {
     return this.brandService.dismissNotification(req.user.id, id);
   }
 
+  @AllowLimited()
   @Patch('notifications/:id/read')
   markNotificationRead(@Request() req: any, @Param('id') id: string) {
     return this.brandService.markNotificationRead(req.user.id, id);
   }
 
+  @AllowLimited()
   @Get('settings')
   getSettings(@Request() req: any) {
     return this.brandService.getSettings(req.user.id);
   }
 
+  @AllowLimited()
   @Put('settings')
   updateSettings(@Request() req: any, @Body() body: Record<string, any>) {
     return this.brandService.updateSettings(req.user.id, body);

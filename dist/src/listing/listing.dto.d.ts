@@ -63,3 +63,7 @@ export declare class AdminListingUpdateDto {
 }
 export declare class ListingSearchQueryDto extends DiscoverySearchQueryDto {
 }
+export declare class ListingSuggestionQueryDto {
+    budgetMin?: number;
+    budgetMax?: number;
+}

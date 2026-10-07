@@ -1,5 +1,5 @@
 import { ListingService } from './listing.service';
-import { CreateListingDto, UpdateListingDto } from './listing.dto';
+import { CreateListingDto, ListingSuggestionQueryDto, UpdateListingDto } from './listing.dto';
 export declare class ListingOwnerController {
     private readonly listings;
     constructor(listings: ListingService);
@@ -103,6 +103,8 @@ export declare class ListingOwnerController {
             updated_at: Date;
         } | null;
         accountType: import("./listing.constants").AccountKind;
+        featureAccess: import("../auth/feature-access").FeatureAccess;
+        accessRequestedAt: Date | null;
         permissions: {
             publicDiscoverProfile: boolean;
             searchVisibility: boolean;
@@ -124,7 +126,7 @@ export declare class ListingOwnerController {
         };
         hasBrandProfile: boolean;
         hasCreatorProfile: boolean;
-        upgradeUrl: string | null;
+        upgradeUrl: string;
     }>;
     enquiries(req: {
         user: {
@@ -159,6 +161,75 @@ export declare class ListingOwnerController {
         last30Days: {
             [k: string]: number;
         };
+    }>;
+    suggestions(req: {
+        user: {
+            id: string;
+        };
+    }, query: ListingSuggestionQueryDto): Promise<{
+        listingReady: boolean;
+        city: string | null;
+        category: string | null;
+        budget: {
+            min: number | null;
+            max: number | null;
+            bands: ({
+                label: string;
+                min: number;
+                max: number;
+            } | {
+                label: string;
+                min: number;
+                max: null;
+            })[];
+        };
+        nearbyCreators: {
+            id: string;
+            name: string;
+            slug: string | null;
+            photo: string | null;
+            niche: string | null;
+            city: string | null;
+            followers: number;
+            rating: number;
+            publicPath: string;
+            estimatedBudget: string;
+        }[];
+        relatedProducts: string[];
+        relatedListings: {
+            id: string;
+            type: import("./listing.constants").ListingType;
+            source: "LISTING";
+            name: string;
+            slug: string;
+            logo: string;
+            coverImage: string;
+            shortDescription: string;
+            category: string;
+            subcategory: string;
+            city: string;
+            state: string;
+            area: string;
+            locationLabel: string;
+            verified: boolean;
+            featured: boolean;
+            rating: number;
+            reviewCount: number;
+            services: string[];
+            tags: string[];
+            discoveryStatus: string;
+            createdAt: Date;
+            profileViews: number;
+            publicPath: string;
+        }[];
+    }>;
+    requestAccess(req: {
+        user: {
+            id: string;
+        };
+    }): Promise<{
+        status: string;
+        requestedAt: Date | null;
     }>;
     upload(req: {
         user: {

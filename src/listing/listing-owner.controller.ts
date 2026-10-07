@@ -6,6 +6,7 @@ import {
   Param,
   Patch,
   Post,
+  Query,
   Request,
   UploadedFile,
   UseGuards,
@@ -16,7 +17,7 @@ import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { ListingService } from './listing.service';
-import { CreateListingDto, UpdateListingDto } from './listing.dto';
+import { CreateListingDto, ListingSuggestionQueryDto, UpdateListingDto } from './listing.dto';
 
 @ApiTags('Listings')
 @ApiBearerAuth()
@@ -44,6 +45,19 @@ export class ListingOwnerController {
   @Get('me/analytics')
   analytics(@Request() req: { user: { id: string } }) {
     return this.listings.getAnalytics(req.user.id);
+  }
+
+  @Get('me/suggestions')
+  suggestions(
+    @Request() req: { user: { id: string } },
+    @Query() query: ListingSuggestionQueryDto,
+  ) {
+    return this.listings.getSuggestions(req.user.id, query);
+  }
+
+  @Post('me/request-access')
+  requestAccess(@Request() req: { user: { id: string } }) {
+    return this.listings.requestFullAccess(req.user.id);
   }
 
   @Post('upload')

@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
+const allow_limited_decorator_1 = require("../auth/allow-limited.decorator");
+const feature_access_guard_1 = require("../auth/feature-access.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const storage_constants_1 = require("../storage/storage.constants");
 const creator_service_1 = require("./creator.service");
@@ -166,6 +168,7 @@ let CreatorController = class CreatorController {
 };
 exports.CreatorController = CreatorController;
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('profile'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -173,6 +176,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getProfile", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Put)('profile'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -181,6 +185,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "updateProfile", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Post)('upload-photo'),
     (0, swagger_1.ApiConsumes)('multipart/form-data', 'application/json'),
     (0, swagger_1.ApiOperation)({ summary: 'Upload creator profile photo (multipart image or JSON url)' }),
@@ -193,6 +198,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "uploadPhoto", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Post)('upload-media-kit'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -363,6 +369,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "sendMessage", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications/unread-count'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -370,6 +377,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getUnreadNotificationCount", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications/banner'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -377,6 +385,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getBannerNotifications", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/read-all'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -384,6 +393,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "markAllNotificationsRead", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)()),
@@ -392,6 +402,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getNotifications", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/:id/dismiss'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -400,6 +411,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "dismissNotification", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/:id/read'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -408,6 +420,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "markNotificationRead", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('settings'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -415,6 +428,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], CreatorController.prototype, "getSettings", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Put)('settings'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -425,7 +439,7 @@ __decorate([
 exports.CreatorController = CreatorController = __decorate([
     (0, swagger_1.ApiTags)('Creator'),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, feature_access_guard_1.FeatureAccessGuard),
     (0, roles_decorator_1.Roles)('CREATOR', 'ADMIN', 'SUPER_ADMIN'),
     (0, common_1.Controller)('creator'),
     __metadata("design:paramtypes", [creator_service_1.CreatorService])

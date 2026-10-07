@@ -9,6 +9,7 @@ import type { SessionMeta } from '../security/security-session.helper';
 
 import { UserActivityService } from '../user-activity/user-activity.service';
 import { ReEngagementService } from '../re-engagement/re-engagement.service';
+import { publicAuthUser } from './feature-access';
 
 @Injectable()
 export class AuthService {
@@ -22,7 +23,14 @@ export class AuthService {
     private reEngagement: ReEngagementService,
   ) {}
 
-  private async signToken(user: { id: string; email: string; name?: string; role?: { name: string } | null }) {
+  private async signToken(user: {
+    id: string;
+    email: string;
+    name: string;
+    role?: { name: string } | null;
+    feature_access?: string | null;
+    access_requested_at?: Date | null;
+  }) {
     const jti = randomUUID();
     const payload = {
       sub: user.id,
@@ -33,12 +41,7 @@ export class AuthService {
     return {
       access_token: await this.jwtService.signAsync(payload),
       jti,
-      user: {
-        id: user.id,
-        name: user.name,
-        email: user.email,
-        role: user.role?.name,
-      },
+      user: publicAuthUser(user),
     };
   }
 
@@ -86,7 +89,7 @@ export class AuthService {
     const token = await this.signToken(user);
     return {
       access_token: token.access_token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
+      user: token.user,
     };
   }
 
@@ -115,7 +118,7 @@ export class AuthService {
     await this.reEngagement.markUserReturned(user.id).catch(() => undefined);
     return {
       access_token: token.access_token,
-      user: { id: user.id, name: user.name, email: user.email, role: user.role?.name },
+      user: token.user,
     };
   }
 

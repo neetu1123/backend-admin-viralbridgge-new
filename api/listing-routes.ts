@@ -16,6 +16,19 @@ router.get('/me/enquiries', (req: AuthedRequest, res) => run(req, res, (id) => l
 
 router.get('/me/analytics', (req: AuthedRequest, res) => run(req, res, (id) => listings().getAnalytics(id)));
 
+router.get('/me/suggestions', (req: AuthedRequest, res) =>
+  run(req, res, (id) =>
+    listings().getSuggestions(id, {
+      budgetMin: req.query.budgetMin ? Number(req.query.budgetMin) : undefined,
+      budgetMax: req.query.budgetMax ? Number(req.query.budgetMax) : undefined,
+    }),
+  ),
+);
+
+router.post('/me/request-access', (req: AuthedRequest, res) =>
+  run(req, res, (id) => listings().requestFullAccess(id)),
+);
+
 router.post('/upload', (req: AuthedRequest, res) => {
   const { profileUploadMiddleware, toProfileUploadPayload } = require('./lib/multer-profile') as typeof import('./lib/multer-profile');
   profileUploadMiddleware(req, res, async (err: unknown) => {

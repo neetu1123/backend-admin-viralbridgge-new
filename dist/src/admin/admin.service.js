@@ -13,12 +13,16 @@ exports.AdminService = void 0;
 const common_1 = require("@nestjs/common");
 const prisma_service_1 = require("../prisma/prisma.service");
 const matching_service_1 = require("../matching/matching.service");
+const notifications_service_1 = require("../notifications/notifications.service");
+const feature_access_1 = require("../auth/feature-access");
 let AdminService = class AdminService {
     prisma;
     matchingService;
-    constructor(prisma, matchingService) {
+    notifications;
+    constructor(prisma, matchingService, notifications) {
         this.prisma = prisma;
         this.matchingService = matchingService;
+        this.notifications = notifications;
     }
     async createAuditLog(params) {
         try {
@@ -247,6 +251,48 @@ let AdminService = class AdminService {
                 metadata: { banned: true },
             });
         }
+        return result;
+    }
+    async setFeatureAccess(id, featureAccess, adminId) {
+        const access = (0, feature_access_1.normalizeFeatureAccess)(featureAccess);
+        const user = await this.prisma.user.findUnique({
+            where: { id },
+            include: { role: true },
+        });
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        const roleName = String(user.role?.name ?? '').toUpperCase();
+        if (roleName !== 'BRAND' && roleName !== 'CREATOR') {
+            throw new common_1.BadRequestException('Feature access can only be changed for Brand or Creator accounts');
+        }
+        const result = await this.prisma.user.update({
+            where: { id },
+            data: {
+                feature_access: access,
+                access_granted_at: access === feature_access_1.FEATURE_ACCESS_FULL ? new Date() : null,
+                access_granted_by: access === feature_access_1.FEATURE_ACCESS_FULL ? adminId ?? null : null,
+                access_requested_at: access === feature_access_1.FEATURE_ACCESS_FULL ? null : user.access_requested_at,
+            },
+        });
+        if (adminId) {
+            await this.createAuditLog({
+                admin_id: adminId,
+                action: access === feature_access_1.FEATURE_ACCESS_FULL ? 'GRANT_FEATURE_ACCESS' : 'REVOKE_FEATURE_ACCESS',
+                entity: 'User',
+                entity_id: id,
+                metadata: { feature_access: access },
+            });
+        }
+        await this.notifications.create({
+            userId: id,
+            type: 'FEATURE_ACCESS',
+            title: access === feature_access_1.FEATURE_ACCESS_FULL ? 'Full access approved' : 'Full access revoked',
+            message: access === feature_access_1.FEATURE_ACCESS_FULL
+                ? 'An admin unlocked campaigns, wallet, and discovery tools on your account.'
+                : 'Your account is back on listing, Grow my business, profile, settings, and subscription only.',
+            entityType: 'User',
+            entityId: id,
+        });
         return result;
     }
     async unbanUser(id, adminId) {
@@ -589,6 +635,7 @@ exports.AdminService = AdminService;
 exports.AdminService = AdminService = __decorate([
     (0, common_1.Injectable)(),
     __metadata("design:paramtypes", [prisma_service_1.PrismaService,
-        matching_service_1.MatchingService])
+        matching_service_1.MatchingService,
+        notifications_service_1.NotificationsService])
 ], AdminService);
 //# sourceMappingURL=admin.service.js.map

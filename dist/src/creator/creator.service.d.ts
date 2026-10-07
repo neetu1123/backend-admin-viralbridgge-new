@@ -34,6 +34,10 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            feature_access: string;
+            access_requested_at: Date | null;
+            access_granted_at: Date | null;
+            access_granted_by: string | null;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
@@ -86,6 +90,10 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            feature_access: string;
+            access_requested_at: Date | null;
+            access_granted_at: Date | null;
+            access_granted_by: string | null;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
@@ -173,6 +181,10 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            feature_access: string;
+            access_requested_at: Date | null;
+            access_granted_at: Date | null;
+            access_granted_by: string | null;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
@@ -262,6 +274,10 @@ export declare class CreatorService {
                     is_verified: boolean;
                     is_banned: boolean;
                     is_deleted: boolean;
+                    feature_access: string;
+                    access_requested_at: Date | null;
+                    access_granted_at: Date | null;
+                    access_granted_by: string | null;
                     settings: import("@prisma/client/runtime/library").JsonValue | null;
                 };
             } & {
@@ -348,6 +364,10 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -452,6 +472,10 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -781,6 +805,10 @@ export declare class CreatorService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -856,6 +884,10 @@ export declare class CreatorService {
             is_verified: boolean;
             is_banned: boolean;
             is_deleted: boolean;
+            feature_access: string;
+            access_requested_at: Date | null;
+            access_granted_at: Date | null;
+            access_granted_by: string | null;
             settings: import("@prisma/client/runtime/library").JsonValue | null;
         };
     } & {
@@ -964,6 +996,10 @@ export declare class CreatorService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     private ensureCreatorProfile;

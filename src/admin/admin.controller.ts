@@ -93,6 +93,15 @@ export class AdminController {
     return this.adminService.unbanUser(id, req.user?.id);
   }
 
+  @Patch('users/:id/feature-access')
+  setFeatureAccess(
+    @Param('id') id: string,
+    @Body() body: { feature_access?: string },
+    @Request() req: any,
+  ) {
+    return this.adminService.setFeatureAccess(id, body.feature_access || 'LIMITED', req.user?.id);
+  }
+
   // ─── Campaigns ────────────────────────────────────────────────────────────────
 
   @Get('campaigns')

@@ -18,6 +18,7 @@ const discovery_service_1 = require("../discovery/discovery.service");
 const storage_service_1 = require("../storage/storage.service");
 const pagination_query_dto_1 = require("../common/dto/pagination-query.dto");
 const discovery_constants_1 = require("../discovery/discovery.constants");
+const feature_access_1 = require("../auth/feature-access");
 const listing_constants_1 = require("./listing.constants");
 let ListingService = class ListingService {
     prisma;
@@ -52,24 +53,163 @@ let ListingService = class ListingService {
         return this.formatOwner(listing);
     }
     async getMine(userId) {
-        const [listing, brand, creator] = await Promise.all([
+        const [listing, brand, creator, user] = await Promise.all([
             this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } }),
             this.prisma.brandProfile.findUnique({ where: { user_id: userId }, select: { id: true } }),
             this.prisma.creatorProfile.findUnique({ where: { user_id: userId }, select: { id: true } }),
+            this.prisma.user.findUnique({
+                where: { id: userId },
+                select: { feature_access: true, access_requested_at: true },
+            }),
         ]);
         const account = this.accountKind(Boolean(brand), Boolean(creator));
+        const featureAccess = (0, feature_access_1.normalizeFeatureAccess)(user?.feature_access);
+        const unlocked = featureAccess === feature_access_1.FEATURE_ACCESS_FULL;
         return {
             listing: listing ? this.formatOwner(listing) : null,
             accountType: account,
-            permissions: (0, listing_constants_1.listingPermissions)(account),
+            featureAccess,
+            accessRequestedAt: user?.access_requested_at ?? null,
+            permissions: (0, listing_constants_1.listingPermissions)(account, featureAccess),
             hasBrandProfile: Boolean(brand),
             hasCreatorProfile: Boolean(creator),
-            upgradeUrl: account === 'BRAND'
-                ? '/brand-campaign-management'
-                : account === 'CREATOR'
-                    ? '/campaign-discovery'
-                    : null,
+            upgradeUrl: unlocked
+                ? account === 'BRAND'
+                    ? '/brand-campaign-management'
+                    : account === 'CREATOR'
+                        ? '/campaign-discovery'
+                        : '/subscription'
+                : '/subscription',
         };
+    }
+    async getSuggestions(userId, query = {}) {
+        const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
+        const city = listing?.city?.trim() || '';
+        const category = listing?.category?.trim() || '';
+        const subcategory = listing?.subcategory?.trim() || '';
+        const services = (listing?.services ?? []).filter(Boolean);
+        const budgetMin = query.budgetMin != null ? Number(query.budgetMin) : undefined;
+        const budgetMax = query.budgetMax != null ? Number(query.budgetMax) : undefined;
+        const followerFilter = this.followerFilterForBudget(budgetMin, budgetMax);
+        const nearbyWhere = {
+            discovery_status: 'ACTIVE',
+            user: { is_banned: false, is_deleted: false },
+            ...(followerFilter ? { followers: followerFilter } : {}),
+        };
+        const nearbyCreators = city
+            ? await this.prisma.creatorProfile.findMany({
+                where: { ...nearbyWhere, city: { equals: city, mode: 'insensitive' } },
+                take: 8,
+                orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
+                select: {
+                    id: true,
+                    full_name: true,
+                    slug: true,
+                    photo: true,
+                    niche: true,
+                    category: true,
+                    city: true,
+                    followers: true,
+                    rating: true,
+                },
+            })
+            : [];
+        const nearby = nearbyCreators.length > 0
+            ? nearbyCreators
+            : await this.prisma.creatorProfile.findMany({
+                where: nearbyWhere,
+                take: 8,
+                orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
+                select: {
+                    id: true,
+                    full_name: true,
+                    slug: true,
+                    photo: true,
+                    niche: true,
+                    category: true,
+                    city: true,
+                    followers: true,
+                    rating: true,
+                },
+            });
+        const relatedOr = [];
+        if (category)
+            relatedOr.push({ category: { equals: category, mode: 'insensitive' } });
+        if (subcategory)
+            relatedOr.push({ subcategory: { equals: subcategory, mode: 'insensitive' } });
+        if (services.length)
+            relatedOr.push({ services: { hasSome: services } });
+        const relatedListings = await this.prisma.freeListing.findMany({
+            where: {
+                status: 'PUBLISHED',
+                is_visible: true,
+                owner_user_id: { not: userId },
+                ...(relatedOr.length ? { OR: relatedOr } : city ? { city: { equals: city, mode: 'insensitive' } } : {}),
+            },
+            take: 8,
+            orderBy: [{ is_featured: 'desc' }, { profile_views: 'desc' }],
+        });
+        const relatedProducts = Array.from(new Set([
+            ...services,
+            subcategory,
+            category,
+            ...relatedListings.flatMap((row) => row.services ?? []),
+        ]))
+            .filter(Boolean)
+            .slice(0, 10);
+        return {
+            listingReady: Boolean(listing?.city || listing?.category || services.length),
+            city: city || null,
+            category: category || null,
+            budget: {
+                min: budgetMin ?? null,
+                max: budgetMax ?? null,
+                bands: [
+                    { label: 'Under ₹5,000', min: 0, max: 5000 },
+                    { label: '₹5,000 – ₹15,000', min: 5000, max: 15000 },
+                    { label: '₹15,000 – ₹50,000', min: 15000, max: 50000 },
+                    { label: '₹50,000+', min: 50000, max: null },
+                ],
+            },
+            nearbyCreators: nearby.map((row) => ({
+                id: row.id,
+                name: row.full_name || 'Creator',
+                slug: row.slug,
+                photo: row.photo,
+                niche: row.niche || row.category,
+                city: row.city,
+                followers: row.followers,
+                rating: row.rating,
+                publicPath: row.slug ? `/discover/creator/${row.slug}` : `/business/creator/${row.id}`,
+                estimatedBudget: this.estimatedBudgetLabel(row.followers),
+            })),
+            relatedProducts,
+            relatedListings: relatedListings.map((row) => this.formatPublicCard(row)),
+        };
+    }
+    async requestFullAccess(userId) {
+        const user = await this.prisma.user.findUnique({
+            where: { id: userId },
+            include: { role: true },
+        });
+        if (!user)
+            throw new common_1.NotFoundException('User not found');
+        if ((0, feature_access_1.normalizeFeatureAccess)(user.feature_access) === feature_access_1.FEATURE_ACCESS_FULL) {
+            return { status: 'FULL', requestedAt: user.access_requested_at };
+        }
+        const updated = await this.prisma.user.update({
+            where: { id: userId },
+            data: { access_requested_at: new Date() },
+        });
+        await this.notifications.notifyAdmins({
+            type: 'FEATURE_ACCESS_REQUEST',
+            title: 'Full access requested',
+            message: `${user.name} (${user.email}) asked to unlock campaigns and premium tools.`,
+            entityType: 'User',
+            entityId: userId,
+            metadata: { role: user.role?.name, requestedAt: updated.access_requested_at },
+        });
+        return { status: 'PENDING', requestedAt: updated.access_requested_at };
     }
     async update(userId, id, dto) {
         const listing = await this.requireOwner(userId, id);
@@ -644,6 +784,34 @@ let ListingService = class ListingService {
         if (hasCreator)
             return 'CREATOR';
         return 'FREE_LISTING';
+    }
+    followerFilterForBudget(min, max) {
+        if (min == null && max == null)
+            return null;
+        const toFollowers = (budget) => {
+            if (budget <= 5000)
+                return 15000;
+            if (budget <= 15000)
+                return 80000;
+            if (budget <= 50000)
+                return 250000;
+            return 10000000;
+        };
+        const filter = {};
+        if (min != null && min > 0)
+            filter.gte = Math.round(toFollowers(min) * 0.2);
+        if (max != null)
+            filter.lte = toFollowers(max);
+        return filter;
+    }
+    estimatedBudgetLabel(followers) {
+        if (followers < 15000)
+            return 'Under ₹5,000';
+        if (followers < 80000)
+            return '₹5,000 – ₹15,000';
+        if (followers < 250000)
+            return '₹15,000 – ₹50,000';
+        return '₹50,000+';
     }
     formatOwner(row) {
         return {

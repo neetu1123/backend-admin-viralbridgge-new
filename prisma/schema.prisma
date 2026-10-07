@@ -20,6 +20,10 @@ model User {
   is_verified      Boolean          @default(false)
   is_banned        Boolean          @default(false)
   is_deleted       Boolean          @default(false)
+  feature_access   String           @default("LIMITED")
+  access_requested_at DateTime?
+  access_granted_at   DateTime?
+  access_granted_by   String?
   created_at       DateTime         @default(now())
   updated_at       DateTime         @updatedAt
 

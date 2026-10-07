@@ -1,9 +1,11 @@
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
+import { NotificationsService } from '../notifications/notifications.service';
 export declare class AdminService {
     private prisma;
     private matchingService;
-    constructor(prisma: PrismaService, matchingService: MatchingService);
+    private notifications;
+    constructor(prisma: PrismaService, matchingService: MatchingService, notifications: NotificationsService);
     createAuditLog(params: {
         admin_id: string;
         action: string;
@@ -109,6 +111,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     assignRoleByEmail(params: {
@@ -130,6 +136,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getUsers(): Promise<({
@@ -238,6 +248,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     getUser(id: string): Promise<{
@@ -334,6 +348,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateUserRole(id: string, role_id: string, adminId?: string): Promise<{
@@ -350,6 +368,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     banUser(id: string, adminId?: string): Promise<{
@@ -366,6 +388,30 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+    setFeatureAccess(id: string, featureAccess: string, adminId?: string): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
+        avatar: string | null;
+        role_id: string | null;
+        is_verified: boolean;
+        is_banned: boolean;
+        is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     unbanUser(id: string, adminId?: string): Promise<{
@@ -382,6 +428,10 @@ export declare class AdminService {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getCampaigns(): Promise<({
@@ -400,6 +450,10 @@ export declare class AdminService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -664,6 +718,10 @@ export declare class AdminService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -713,6 +771,10 @@ export declare class AdminService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -756,6 +818,10 @@ export declare class AdminService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -799,6 +865,10 @@ export declare class AdminService {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {

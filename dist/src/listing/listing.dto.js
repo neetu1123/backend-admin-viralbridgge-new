@@ -9,7 +9,7 @@ var __metadata = (this && this.__metadata) || function (k, v) {
     if (typeof Reflect === "object" && typeof Reflect.metadata === "function") return Reflect.metadata(k, v);
 };
 Object.defineProperty(exports, "__esModule", { value: true });
-exports.ListingSearchQueryDto = exports.AdminListingUpdateDto = exports.ListingEventDto = exports.ListingReportDto = exports.ListingEnquiryDto = exports.UpdateListingDto = exports.CreateListingDto = void 0;
+exports.ListingSuggestionQueryDto = exports.ListingSearchQueryDto = exports.AdminListingUpdateDto = exports.ListingEventDto = exports.ListingReportDto = exports.ListingEnquiryDto = exports.UpdateListingDto = exports.CreateListingDto = void 0;
 const class_transformer_1 = require("class-transformer");
 const class_validator_1 = require("class-validator");
 const discovery_dto_1 = require("../discovery/discovery.dto");
@@ -348,4 +348,21 @@ __decorate([
 class ListingSearchQueryDto extends discovery_dto_1.DiscoverySearchQueryDto {
 }
 exports.ListingSearchQueryDto = ListingSearchQueryDto;
+class ListingSuggestionQueryDto {
+    budgetMin;
+    budgetMax;
+}
+exports.ListingSuggestionQueryDto = ListingSuggestionQueryDto;
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], ListingSuggestionQueryDto.prototype, "budgetMin", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_transformer_1.Type)(() => Number),
+    (0, class_validator_1.IsNumber)(),
+    __metadata("design:type", Number)
+], ListingSuggestionQueryDto.prototype, "budgetMax", void 0);
 //# sourceMappingURL=listing.dto.js.map

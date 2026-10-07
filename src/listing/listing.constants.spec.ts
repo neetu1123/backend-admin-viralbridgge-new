@@ -18,6 +18,15 @@ describe('listing.constants', () => {
     expect(brand.applyCampaign).toBe(false);
   });
 
+  it('keeps Brand and Creator campaign tools locked until full access', () => {
+    const brand = listingPermissions('BRAND', 'LIMITED');
+    const creator = listingPermissions('CREATOR', 'LIMITED');
+    expect(brand.createCampaign).toBe(false);
+    expect(brand.payments).toBe(false);
+    expect(creator.applyCampaign).toBe(false);
+    expect(creator.campaignManagement).toBe(false);
+  });
+
   it('rejects unsafe listing URLs', () => {
     expect(isSafeHttpUrl('https://viralbridge.com')).toBe(true);
     expect(isSafeHttpUrl('javascript:alert(1)')).toBe(false);

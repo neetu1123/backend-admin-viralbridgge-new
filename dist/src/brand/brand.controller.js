@@ -17,6 +17,8 @@ const common_1 = require("@nestjs/common");
 const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
+const allow_limited_decorator_1 = require("../auth/allow-limited.decorator");
+const feature_access_guard_1 = require("../auth/feature-access.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const storage_constants_1 = require("../storage/storage.constants");
 const brand_service_1 = require("./brand.service");
@@ -174,6 +176,7 @@ let BrandController = class BrandController {
 };
 exports.BrandController = BrandController;
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('profile'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -181,6 +184,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getProfile", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Put)('profile'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -189,6 +193,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "updateProfile", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Post)('upload-logo'),
     (0, swagger_1.ApiConsumes)('multipart/form-data'),
     (0, swagger_1.ApiOperation)({ summary: 'Upload brand logo image' }),
@@ -475,6 +480,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "sendMessage", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications/unread-count'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -482,6 +488,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getUnreadNotificationCount", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications/banner'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -489,6 +496,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getBannerNotifications", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/read-all'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -496,6 +504,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "markAllNotificationsRead", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('notifications'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Query)()),
@@ -504,6 +513,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getNotifications", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/:id/dismiss'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -512,6 +522,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "dismissNotification", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Patch)('notifications/:id/read'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Param)('id')),
@@ -520,6 +531,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "markNotificationRead", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Get)('settings'),
     __param(0, (0, common_1.Request)()),
     __metadata("design:type", Function),
@@ -527,6 +539,7 @@ __decorate([
     __metadata("design:returntype", void 0)
 ], BrandController.prototype, "getSettings", null);
 __decorate([
+    (0, allow_limited_decorator_1.AllowLimited)(),
     (0, common_1.Put)('settings'),
     __param(0, (0, common_1.Request)()),
     __param(1, (0, common_1.Body)()),
@@ -537,7 +550,7 @@ __decorate([
 exports.BrandController = BrandController = __decorate([
     (0, swagger_1.ApiTags)('Brand'),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, feature_access_guard_1.FeatureAccessGuard),
     (0, roles_decorator_1.Roles)('BRAND', 'ADMIN', 'SUPER_ADMIN'),
     (0, common_1.Controller)('brand'),
     __metadata("design:paramtypes", [brand_service_1.BrandService])

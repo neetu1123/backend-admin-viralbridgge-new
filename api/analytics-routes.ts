@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireAdmin, requireCreator, type AuthedRequest } from './lib/auth-middleware';
+import { requireAdmin, requireCreator, requireFullAccess, type AuthedRequest } from './lib/auth-middleware';
 import { fail, ok, run } from './lib/http';
 import { getAdminAnalyticsService, getCreatorAnalyticsService } from './lib/services';
 
@@ -13,16 +13,16 @@ function parseQuery(req: AuthedRequest) {
   };
 }
 
-router.get('/creator/dashboard', requireCreator, (req: AuthedRequest, res) =>
+router.get('/creator/dashboard', requireCreator, requireFullAccess, (req: AuthedRequest, res) =>
   run(req, res, (id) => getCreatorAnalyticsService().getDashboard(id, parseQuery(req))),
 );
-router.get('/creator/earnings', requireCreator, (req: AuthedRequest, res) =>
+router.get('/creator/earnings', requireCreator, requireFullAccess, (req: AuthedRequest, res) =>
   run(req, res, (id) => getCreatorAnalyticsService().getEarnings(id, parseQuery(req))),
 );
-router.get('/creator/profile-performance', requireCreator, (req: AuthedRequest, res) =>
+router.get('/creator/profile-performance', requireCreator, requireFullAccess, (req: AuthedRequest, res) =>
   run(req, res, (id) => getCreatorAnalyticsService().getProfilePerformance(id, parseQuery(req))),
 );
-router.get('/creator/top-brands', requireCreator, (req: AuthedRequest, res) =>
+router.get('/creator/top-brands', requireCreator, requireFullAccess, (req: AuthedRequest, res) =>
   run(req, res, (id) => getCreatorAnalyticsService().getTopBrands(id, parseQuery(req))),
 );
 

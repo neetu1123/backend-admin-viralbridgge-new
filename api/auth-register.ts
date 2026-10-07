@@ -81,6 +81,8 @@ export async function handleAuthRegister(body: {
           name: user.name,
           email: user.email,
           role: user.role?.name,
+          feature_access: String(user.feature_access ?? 'LIMITED').toUpperCase() === 'FULL' ? 'FULL' : 'LIMITED',
+          access_requested_at: user.access_requested_at ?? null,
         },
       },
     },

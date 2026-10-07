@@ -1,12 +1,15 @@
-import { Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
 import { MatchingService } from '../matching/matching.service';
+import { NotificationsService } from '../notifications/notifications.service';
+import { FEATURE_ACCESS_FULL, normalizeFeatureAccess } from '../auth/feature-access';
 
 @Injectable()
 export class AdminService {
   constructor(
     private prisma: PrismaService,
     private matchingService: MatchingService,
+    private notifications: NotificationsService,
   ) {}
 
   // ─── Audit Log Helpers ───────────────────────────────────────────────────────
@@ -277,6 +280,53 @@ export class AdminService {
         metadata: { banned: true },
       });
     }
+    return result;
+  }
+
+  async setFeatureAccess(id: string, featureAccess: string, adminId?: string) {
+    const access = normalizeFeatureAccess(featureAccess);
+    const user = await this.prisma.user.findUnique({
+      where: { id },
+      include: { role: true },
+    });
+    if (!user) throw new NotFoundException('User not found');
+    const roleName = String(user.role?.name ?? '').toUpperCase();
+    if (roleName !== 'BRAND' && roleName !== 'CREATOR') {
+      throw new BadRequestException('Feature access can only be changed for Brand or Creator accounts');
+    }
+
+    const result = await this.prisma.user.update({
+      where: { id },
+      data: {
+        feature_access: access,
+        access_granted_at: access === FEATURE_ACCESS_FULL ? new Date() : null,
+        access_granted_by: access === FEATURE_ACCESS_FULL ? adminId ?? null : null,
+        access_requested_at: access === FEATURE_ACCESS_FULL ? null : user.access_requested_at,
+      },
+    });
+
+    if (adminId) {
+      await this.createAuditLog({
+        admin_id: adminId,
+        action: access === FEATURE_ACCESS_FULL ? 'GRANT_FEATURE_ACCESS' : 'REVOKE_FEATURE_ACCESS',
+        entity: 'User',
+        entity_id: id,
+        metadata: { feature_access: access },
+      });
+    }
+
+    await this.notifications.create({
+      userId: id,
+      type: 'FEATURE_ACCESS',
+      title: access === FEATURE_ACCESS_FULL ? 'Full access approved' : 'Full access revoked',
+      message:
+        access === FEATURE_ACCESS_FULL
+          ? 'An admin unlocked campaigns, wallet, and discovery tools on your account.'
+          : 'Your account is back on listing, Grow my business, profile, settings, and subscription only.',
+      entityType: 'User',
+      entityId: id,
+    });
+
     return result;
   }
 

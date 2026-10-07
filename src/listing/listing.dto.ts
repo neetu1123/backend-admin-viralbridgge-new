@@ -240,3 +240,15 @@ export class AdminListingUpdateDto {
 }
 
 export class ListingSearchQueryDto extends DiscoverySearchQueryDto {}
+
+export class ListingSuggestionQueryDto {
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  budgetMin?: number;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsNumber()
+  budgetMax?: number;
+}

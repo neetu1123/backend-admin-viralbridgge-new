@@ -96,6 +96,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     assignRoleByEmail(body: {
@@ -117,6 +121,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getUsers(): Promise<({
@@ -225,6 +233,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     })[]>;
     getUser(id: string): Promise<{
@@ -321,6 +333,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     updateUserRole(id: string, body: {
@@ -339,6 +355,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     banUser(id: string, req: any): Promise<{
@@ -355,6 +375,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     unbanUser(id: string, req: any): Promise<{
@@ -371,6 +395,32 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
+        settings: import("@prisma/client/runtime/library").JsonValue | null;
+    }>;
+    setFeatureAccess(id: string, body: {
+        feature_access?: string;
+    }, req: any): Promise<{
+        name: string;
+        id: string;
+        status: string;
+        updated_at: Date;
+        created_at: Date;
+        firebase_uid: string | null;
+        password: string | null;
+        email: string;
+        avatar: string | null;
+        role_id: string | null;
+        is_verified: boolean;
+        is_banned: boolean;
+        is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     getCampaigns(): Promise<({
@@ -389,6 +439,10 @@ export declare class AdminController {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -578,6 +632,10 @@ export declare class AdminController {
                 is_verified: boolean;
                 is_banned: boolean;
                 is_deleted: boolean;
+                feature_access: string;
+                access_requested_at: Date | null;
+                access_granted_at: Date | null;
+                access_granted_by: string | null;
                 settings: import("@prisma/client/runtime/library").JsonValue | null;
             };
         } & {
@@ -968,6 +1026,10 @@ export declare class AdminController {
         is_verified: boolean;
         is_banned: boolean;
         is_deleted: boolean;
+        feature_access: string;
+        access_requested_at: Date | null;
+        access_granted_at: Date | null;
+        access_granted_by: string | null;
         settings: import("@prisma/client/runtime/library").JsonValue | null;
     }>;
     listBrands(search?: string, industry?: string, status?: string, verified?: string, page?: string, limit?: string): Promise<{

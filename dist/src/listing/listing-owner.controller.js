@@ -37,6 +37,12 @@ let ListingOwnerController = class ListingOwnerController {
     analytics(req) {
         return this.listings.getAnalytics(req.user.id);
     }
+    suggestions(req, query) {
+        return this.listings.getSuggestions(req.user.id, query);
+    }
+    requestAccess(req) {
+        return this.listings.requestFullAccess(req.user.id);
+    }
     upload(req, file) {
         if (!file) {
             throw new common_1.BadRequestException('image file is required');
@@ -95,6 +101,21 @@ __decorate([
     __metadata("design:paramtypes", [Object]),
     __metadata("design:returntype", void 0)
 ], ListingOwnerController.prototype, "analytics", null);
+__decorate([
+    (0, common_1.Get)('me/suggestions'),
+    __param(0, (0, common_1.Request)()),
+    __param(1, (0, common_1.Query)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object, listing_dto_1.ListingSuggestionQueryDto]),
+    __metadata("design:returntype", void 0)
+], ListingOwnerController.prototype, "suggestions", null);
+__decorate([
+    (0, common_1.Post)('me/request-access'),
+    __param(0, (0, common_1.Request)()),
+    __metadata("design:type", Function),
+    __metadata("design:paramtypes", [Object]),
+    __metadata("design:returntype", void 0)
+], ListingOwnerController.prototype, "requestAccess", null);
 __decorate([
     (0, common_1.Post)('upload'),
     (0, common_1.UseInterceptors)((0, platform_express_1.FileInterceptor)('image', { limits: { fileSize: storage_constants_1.PROFILE_MAX_UPLOAD_BYTES } })),
