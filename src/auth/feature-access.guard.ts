@@ -17,6 +17,9 @@ export class FeatureAccessGuard implements CanActivate {
     const user = context.switchToHttp().getRequest()?.user;
     if (isFullAccessUser(user)) return true;
 
+    const roleName = String(user?.role?.name ?? user?.role ?? '').toUpperCase();
+    if (roleName === 'BRAND') return true;
+
     throw new ForbiddenException(
       'Campaigns, wallet, and discovery tools require a subscription or admin approval.',
     );

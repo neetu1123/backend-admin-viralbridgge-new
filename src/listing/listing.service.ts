@@ -377,24 +377,60 @@ export class ListingService {
   async getAnalytics(userId: string) {
     const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
     if (!listing) {
-      return { views: 0, enquiries: 0, contacts: 0, searches: 0 };
+      return {
+        listing: null,
+        views: 0,
+        enquiries: 0,
+        contacts: 0,
+        searches: 0,
+        whatsapp: 0,
+        calls: 0,
+        website: 0,
+        contactClicks: 0,
+        enquiryEvents: 0,
+        last30Days: {},
+        totals: {},
+      };
     }
     const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-    const [enquiries, events] = await Promise.all([
+    const [enquiries, events30, eventsAll] = await Promise.all([
       this.prisma.freeListingEnquiry.count({ where: { listing_id: listing.id } }),
       this.prisma.discoveryEvent.groupBy({
         by: ['event_type'],
         where: { listing_id: listing.id, created_at: { gte: since } },
         _count: true,
       }),
+      this.prisma.discoveryEvent.groupBy({
+        by: ['event_type'],
+        where: { listing_id: listing.id },
+        _count: true,
+      }),
     ]);
-    const countOf = (type: string) => events.find((row) => row.event_type === type)?._count ?? 0;
+    const countOf = (rows: typeof eventsAll, type: string) => rows.find((row) => row.event_type === type)?._count ?? 0;
+    const whatsapp = countOf(eventsAll, 'whatsapp_click');
+    const calls = countOf(eventsAll, 'call_click');
+    const website = countOf(eventsAll, 'website_click');
+    const contactClicks = countOf(eventsAll, 'contact_click');
+    const enquiryEvents = countOf(eventsAll, 'enquiry_sent');
+    const searches = countOf(eventsAll, 'search');
     return {
+      listing: {
+        id: listing.id,
+        name: listing.name,
+        slug: listing.slug,
+        status: listing.status,
+      },
       views: listing.profile_views,
       enquiries,
-      contacts: countOf('contact_click') + countOf('call_click') + countOf('whatsapp_click'),
-      searches: countOf('search'),
-      last30Days: Object.fromEntries(events.map((row) => [row.event_type, row._count])),
+      contacts: contactClicks + calls + whatsapp,
+      searches,
+      whatsapp,
+      calls,
+      website,
+      contactClicks,
+      enquiryEvents,
+      last30Days: Object.fromEntries(events30.map((row) => [row.event_type, row._count])),
+      totals: Object.fromEntries(eventsAll.map((row) => [row.event_type, row._count])),
     };
   }
 

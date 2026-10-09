@@ -107,8 +107,12 @@ function pathAllowed(path: string, prefixes: string[]) {
   return prefixes.some((prefix) => path === prefix || path.startsWith(`${prefix}/`));
 }
 
+function isBrandUser(user?: AuthedRequest['user']) {
+  return String(user?.role?.name ?? '').toUpperCase() === 'BRAND';
+}
+
 export function requireFullAccess(req: AuthedRequest, res: Response, next: NextFunction) {
-  if (isFullAccessUser(req.user)) return next();
+  if (isFullAccessUser(req.user) || isBrandUser(req.user)) return next();
   return res.status(403).json({
     success: false,
     message: 'Campaigns, wallet, and discovery tools require a subscription or admin approval.',
@@ -117,7 +121,7 @@ export function requireFullAccess(req: AuthedRequest, res: Response, next: NextF
 
 export function requireFullAccessUnless(allowedPrefixes: string[]) {
   return (req: AuthedRequest, res: Response, next: NextFunction) => {
-    if (pathAllowed(req.path, allowedPrefixes) || isFullAccessUser(req.user)) {
+    if (pathAllowed(req.path, allowedPrefixes) || isFullAccessUser(req.user) || isBrandUser(req.user)) {
       return next();
     }
     return res.status(403).json({
