@@ -19,7 +19,6 @@ import { FileFieldsInterceptor, FileInterceptor } from '@nestjs/platform-express
 import { ApiBearerAuth, ApiBody, ApiConsumes, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { AuthGuard } from '../auth/auth.guard';
 import { AllowLimited } from '../auth/allow-limited.decorator';
-import { FeatureAccessGuard } from '../auth/feature-access.guard';
 import { Roles } from '../auth/roles.decorator';
 import { DELIVERABLE_MAX_UPLOAD_BYTES, PROFILE_MAX_UPLOAD_BYTES } from '../storage/storage.constants';
 import { CreatorService } from './creator.service';
@@ -38,7 +37,7 @@ import {
 
 @ApiTags('Creator')
 @ApiBearerAuth()
-@UseGuards(AuthGuard, FeatureAccessGuard)
+@UseGuards(AuthGuard)
 @Roles('CREATOR', 'ADMIN', 'SUPER_ADMIN')
 @Controller('creator')
 export class CreatorController {

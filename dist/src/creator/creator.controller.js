@@ -18,7 +18,6 @@ const platform_express_1 = require("@nestjs/platform-express");
 const swagger_1 = require("@nestjs/swagger");
 const auth_guard_1 = require("../auth/auth.guard");
 const allow_limited_decorator_1 = require("../auth/allow-limited.decorator");
-const feature_access_guard_1 = require("../auth/feature-access.guard");
 const roles_decorator_1 = require("../auth/roles.decorator");
 const storage_constants_1 = require("../storage/storage.constants");
 const creator_service_1 = require("./creator.service");
@@ -439,7 +438,7 @@ __decorate([
 exports.CreatorController = CreatorController = __decorate([
     (0, swagger_1.ApiTags)('Creator'),
     (0, swagger_1.ApiBearerAuth)(),
-    (0, common_1.UseGuards)(auth_guard_1.AuthGuard, feature_access_guard_1.FeatureAccessGuard),
+    (0, common_1.UseGuards)(auth_guard_1.AuthGuard),
     (0, roles_decorator_1.Roles)('CREATOR', 'ADMIN', 'SUPER_ADMIN'),
     (0, common_1.Controller)('creator'),
     __metadata("design:paramtypes", [creator_service_1.CreatorService])

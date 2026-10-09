@@ -188,10 +188,16 @@ export declare class ListingOwnerController {
             name: string;
             slug: string | null;
             photo: string | null;
+            bio: string | null;
             niche: string | null;
+            category: string | null;
             city: string | null;
             followers: number;
             rating: number;
+            reviewCount: number;
+            engagementRate: number;
+            languages: string[];
+            featured: boolean;
             publicPath: string;
             estimatedBudget: string;
         }[];

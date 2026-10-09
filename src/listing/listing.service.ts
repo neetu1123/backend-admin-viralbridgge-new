@@ -44,24 +44,26 @@ export class ListingService {
   ) {}
 
   async create(userId: string, dto: CreateListingDto) {
+    const brand = await this.prisma.brandProfile.findUnique({ where: { user_id: userId }, select: { id: true } });
+    if (!brand) {
+      throw new ForbiddenException('Only Brand accounts can list a business.');
+    }
+
     const existing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
     if (existing) return this.formatOwner(existing);
 
-    const type = dto.type === 'CREATOR' ? 'CREATOR' : 'BUSINESS';
     const user = await this.prisma.user.findUnique({ where: { id: userId } });
-    const name = (dto.name || user?.name || (type === 'CREATOR' ? 'Creator listing' : 'Business listing')).slice(
-      0,
-      FREE_LISTING_LIMITS.name,
-    );
+    const name = (dto.name || user?.name || 'Business listing').slice(0, FREE_LISTING_LIMITS.name);
     const slug = await this.uniqueSlug(name);
 
     const listing = await this.prisma.freeListing.create({
       data: {
         owner_user_id: userId,
-        type,
+        type: 'BUSINESS',
         name,
         slug,
         email: user?.email || null,
+        brand_profile_id: brand.id,
       },
     });
     return this.formatOwner(listing);
@@ -99,6 +101,10 @@ export class ListingService {
   }
 
   async getSuggestions(userId: string, query: ListingSuggestionQueryDto = {}) {
+    const brand = await this.prisma.brandProfile.findUnique({ where: { user_id: userId }, select: { id: true } });
+    if (!brand) {
+      throw new ForbiddenException('Grow my business is available for Brand accounts.');
+    }
     const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
     const city = listing?.city?.trim() || '';
     const category = listing?.category?.trim() || '';
@@ -123,14 +129,35 @@ export class ListingService {
             full_name: true,
             slug: true,
             photo: true,
+            bio: true,
             niche: true,
             category: true,
             city: true,
             followers: true,
             rating: true,
+            review_count: true,
+            engagement_rate: true,
+            languages: true,
+            featured: true,
           },
         })
       : [];
+    const nearbyCreatorSelect = {
+      id: true,
+      full_name: true,
+      slug: true,
+      photo: true,
+      bio: true,
+      niche: true,
+      category: true,
+      city: true,
+      followers: true,
+      rating: true,
+      review_count: true,
+      engagement_rate: true,
+      languages: true,
+      featured: true,
+    } as const;
     const nearby =
       nearbyCreators.length > 0
         ? nearbyCreators
@@ -138,17 +165,7 @@ export class ListingService {
             where: nearbyWhere,
             take: 8,
             orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
-            select: {
-              id: true,
-              full_name: true,
-              slug: true,
-              photo: true,
-              niche: true,
-              category: true,
-              city: true,
-              followers: true,
-              rating: true,
-            },
+            select: nearbyCreatorSelect,
           });
 
     const relatedOr: Prisma.FreeListingWhereInput[] = [];
@@ -197,10 +214,16 @@ export class ListingService {
         name: row.full_name || 'Creator',
         slug: row.slug,
         photo: row.photo,
+        bio: row.bio,
         niche: row.niche || row.category,
+        category: row.category || row.niche,
         city: row.city,
         followers: row.followers,
         rating: row.rating,
+        reviewCount: row.review_count,
+        engagementRate: row.engagement_rate,
+        languages: row.languages ?? [],
+        featured: row.featured,
         publicPath: row.slug ? `/discover/creator/${row.slug}` : `/business/creator/${row.id}`,
         estimatedBudget: this.estimatedBudgetLabel(row.followers),
       })),

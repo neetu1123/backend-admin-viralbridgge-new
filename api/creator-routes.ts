@@ -1,5 +1,5 @@
 import { Router } from 'express';
-import { requireCreator, requireCreatorFullAccess, type AuthedRequest } from './lib/auth-middleware';
+import { requireCreator, type AuthedRequest } from './lib/auth-middleware';
 import { fail, ok, paramId, run, runWithAudit } from './lib/http';
 import { getPrisma } from './lib/prisma';
 import { parseListQuery } from './lib/query';
@@ -10,7 +10,6 @@ const creator = () => getCreatorService();
 const prisma = () => getPrisma();
 
 router.use(requireCreator);
-router.use(requireCreatorFullAccess);
 
 router.get('/profile', (req: AuthedRequest, res) => run(req, res, (id) => creator().getProfile(id)));
 router.put('/profile', (req: AuthedRequest, res) =>

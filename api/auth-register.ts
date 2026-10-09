@@ -45,6 +45,7 @@ export async function handleAuthRegister(body: {
       name,
       password: hashedPassword,
       role_id: role.id,
+      feature_access: roleName === 'BRAND' ? 'LIMITED' : 'FULL',
       wallets: { create: {} },
     },
     include: { role: true },

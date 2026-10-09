@@ -68,6 +68,7 @@ export class AuthService {
         name: data.name,
         password: hashedPassword,
         role_id: role.id,
+        feature_access: roleName === 'BRAND' ? 'LIMITED' : 'FULL',
       },
       include: { role: true },
     });
