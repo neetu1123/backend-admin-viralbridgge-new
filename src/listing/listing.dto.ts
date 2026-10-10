@@ -251,4 +251,32 @@ export class ListingSuggestionQueryDto {
   @Type(() => Number)
   @IsNumber()
   budgetMax?: number;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  city?: string;
+
+  @IsOptional()
+  @IsIn(['relevance', 'rating', 'popular', 'newest'])
+  sort?: 'relevance' | 'rating' | 'popular' | 'newest';
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(120)
+  objective?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(80)
+  category?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(40)
+  language?: string;
+
+  @IsOptional()
+  @IsString()
+  featured?: string;
 }

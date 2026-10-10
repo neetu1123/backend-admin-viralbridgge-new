@@ -21,6 +21,12 @@ router.get('/me/suggestions', (req: AuthedRequest, res) =>
     listings().getSuggestions(id, {
       budgetMin: req.query.budgetMin ? Number(req.query.budgetMin) : undefined,
       budgetMax: req.query.budgetMax ? Number(req.query.budgetMax) : undefined,
+      city: typeof req.query.city === 'string' ? req.query.city : undefined,
+      sort: typeof req.query.sort === 'string' ? req.query.sort as 'relevance' | 'rating' | 'popular' | 'newest' : undefined,
+      objective: typeof req.query.objective === 'string' ? req.query.objective : undefined,
+      category: typeof req.query.category === 'string' ? req.query.category : undefined,
+      language: typeof req.query.language === 'string' ? req.query.language : undefined,
+      featured: typeof req.query.featured === 'string' ? req.query.featured : undefined,
     }),
   ),
 );

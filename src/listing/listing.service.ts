@@ -106,42 +106,42 @@ export class ListingService {
       throw new ForbiddenException('Grow my business is available for Brand accounts.');
     }
     const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
-    const city = listing?.city?.trim() || '';
-    const category = listing?.category?.trim() || '';
+    const requestedCity = query.city?.trim();
+    const city =
+      requestedCity === 'all' || requestedCity === ''
+        ? ''
+        : requestedCity || listing?.city?.trim() || '';
+    const listingCategory = listing?.category?.trim() || '';
+    const category = query.category?.trim() || listingCategory;
     const subcategory = listing?.subcategory?.trim() || '';
     const services = (listing?.services ?? []).filter(Boolean);
     const budgetMin = query.budgetMin != null ? Number(query.budgetMin) : undefined;
     const budgetMax = query.budgetMax != null ? Number(query.budgetMax) : undefined;
     const followerFilter = this.followerFilterForBudget(budgetMin, budgetMax);
+    const language = query.language?.trim();
+    const featuredOnly = String(query.featured ?? '').toLowerCase() === 'true';
+    const primaryObjective = String(query.objective ?? '')
+      .split(',')
+      .map((item) => item.trim())
+      .find(Boolean);
+    const sort = query.sort || this.sortForObjective(primaryObjective);
 
     const nearbyWhere: Prisma.CreatorProfileWhereInput = {
       discovery_status: 'ACTIVE',
       user: { is_banned: false, is_deleted: false },
       ...(followerFilter ? { followers: followerFilter } : {}),
+      ...(language ? { languages: { has: language } } : {}),
+      ...(featuredOnly ? { featured: true } : {}),
+      ...(category
+        ? {
+            OR: [
+              { category: { contains: category, mode: 'insensitive' } },
+              { niche: { contains: category, mode: 'insensitive' } },
+              { subcategory: { contains: category, mode: 'insensitive' } },
+            ],
+          }
+        : {}),
     };
-    const nearbyCreators = city
-      ? await this.prisma.creatorProfile.findMany({
-          where: { ...nearbyWhere, city: { equals: city, mode: 'insensitive' } },
-          take: 8,
-          orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
-          select: {
-            id: true,
-            full_name: true,
-            slug: true,
-            photo: true,
-            bio: true,
-            niche: true,
-            category: true,
-            city: true,
-            followers: true,
-            rating: true,
-            review_count: true,
-            engagement_rate: true,
-            languages: true,
-            featured: true,
-          },
-        })
-      : [];
     const nearbyCreatorSelect = {
       id: true,
       full_name: true,
@@ -158,18 +158,27 @@ export class ListingService {
       languages: true,
       featured: true,
     } as const;
+    const creatorOrder = this.creatorOrderForSort(sort);
+    const nearbyCreators = city
+      ? await this.prisma.creatorProfile.findMany({
+          where: { ...nearbyWhere, city: { equals: city, mode: 'insensitive' } },
+          take: 12,
+          orderBy: creatorOrder,
+          select: nearbyCreatorSelect,
+        })
+      : [];
     const nearby =
       nearbyCreators.length > 0
         ? nearbyCreators
         : await this.prisma.creatorProfile.findMany({
             where: nearbyWhere,
-            take: 8,
-            orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
+            take: 12,
+            orderBy: creatorOrder,
             select: nearbyCreatorSelect,
           });
 
     const relatedOr: Prisma.FreeListingWhereInput[] = [];
-    if (category) relatedOr.push({ category: { equals: category, mode: 'insensitive' } });
+    if (listingCategory) relatedOr.push({ category: { equals: listingCategory, mode: 'insensitive' } });
     if (subcategory) relatedOr.push({ subcategory: { equals: subcategory, mode: 'insensitive' } });
     if (services.length) relatedOr.push({ services: { hasSome: services } });
 
@@ -198,7 +207,10 @@ export class ListingService {
     return {
       listingReady: Boolean(listing?.city || listing?.category || services.length),
       city: city || null,
+      listingCity: listing?.city?.trim() || null,
       category: category || null,
+      sort,
+      objective: primaryObjective || null,
       budget: {
         min: budgetMin ?? null,
         max: budgetMax ?? null,
@@ -860,6 +872,21 @@ export class ListingService {
     if (hasBrand) return 'BRAND';
     if (hasCreator) return 'CREATOR';
     return 'FREE_LISTING';
+  }
+
+  private sortForObjective(objective?: string): 'relevance' | 'rating' | 'popular' | 'newest' {
+    if (objective === 'reviews' || objective === 'enquiries') return 'rating';
+    if (objective === 'followers' || objective === 'awareness' || objective === 'sales') return 'popular';
+    return 'relevance';
+  }
+
+  private creatorOrderForSort(
+    sort: 'relevance' | 'rating' | 'popular' | 'newest',
+  ): Prisma.CreatorProfileOrderByWithRelationInput[] {
+    if (sort === 'rating') return [{ rating: 'desc' }, { review_count: 'desc' }, { engagement_rate: 'desc' }];
+    if (sort === 'popular') return [{ followers: 'desc' }, { featured: 'desc' }];
+    if (sort === 'newest') return [{ created_at: 'desc' }];
+    return [{ featured: 'desc' }, { engagement_rate: 'desc' }, { followers: 'desc' }];
   }
 
   private followerFilterForBudget(min?: number, max?: number): Prisma.IntFilter | null {
