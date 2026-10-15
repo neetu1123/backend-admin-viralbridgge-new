@@ -92,41 +92,40 @@ let ListingService = class ListingService {
             throw new common_1.ForbiddenException('Grow my business is available for Brand accounts.');
         }
         const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
-        const city = listing?.city?.trim() || '';
-        const category = listing?.category?.trim() || '';
+        const requestedCity = query.city?.trim();
+        const city = requestedCity === 'all' || requestedCity === ''
+            ? ''
+            : requestedCity || listing?.city?.trim() || '';
+        const listingCategory = listing?.category?.trim() || '';
+        const category = query.category?.trim() || listingCategory;
         const subcategory = listing?.subcategory?.trim() || '';
         const services = (listing?.services ?? []).filter(Boolean);
         const budgetMin = query.budgetMin != null ? Number(query.budgetMin) : undefined;
         const budgetMax = query.budgetMax != null ? Number(query.budgetMax) : undefined;
         const followerFilter = this.followerFilterForBudget(budgetMin, budgetMax);
+        const language = query.language?.trim();
+        const featuredOnly = String(query.featured ?? '').toLowerCase() === 'true';
+        const primaryObjective = String(query.objective ?? '')
+            .split(',')
+            .map((item) => item.trim())
+            .find(Boolean);
+        const sort = query.sort || this.sortForObjective(primaryObjective);
         const nearbyWhere = {
             discovery_status: 'ACTIVE',
             user: { is_banned: false, is_deleted: false },
             ...(followerFilter ? { followers: followerFilter } : {}),
+            ...(language ? { languages: { has: language } } : {}),
+            ...(featuredOnly ? { featured: true } : {}),
+            ...(category
+                ? {
+                    OR: [
+                        { category: { contains: category, mode: 'insensitive' } },
+                        { niche: { contains: category, mode: 'insensitive' } },
+                        { subcategory: { contains: category, mode: 'insensitive' } },
+                    ],
+                }
+                : {}),
         };
-        const nearbyCreators = city
-            ? await this.prisma.creatorProfile.findMany({
-                where: { ...nearbyWhere, city: { equals: city, mode: 'insensitive' } },
-                take: 8,
-                orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
-                select: {
-                    id: true,
-                    full_name: true,
-                    slug: true,
-                    photo: true,
-                    bio: true,
-                    niche: true,
-                    category: true,
-                    city: true,
-                    followers: true,
-                    rating: true,
-                    review_count: true,
-                    engagement_rate: true,
-                    languages: true,
-                    featured: true,
-                },
-            })
-            : [];
         const nearbyCreatorSelect = {
             id: true,
             full_name: true,
@@ -143,17 +142,26 @@ let ListingService = class ListingService {
             languages: true,
             featured: true,
         };
+        const creatorOrder = this.creatorOrderForSort(sort);
+        const nearbyCreators = city
+            ? await this.prisma.creatorProfile.findMany({
+                where: { ...nearbyWhere, city: { equals: city, mode: 'insensitive' } },
+                take: 12,
+                orderBy: creatorOrder,
+                select: nearbyCreatorSelect,
+            })
+            : [];
         const nearby = nearbyCreators.length > 0
             ? nearbyCreators
             : await this.prisma.creatorProfile.findMany({
                 where: nearbyWhere,
-                take: 8,
-                orderBy: [{ featured: 'desc' }, { followers: 'desc' }],
+                take: 12,
+                orderBy: creatorOrder,
                 select: nearbyCreatorSelect,
             });
         const relatedOr = [];
-        if (category)
-            relatedOr.push({ category: { equals: category, mode: 'insensitive' } });
+        if (listingCategory)
+            relatedOr.push({ category: { equals: listingCategory, mode: 'insensitive' } });
         if (subcategory)
             relatedOr.push({ subcategory: { equals: subcategory, mode: 'insensitive' } });
         if (services.length)
@@ -179,7 +187,10 @@ let ListingService = class ListingService {
         return {
             listingReady: Boolean(listing?.city || listing?.category || services.length),
             city: city || null,
+            listingCity: listing?.city?.trim() || null,
             category: category || null,
+            sort,
+            objective: primaryObjective || null,
             budget: {
                 min: budgetMin ?? null,
                 max: budgetMax ?? null,
@@ -374,24 +385,60 @@ let ListingService = class ListingService {
     async getAnalytics(userId) {
         const listing = await this.prisma.freeListing.findUnique({ where: { owner_user_id: userId } });
         if (!listing) {
-            return { views: 0, enquiries: 0, contacts: 0, searches: 0 };
+            return {
+                listing: null,
+                views: 0,
+                enquiries: 0,
+                contacts: 0,
+                searches: 0,
+                whatsapp: 0,
+                calls: 0,
+                website: 0,
+                contactClicks: 0,
+                enquiryEvents: 0,
+                last30Days: {},
+                totals: {},
+            };
         }
         const since = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000);
-        const [enquiries, events] = await Promise.all([
+        const [enquiries, events30, eventsAll] = await Promise.all([
             this.prisma.freeListingEnquiry.count({ where: { listing_id: listing.id } }),
             this.prisma.discoveryEvent.groupBy({
                 by: ['event_type'],
                 where: { listing_id: listing.id, created_at: { gte: since } },
                 _count: true,
             }),
+            this.prisma.discoveryEvent.groupBy({
+                by: ['event_type'],
+                where: { listing_id: listing.id },
+                _count: true,
+            }),
         ]);
-        const countOf = (type) => events.find((row) => row.event_type === type)?._count ?? 0;
+        const countOf = (rows, type) => rows.find((row) => row.event_type === type)?._count ?? 0;
+        const whatsapp = countOf(eventsAll, 'whatsapp_click');
+        const calls = countOf(eventsAll, 'call_click');
+        const website = countOf(eventsAll, 'website_click');
+        const contactClicks = countOf(eventsAll, 'contact_click');
+        const enquiryEvents = countOf(eventsAll, 'enquiry_sent');
+        const searches = countOf(eventsAll, 'search');
         return {
+            listing: {
+                id: listing.id,
+                name: listing.name,
+                slug: listing.slug,
+                status: listing.status,
+            },
             views: listing.profile_views,
             enquiries,
-            contacts: countOf('contact_click') + countOf('call_click') + countOf('whatsapp_click'),
-            searches: countOf('search'),
-            last30Days: Object.fromEntries(events.map((row) => [row.event_type, row._count])),
+            contacts: contactClicks + calls + whatsapp,
+            searches,
+            whatsapp,
+            calls,
+            website,
+            contactClicks,
+            enquiryEvents,
+            last30Days: Object.fromEntries(events30.map((row) => [row.event_type, row._count])),
+            totals: Object.fromEntries(eventsAll.map((row) => [row.event_type, row._count])),
         };
     }
     async upgrade(userId, id) {
@@ -809,6 +856,22 @@ let ListingService = class ListingService {
         if (hasCreator)
             return 'CREATOR';
         return 'FREE_LISTING';
+    }
+    sortForObjective(objective) {
+        if (objective === 'reviews' || objective === 'enquiries')
+            return 'rating';
+        if (objective === 'followers' || objective === 'awareness' || objective === 'sales')
+            return 'popular';
+        return 'relevance';
+    }
+    creatorOrderForSort(sort) {
+        if (sort === 'rating')
+            return [{ rating: 'desc' }, { review_count: 'desc' }, { engagement_rate: 'desc' }];
+        if (sort === 'popular')
+            return [{ followers: 'desc' }, { featured: 'desc' }];
+        if (sort === 'newest')
+            return [{ created_at: 'desc' }];
+        return [{ featured: 'desc' }, { engagement_rate: 'desc' }, { followers: 'desc' }];
     }
     followerFilterForBudget(min, max) {
         if (min == null && max == null)

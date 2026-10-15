@@ -45,6 +45,18 @@ export class UpdateCreatorProfileDto {
 
   @IsOptional()
   @IsString()
+  country?: string;
+
+  @IsOptional()
+  @IsString()
+  state?: string;
+
+  @IsOptional()
+  @IsString()
+  city?: string;
+
+  @IsOptional()
+  @IsString()
   instagram?: string;
 
   @IsOptional()

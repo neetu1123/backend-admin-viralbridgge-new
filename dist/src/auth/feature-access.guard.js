@@ -29,6 +29,9 @@ let FeatureAccessGuard = class FeatureAccessGuard {
         const user = context.switchToHttp().getRequest()?.user;
         if ((0, feature_access_1.isFullAccessUser)(user))
             return true;
+        const roleName = String(user?.role?.name ?? user?.role ?? '').toUpperCase();
+        if (roleName === 'BRAND')
+            return true;
         throw new common_1.ForbiddenException('Campaigns, wallet, and discovery tools require a subscription or admin approval.');
     }
 };

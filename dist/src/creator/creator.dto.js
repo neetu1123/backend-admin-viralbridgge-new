@@ -22,6 +22,9 @@ class UpdateCreatorProfileDto {
     engagementRate;
     languages;
     locality;
+    country;
+    state;
+    city;
     instagram;
     youtube;
     tiktok;
@@ -73,6 +76,21 @@ __decorate([
     (0, class_validator_1.IsString)(),
     __metadata("design:type", String)
 ], UpdateCreatorProfileDto.prototype, "locality", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "country", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "state", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], UpdateCreatorProfileDto.prototype, "city", void 0);
 __decorate([
     (0, class_validator_1.IsOptional)(),
     (0, class_validator_1.IsString)(),

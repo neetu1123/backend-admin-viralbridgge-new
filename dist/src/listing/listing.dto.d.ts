@@ -66,4 +66,10 @@ export declare class ListingSearchQueryDto extends DiscoverySearchQueryDto {
 export declare class ListingSuggestionQueryDto {
     budgetMin?: number;
     budgetMax?: number;
+    city?: string;
+    sort?: 'relevance' | 'rating' | 'popular' | 'newest';
+    objective?: string;
+    category?: string;
+    language?: string;
+    featured?: string;
 }

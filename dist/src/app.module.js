@@ -36,6 +36,7 @@ const crm_module_1 = require("./crm/crm.module");
 const support_module_1 = require("./support/support.module");
 const discovery_module_1 = require("./discovery/discovery.module");
 const listing_module_1 = require("./listing/listing.module");
+const locations_module_1 = require("./locations/locations.module");
 let AppModule = class AppModule {
 };
 exports.AppModule = AppModule;
@@ -72,6 +73,7 @@ exports.AppModule = AppModule = __decorate([
             support_module_1.SupportModule,
             discovery_module_1.DiscoveryModule,
             listing_module_1.ListingModule,
+            locations_module_1.LocationsModule,
         ],
         controllers: [app_controller_1.AppController],
         providers: [

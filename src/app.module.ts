@@ -28,6 +28,7 @@ import { CrmModule } from './crm/crm.module';
 import { SupportModule } from './support/support.module';
 import { DiscoveryModule } from './discovery/discovery.module';
 import { ListingModule } from './listing/listing.module';
+import { LocationsModule } from './locations/locations.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { ListingModule } from './listing/listing.module';
     SupportModule,
     DiscoveryModule,
     ListingModule,
+    LocationsModule,
   ],
   controllers: [AppController],
   providers: [

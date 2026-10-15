@@ -133,7 +133,10 @@ export declare class ListingService {
     getSuggestions(userId: string, query?: ListingSuggestionQueryDto): Promise<{
         listingReady: boolean;
         city: string | null;
+        listingCity: string | null;
         category: string | null;
+        sort: "rating" | "popular" | "newest" | "relevance";
+        objective: string | null;
         budget: {
             min: number | null;
             max: number | null;
@@ -390,17 +393,38 @@ export declare class ListingService {
         sender_user_id: string | null;
     }[]>;
     getAnalytics(userId: string): Promise<{
+        listing: null;
         views: number;
         enquiries: number;
         contacts: number;
         searches: number;
-        last30Days?: undefined;
+        whatsapp: number;
+        calls: number;
+        website: number;
+        contactClicks: number;
+        enquiryEvents: number;
+        last30Days: {};
+        totals: {};
     } | {
+        listing: {
+            id: string;
+            name: string;
+            slug: string;
+            status: string;
+        };
         views: number;
         enquiries: number;
         contacts: number;
         searches: number;
+        whatsapp: number;
+        calls: number;
+        website: number;
+        contactClicks: number;
+        enquiryEvents: number;
         last30Days: {
+            [k: string]: number;
+        };
+        totals: {
             [k: string]: number;
         };
     }>;
@@ -797,6 +821,8 @@ export declare class ListingService {
     private limitList;
     private sanitizeSocial;
     private accountKind;
+    private sortForObjective;
+    private creatorOrderForSort;
     private followerFilterForBudget;
     private estimatedBudgetLabel;
     private formatOwner;

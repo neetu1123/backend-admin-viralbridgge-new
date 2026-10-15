@@ -351,6 +351,12 @@ exports.ListingSearchQueryDto = ListingSearchQueryDto;
 class ListingSuggestionQueryDto {
     budgetMin;
     budgetMax;
+    city;
+    sort;
+    objective;
+    category;
+    language;
+    featured;
 }
 exports.ListingSuggestionQueryDto = ListingSuggestionQueryDto;
 __decorate([
@@ -365,4 +371,38 @@ __decorate([
     (0, class_validator_1.IsNumber)(),
     __metadata("design:type", Number)
 ], ListingSuggestionQueryDto.prototype, "budgetMax", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "city", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsIn)(['relevance', 'rating', 'popular', 'newest']),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "sort", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(120),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "objective", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(80),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "category", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    (0, class_validator_1.MaxLength)(40),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "language", void 0);
+__decorate([
+    (0, class_validator_1.IsOptional)(),
+    (0, class_validator_1.IsString)(),
+    __metadata("design:type", String)
+], ListingSuggestionQueryDto.prototype, "featured", void 0);
 //# sourceMappingURL=listing.dto.js.map

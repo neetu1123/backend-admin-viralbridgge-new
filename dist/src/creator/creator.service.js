@@ -49,6 +49,13 @@ let CreatorService = class CreatorService {
         const profile = await this.ensureCreatorProfile(userId);
         const existingSocial = profile.social_links ?? {};
         const niches = dto.niches?.length ? dto.niches : dto.niche ? [dto.niche] : undefined;
+        const country = dto.country?.trim();
+        const state = dto.state?.trim();
+        const city = dto.city?.trim();
+        const hasStructuredLocation = dto.country !== undefined || dto.state !== undefined || dto.city !== undefined;
+        const locality = hasStructuredLocation
+            ? [city, state, country].filter(Boolean).join(', ')
+            : dto.locality;
         const socialLinks = {
             ...existingSocial,
             ...(dto.instagram !== undefined ? { instagram: dto.instagram } : {}),
@@ -57,6 +64,7 @@ let CreatorService = class CreatorService {
             ...(dto.twitter !== undefined ? { twitter: dto.twitter } : {}),
             ...(dto.website !== undefined ? { website: dto.website } : {}),
             ...(dto.handle !== undefined ? { handle: dto.handle } : {}),
+            ...(dto.country !== undefined ? { country: country || '' } : {}),
             ...(niches ? { niches } : {}),
         };
         return this.prisma.creatorProfile.update({
@@ -68,7 +76,9 @@ let CreatorService = class CreatorService {
                 followers: dto.followers,
                 engagement_rate: dto.engagementRate,
                 languages: dto.languages,
-                locality: dto.locality,
+                ...(locality !== undefined ? { locality: locality || null } : {}),
+                ...(dto.city !== undefined ? { city: city || null } : {}),
+                ...(dto.state !== undefined ? { state: state || null } : {}),
                 social_links: socialLinks,
                 media_kit: dto.mediaKit,
                 portfolio: dto.portfolio,

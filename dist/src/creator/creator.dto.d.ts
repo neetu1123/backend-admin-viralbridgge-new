@@ -7,6 +7,9 @@ export declare class UpdateCreatorProfileDto {
     engagementRate?: number;
     languages?: string[];
     locality?: string;
+    country?: string;
+    state?: string;
+    city?: string;
     instagram?: string;
     youtube?: string;
     tiktok?: string;
