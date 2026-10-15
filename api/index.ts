@@ -14,6 +14,7 @@ import { publicRouter } from './public-routes';
 import { discoveryRouter } from './discovery-routes';
 import { discoverRouter } from './discover-routes';
 import { listingRouter } from './listing-routes';
+import { locationsRouter } from './locations-routes';
 import { handleAuthLogin } from './auth-login';
 import { handleAuthRegister } from './auth-register';
 import { handleAuthMe } from './auth-me';
@@ -103,6 +104,7 @@ function bypassesNest(path: string, method: string): boolean {
   if (path.startsWith('/business')) return true;
   if (path.startsWith('/discover')) return true;
   if (path.startsWith('/listings')) return true;
+  if (path.startsWith('/locations')) return true;
   return false;
 }
 
@@ -156,6 +158,7 @@ server.use('/public', publicRouter);
 server.use('/business', discoveryRouter);
 server.use('/discover', discoverRouter);
 server.use('/listings', listingRouter);
+server.use('/locations', locationsRouter);
 
 server.post('/auth/login', async (req, res) => {
   try {

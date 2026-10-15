@@ -6,7 +6,7 @@
       "use": "@vercel/node",
       "config": {
         "maxDuration": 60,
-        "includeFiles": ["dist/**", "node_modules/.prisma/**"]
+        "includeFiles": ["dist/**", "node_modules/.prisma/**", "node_modules/country-state-city/**"]
       }
     }
   ],
