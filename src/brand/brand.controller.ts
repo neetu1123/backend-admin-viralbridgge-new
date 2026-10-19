@@ -140,6 +140,16 @@ export class BrandController {
     return this.brandService.inviteCreator(req.user.id, id, creatorId);
   }
 
+  @Get('campaigns/:id/invites')
+  getCampaignInvites(@Request() req: any, @Param('id') id: string) {
+    return this.brandService.getCampaignInvites(req.user.id, id);
+  }
+
+  @Get('invites')
+  getInvites(@Request() req: any) {
+    return this.brandService.getInvites(req.user.id);
+  }
+
   @Get('creators')
   getCreators(@Query() query: CreatorDiscoveryQueryDto) {
     return this.brandService.getCreators(query);

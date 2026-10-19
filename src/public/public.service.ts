@@ -92,7 +92,8 @@ export class PublicService {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
     const where: any = {
-      user: { status: 'ACTIVE', is_deleted: false, is_banned: false },
+      discovery_status: 'ACTIVE',
+      user: { status: 'ACTIVE', is_deleted: false, is_banned: false, is_verified: true },
     };
 
     if (query.search) {
@@ -169,14 +170,14 @@ export class PublicService {
 
     if (isUuid(normalized)) {
       const byId = await this.prisma.creatorProfile.findFirst({
-        where: { id: normalized, user: { status: 'ACTIVE', is_deleted: false, is_banned: false } },
+        where: { id: normalized, discovery_status: 'ACTIVE', user: { status: 'ACTIVE', is_deleted: false, is_banned: false, is_verified: true } },
         include: this.creatorDetailInclude(),
       });
       if (byId) return this.formatCreatorDetail(byId);
     }
 
     const creators = await this.prisma.creatorProfile.findMany({
-      where: { user: { status: 'ACTIVE', is_deleted: false, is_banned: false } },
+      where: { discovery_status: 'ACTIVE', user: { status: 'ACTIVE', is_deleted: false, is_banned: false, is_verified: true } },
       include: this.creatorDetailInclude(),
     });
 
@@ -263,7 +264,7 @@ export class PublicService {
 
   async getPublicBrand(idOrSlug: string) {
     const key = decodeURIComponent(idOrSlug).trim();
-    const activeUser = { status: 'ACTIVE' as const, is_deleted: false, is_banned: false };
+    const activeUser = { status: 'ACTIVE' as const, is_deleted: false, is_banned: false, is_verified: true };
     let brandId: string | null = null;
 
     if (isUuid(key)) {

@@ -105,7 +105,10 @@ export class DiscoveryService {
     const area = query.area || parsed.area;
     const category = await this.resolveCategoryTerm(query.category);
     const type = (query.type || 'all').toLowerCase();
-    const verifiedOnly = query.verified === 'true' || query.verified === '1';
+    const verifiedOnly =
+      options?.includeHidden
+        ? query.verified === 'true' || query.verified === '1'
+        : query.verified !== 'false' && query.verified !== '0';
     const minRating = query.rating ?? 0;
     const status = (query.status || 'active').toLowerCase();
     const includeHidden = Boolean(options?.includeHidden);
@@ -164,7 +167,7 @@ export class DiscoveryService {
       this.prisma.brandProfile.findFirst({
         where: {
           OR: [{ slug: normalized }, { company_name: { equals: this.unslug(normalized), mode: 'insensitive' } }],
-          user: { status: 'ACTIVE', is_deleted: false, is_banned: false },
+          user: { status: 'ACTIVE', is_deleted: false, is_banned: false, is_verified: true },
         },
         include: { user: true, campaigns: { where: { status: { in: ['ACTIVE', 'APPROVED'] } }, take: 6 } },
       }),
@@ -175,7 +178,7 @@ export class DiscoveryService {
             { full_name: { equals: this.unslug(normalized), mode: 'insensitive' } },
             { user: { name: { equals: this.unslug(normalized), mode: 'insensitive' } } },
           ],
-          user: { status: 'ACTIVE', is_deleted: false, is_banned: false },
+          user: { status: 'ACTIVE', is_deleted: false, is_banned: false, is_verified: true },
         },
         include: { user: true },
       }),

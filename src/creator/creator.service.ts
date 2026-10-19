@@ -52,6 +52,8 @@ export class CreatorService {
     const country = dto.country?.trim();
     const state = dto.state?.trim();
     const city = dto.city?.trim();
+    const area = dto.area?.trim();
+    const pincode = dto.pincode?.trim();
     const hasStructuredLocation = dto.country !== undefined || dto.state !== undefined || dto.city !== undefined;
     const locality = hasStructuredLocation
       ? [city, state, country].filter(Boolean).join(', ')
@@ -65,6 +67,8 @@ export class CreatorService {
       ...(dto.website !== undefined ? { website: dto.website } : {}),
       ...(dto.handle !== undefined ? { handle: dto.handle } : {}),
       ...(dto.country !== undefined ? { country: country || '' } : {}),
+      ...(dto.area !== undefined ? { area: area || '' } : {}),
+      ...(dto.pincode !== undefined ? { pincode: pincode || '' } : {}),
       ...(niches ? { niches } : {}),
     };
     return this.prisma.creatorProfile.update({
@@ -79,6 +83,7 @@ export class CreatorService {
         ...(locality !== undefined ? { locality: locality || null } : {}),
         ...(dto.city !== undefined ? { city: city || null } : {}),
         ...(dto.state !== undefined ? { state: state || null } : {}),
+        ...(dto.area !== undefined ? { area: area || null } : {}),
         social_links: socialLinks as object,
         media_kit: dto.mediaKit,
         portfolio: dto.portfolio,
@@ -441,7 +446,12 @@ export class CreatorService {
       page: query.page,
       limit: query.limit,
       unread: query.isRead === false ? true : undefined,
+      type: query.type,
     });
+  }
+
+  async getInvites(userId: string) {
+    return this.notifications.list(userId, { type: 'CAMPAIGN_INVITE', limit: 50 });
   }
 
   async markNotificationRead(userId: string, id: string) {
@@ -488,7 +498,7 @@ export class CreatorService {
     return this.prisma.creatorProfile.upsert({
       where: { user_id: userId },
       update: {},
-      create: { user_id: userId, full_name: user.name, languages: [] },
+      create: { user_id: userId, full_name: user.name, languages: [], discovery_status: 'PENDING' },
       include: { user: true },
     });
   }

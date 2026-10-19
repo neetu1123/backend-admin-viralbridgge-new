@@ -57,6 +57,14 @@ export class UpdateCreatorProfileDto {
 
   @IsOptional()
   @IsString()
+  area?: string;
+
+  @IsOptional()
+  @IsString()
+  pincode?: string;
+
+  @IsOptional()
+  @IsString()
   instagram?: string;
 
   @IsOptional()
@@ -177,6 +185,10 @@ export class NotificationQueryDto extends PaginationQueryDto {
   @IsOptional()
   @Type(() => Boolean)
   isRead?: boolean;
+
+  @IsOptional()
+  @IsString()
+  type?: string;
 }
 
 export class SubmitDeliverableDto {

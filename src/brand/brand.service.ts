@@ -262,41 +262,101 @@ export class BrandService {
     });
     if (!creator) throw new NotFoundException('Creator not found');
 
-    const allowed = await this.notifications.shouldNotify(creator.user_id, 'notifInvites');
-    if (!allowed) {
-      return { success: true, notified: false };
-    }
-
     const existing = await this.prisma.notification.findFirst({
       where: {
         user_id: creator.user_id,
-        is_read: false,
         type: 'CAMPAIGN_INVITE',
         entity_id: campaignId,
       },
     });
     if (existing) {
-      return { success: true, alreadyInvited: true };
+      return {
+        success: true,
+        alreadyInvited: true,
+        invite: this.formatCampaignInvite(existing, campaign.title, creator),
+      };
     }
 
     const brandName = campaign.brand.company_name || 'A brand';
-    await this.createNotification(
+    const invite = await this.createNotification(
       creator.user_id,
       'Campaign invitation',
       `${brandName} invited you to apply for ${campaign.title}.`,
-      { campaignId, creatorId, brandName, campaignTitle: campaign.title },
+      {
+        campaignId,
+        creatorId,
+        creatorName: creator.full_name || creator.user.name,
+        brandName,
+        campaignTitle: campaign.title,
+      },
       'CAMPAIGN_INVITE',
       'CAMPAIGN',
       campaignId,
     );
 
-    return { success: true, notified: true };
+    return { success: true, notified: true, invite };
+  }
+
+  async getCampaignInvites(userId: string, campaignId: string) {
+    const campaign = await this.getOwnedCampaign(userId, campaignId);
+    const rows = await this.prisma.notification.findMany({
+      where: { type: 'CAMPAIGN_INVITE', entity_id: campaignId },
+      orderBy: { created_at: 'desc' },
+    });
+    return { data: rows.map((row) => this.formatCampaignInvite(row, campaign.title)) };
+  }
+
+  async getInvites(userId: string) {
+    const profile = await this.ensureBrandProfile(userId);
+    const campaigns = await this.prisma.campaign.findMany({
+      where: { brand_id: profile.id },
+      select: { id: true, title: true },
+    });
+    const campaignIds = campaigns.map((c) => c.id);
+    if (campaignIds.length === 0) return { data: [] };
+    const titleById = Object.fromEntries(campaigns.map((c) => [c.id, c.title]));
+    const rows = await this.prisma.notification.findMany({
+      where: { type: 'CAMPAIGN_INVITE', entity_id: { in: campaignIds } },
+      orderBy: { created_at: 'desc' },
+      take: 100,
+    });
+    return { data: rows.map((row) => this.formatCampaignInvite(row, titleById[row.entity_id ?? ''] ?? 'Campaign')) };
+  }
+
+  private formatCampaignInvite(
+    row: {
+      id: string;
+      user_id: string;
+      title: string;
+      body: string;
+      entity_id: string | null;
+      is_read: boolean;
+      created_at: Date;
+      metadata?: unknown;
+    },
+    campaignTitle: string,
+    creator?: { id: string; full_name: string | null; user: { name: string } },
+  ) {
+    const meta = (row.metadata ?? {}) as Record<string, unknown>;
+    return {
+      id: row.id,
+      campaignId: row.entity_id,
+      campaignTitle: String(meta.campaignTitle ?? campaignTitle),
+      creatorId: String(meta.creatorId ?? creator?.id ?? ''),
+      creatorName: String(meta.creatorName ?? creator?.full_name ?? creator?.user.name ?? 'Creator'),
+      message: row.body,
+      isRead: row.is_read,
+      sentAt: row.created_at,
+    };
   }
 
   async getCreators(query: CreatorDiscoveryQueryDto) {
     const page = query.page ?? 1;
     const limit = query.limit ?? 20;
-    const where: any = {};
+    const where: any = {
+      discovery_status: 'ACTIVE',
+      user: { is_deleted: false, is_banned: false, is_verified: true },
+    };
     if (query.search) {
       where.OR = [
         { full_name: { contains: query.search, mode: 'insensitive' } },
@@ -599,7 +659,7 @@ export class BrandService {
     return this.prisma.brandProfile.upsert({
       where: { user_id: userId },
       update: {},
-      create: { user_id: userId, company_name: user.name },
+      create: { user_id: userId, company_name: user.name, discovery_status: 'PENDING' },
       include: { user: true },
     });
   }

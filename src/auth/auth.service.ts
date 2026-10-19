@@ -69,6 +69,8 @@ export class AuthService {
         password: hashedPassword,
         role_id: role.id,
         feature_access: roleName === 'BRAND' ? 'LIMITED' : 'FULL',
+        status: roleName === 'ADMIN' || roleName === 'SUPER_ADMIN' ? 'ACTIVE' : 'PENDING_KYC',
+        is_verified: false,
       },
       include: { role: true },
     });
@@ -77,13 +79,13 @@ export class AuthService {
 
     if (roleName === 'BRAND') {
       await this.prisma.brandProfile.create({
-        data: { user_id: user.id, company_name: data.name },
+        data: { user_id: user.id, company_name: data.name, discovery_status: 'PENDING' },
       });
     }
 
     if (roleName === 'CREATOR') {
       await this.prisma.creatorProfile.create({
-        data: { user_id: user.id, full_name: data.name, languages: [] },
+        data: { user_id: user.id, full_name: data.name, languages: [], discovery_status: 'PENDING' },
       });
     }
 

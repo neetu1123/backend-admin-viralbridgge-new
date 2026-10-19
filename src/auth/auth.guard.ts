@@ -112,7 +112,6 @@ export class AuthGuard implements CanActivate {
           name: decoded.name ?? decoded.email ?? 'ViralBridge User',
           avatar: decoded.picture,
           role_id: role.id,
-          is_verified: Boolean(decoded.email_verified),
         },
         create: {
           firebase_uid: decoded.uid,
@@ -120,8 +119,8 @@ export class AuthGuard implements CanActivate {
           name: decoded.name ?? decoded.email ?? 'ViralBridge User',
           avatar: decoded.picture,
           role_id: role.id,
-          is_verified: Boolean(decoded.email_verified),
-          status: 'ACTIVE',
+          is_verified: false,
+          status: roleName === 'ADMIN' || roleName === 'SUPER_ADMIN' ? 'ACTIVE' : 'PENDING_KYC',
         },
         include: { role: true },
       });

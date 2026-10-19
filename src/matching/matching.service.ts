@@ -184,6 +184,10 @@ export class MatchingService {
 
     const appliedCreatorIds = new Set(campaign.applications.map((a) => a.creator_id));
     const creators = await this.prisma.creatorProfile.findMany({
+      where: {
+        discovery_status: 'ACTIVE',
+        user: { is_deleted: false, is_banned: false, is_verified: true },
+      },
       include: { user: true },
     });
 

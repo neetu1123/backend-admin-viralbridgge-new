@@ -141,6 +141,18 @@ export class KycService {
       await this.prisma.brandKyc.update({ where: { id: request.brand_kyc.id }, data: { verification_status: 'VERIFIED' } });
     }
     await this.prisma.user.update({ where: { id: request.user_id }, data: { is_verified: true, status: 'ACTIVE' } });
+    if (request.user_type === 'CREATOR') {
+      await this.prisma.creatorProfile.updateMany({
+        where: { user_id: request.user_id },
+        data: { discovery_status: 'ACTIVE' },
+      });
+    }
+    if (request.user_type === 'BRAND') {
+      await this.prisma.brandProfile.updateMany({
+        where: { user_id: request.user_id },
+        data: { discovery_status: 'ACTIVE' },
+      });
+    }
     await this.notifications.create({
       userId: request.user_id,
       title: 'KYC Approved',

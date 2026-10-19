@@ -271,6 +271,12 @@ export class CreatorController {
   }
 
   @AllowLimited()
+  @Get('invites')
+  getInvites(@Request() req: any) {
+    return this.creatorService.getInvites(req.user.id);
+  }
+
+  @AllowLimited()
   @Get('notifications')
   getNotifications(@Request() req: any, @Query() query: NotificationQueryDto) {
     return this.creatorService.getNotifications(req.user.id, query);
